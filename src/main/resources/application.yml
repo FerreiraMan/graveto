@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: Graveto
+server:
+  servlet:
+    context-path: /api
