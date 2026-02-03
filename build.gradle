@@ -14,6 +14,10 @@ java {
 	}
 }
 
+bootJar {
+	archiveFileName = 'graveto.jar'
+}
+
 configurations {
 	compileOnly {
 		extendsFrom annotationProcessor
@@ -28,7 +32,21 @@ ext {
 	set('springModulithVersion', "2.0.2")
 }
 
+tasks.register('initApplication', Exec) {
+	description = 'Build latest JAR and start application with Docker Compose'
+	dependsOn 'bootJar'
+	workingDir "$projectDir"
+	commandLine 'docker', 'compose', '-f', 'infrastructure/docker/docker-compose.yml', 'up', '-d', '--build'
+}
+
+tasks.register('finalizeBuild', Exec) {
+	description = 'Stop and remove containers'
+	workingDir "$projectDir"
+	commandLine 'docker', 'compose', '-f', 'infrastructure/docker/docker-compose.yml', 'down', '--remove-orphans'
+}
+
 dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation 'org.springframework.modulith:spring-modulith-starter-core'
 	compileOnly 'org.projectlombok:lombok'
@@ -36,6 +54,7 @@ dependencies {
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testImplementation 'org.springframework.modulith:spring-modulith-starter-test'
+	runtimeOnly 'org.postgresql:postgresql'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 

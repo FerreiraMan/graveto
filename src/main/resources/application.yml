@@ -1,6 +1,11 @@
 spring:
   application:
     name: Graveto
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://${GRAVETO_POSTGRES_HOST:localhost}:5432/${POSTGRES_DB:graveto_db}
+    username: ${POSTGRES_USER:graveto_user}
+    password: ${POSTGRES_PASSWORD:graveto_password}
 server:
   servlet:
     context-path: /api
