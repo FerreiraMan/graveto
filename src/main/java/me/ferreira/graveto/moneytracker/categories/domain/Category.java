@@ -1,4 +1,4 @@
-package me.ferreira.graveto.moneytracker.categories;
+package me.ferreira.graveto.moneytracker.categories.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

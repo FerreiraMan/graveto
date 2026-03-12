@@ -1,4 +1,4 @@
-package me.ferreira.graveto.moneytracker.accounts;
+package me.ferreira.graveto.moneytracker.accounts.domain;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
