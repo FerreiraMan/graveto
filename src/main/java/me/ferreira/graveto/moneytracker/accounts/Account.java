@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.common.jpa.BaseEntity;
 import org.hibernate.annotations.DynamicUpdate;
 
@@ -36,7 +37,8 @@ public class Account extends BaseEntity {
     private BigDecimal balance = DEFAULT_ACCOUNT_OPENING_BALANCE;
 
     @Column(nullable = false, name = "base_currency")
-    private String baseCurrency;
+    @Enumerated(EnumType.STRING)
+    private Currency baseCurrency;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
