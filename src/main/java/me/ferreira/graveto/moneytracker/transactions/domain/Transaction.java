@@ -67,4 +67,25 @@ public class Transaction extends BaseEntity {
     @Column(name = "occurred_at", nullable = false)
     private LocalDateTime occurredAt;
 
+    public static Transaction createOpeningTransaction(
+            final Account account,
+            final BigDecimal amount,
+            final Category category) {
+
+        final Transaction tx = new Transaction();
+
+        tx.setSid(UUID.randomUUID());
+        tx.setOccurredAt(LocalDateTime.now());
+
+        tx.setAccount(account);
+        tx.setAmount(amount);
+        tx.setCurrency(account.getBaseCurrency());
+        tx.setCategory(category);
+
+        tx.setType(TransactionType.OPENING_BALANCE);
+        tx.setStatus(TransactionStatus.ACTIVE);
+
+        return tx;
+    }
+
 }

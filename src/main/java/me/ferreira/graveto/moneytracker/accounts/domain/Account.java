@@ -55,4 +55,22 @@ public class Account extends BaseEntity {
         membership.setAccount(this);
     }
 
+    public static Account create(
+            final BigDecimal initialBalance,
+            final Currency baseCurrency,
+            final String institution) {
+
+        final Account acc = new Account();
+
+        acc.setSid(UUID.randomUUID());
+
+        acc.setBalance(initialBalance);
+        acc.setBaseCurrency(baseCurrency);
+        acc.setInstitution(institution);
+
+        acc.setStatus(AccountStatus.ACTIVE);
+
+        return acc;
+    }
+
 }
