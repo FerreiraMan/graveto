@@ -1,0 +1,76 @@
+package me.ferreira.graveto.moneytracker.accounts;
+
+import io.restassured.http.ContentType;
+import me.ferreira.graveto.common.domain.Currency;
+import me.ferreira.graveto.moneytracker.accounts.domain.Account;
+import me.ferreira.graveto.moneytracker.accounts.domain.AccountStatus;
+import me.ferreira.graveto.moneytracker.accounts.repository.AccountRepository;
+import me.ferreira.graveto.moneytracker.accounts.web.dto.request.CreateAccountRequestDTO;
+import me.ferreira.graveto.moneytracker.config.BaseIntegrationTest;
+import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
+import me.ferreira.graveto.moneytracker.transactions.repository.TransactionRepository;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.test.context.jdbc.Sql;
+
+import java.math.BigDecimal;
+import java.util.Optional;
+import java.util.UUID;
+
+import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+
+@Sql(scripts = {"/sql/delete_all.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+public class CreateAccountIT extends BaseIntegrationTest {
+
+    @Autowired
+    private AccountRepository accountRepository;
+    @Autowired
+    private TransactionRepository transactionRepository;
+
+    @Test
+    void shouldCreateProduct() {
+        // Arrange
+        final BigDecimal expectedBalance = BigDecimal.TEN;
+        final String expectedInstitution = "Santander";
+        final CreateAccountRequestDTO requestDTO = new CreateAccountRequestDTO(
+                expectedBalance, Currency.EUR, expectedInstitution
+        );
+
+        // Act
+        final String accountSid =
+                given().
+                        header("X-User-Sid", UUID.randomUUID()).
+                        contentType(ContentType.JSON).
+                        body(requestDTO).
+                when().
+                        post("/accounts").
+                then().
+                        statusCode(201).
+                        body("status", equalTo(AccountStatus.ACTIVE.name())).
+                        extract().
+                        path("sid");
+
+        // Assert
+        final Optional<Account> accountOptional = accountRepository.findBySid(UUID.fromString(accountSid));
+        assertThat(accountOptional).isPresent();
+
+        final Account savedAccount = accountOptional.get();
+        assertThat(savedAccount.getBalance()).isEqualByComparingTo(expectedBalance);
+        assertThat(savedAccount.getInstitution()).isEqualTo(expectedInstitution);
+
+        final Page<Transaction> transactionsPage = transactionRepository.findAllByAccountId(
+                savedAccount.getId(), Pageable.ofSize(1)
+        );
+        assertThat(transactionsPage.getTotalElements()).isEqualTo(1);
+
+        final Transaction openingTx = transactionsPage.getContent().get(0);
+        assertThat(openingTx.getAmount()).isEqualByComparingTo(expectedBalance);
+        assertThat(openingTx.getType()).isEqualTo(TransactionType.OPENING_BALANCE);
+    }
+
+}
