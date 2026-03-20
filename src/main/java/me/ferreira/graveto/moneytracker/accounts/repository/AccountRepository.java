@@ -13,6 +13,8 @@ public interface AccountRepository {
 
     Optional<Account> findBySid(UUID sid);
 
+    Optional<Account> findBySidWithMemberships(UUID sid);
+
     List<Account> findByStatus(AccountStatus status);
 
 }

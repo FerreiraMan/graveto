@@ -28,6 +28,11 @@ public class AccountRepositoryImpl implements AccountRepository {
     }
 
     @Override
+    public Optional<Account> findBySidWithMemberships(UUID sid) {
+        return repository.findBySidWithMemberships(sid);
+    }
+
+    @Override
     public List<Account> findByStatus(final AccountStatus status) {
         return repository.findAllByStatus(status);
     }

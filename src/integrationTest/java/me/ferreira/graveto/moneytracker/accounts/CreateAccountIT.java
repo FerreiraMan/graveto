@@ -40,11 +40,12 @@ public class CreateAccountIT extends BaseIntegrationTest {
         final CreateAccountRequestDTO requestDTO = new CreateAccountRequestDTO(
                 expectedBalance, Currency.EUR, expectedInstitution
         );
+        final UUID userSid = UUID.randomUUID();
 
         // Act
         final String accountSid =
                 given().
-                        header("X-User-Sid", UUID.randomUUID()).
+                        header("X-User-Sid", userSid).
                         contentType(ContentType.JSON).
                         body(requestDTO).
                 when().
@@ -56,12 +57,14 @@ public class CreateAccountIT extends BaseIntegrationTest {
                         path("sid");
 
         // Assert
-        final Optional<Account> accountOptional = accountRepository.findBySid(UUID.fromString(accountSid));
+        final Optional<Account> accountOptional = accountRepository.findBySidWithMemberships(UUID.fromString(accountSid));
         assertThat(accountOptional).isPresent();
 
         final Account savedAccount = accountOptional.get();
         assertThat(savedAccount.getBalance()).isEqualByComparingTo(expectedBalance);
         assertThat(savedAccount.getInstitution()).isEqualTo(expectedInstitution);
+        assertThat(savedAccount.getMemberships()).isNotNull();
+        assertThat(savedAccount.getMemberships().getFirst().getUserSid()).isEqualTo(userSid);
 
         final Page<Transaction> transactionsPage = transactionRepository.findAllByAccountId(
                 savedAccount.getId(), Pageable.ofSize(1)

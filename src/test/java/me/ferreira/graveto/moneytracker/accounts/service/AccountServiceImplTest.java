@@ -2,6 +2,7 @@ package me.ferreira.graveto.moneytracker.accounts.service;
 
 import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
+import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
 import me.ferreira.graveto.moneytracker.accounts.repository.AccountRepository;
 import me.ferreira.graveto.moneytracker.accounts.service.command.CreateAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.service.impl.AccountServiceImpl;
@@ -37,8 +38,9 @@ public class AccountServiceImplTest {
         // Arrange
         final BigDecimal expectedBalance = BigDecimal.TEN;
         final String expectedInstitution = "Santander";
+        final UUID userSid = UUID.randomUUID();
         final CreateAccountCommand command = new CreateAccountCommand(
-                UUID.randomUUID(),
+                userSid,
                 Currency.EUR,
                 expectedBalance,
                 expectedInstitution
@@ -61,6 +63,10 @@ public class AccountServiceImplTest {
         assertThat(createdAccount.getBaseCurrency()).isEqualTo(Currency.EUR);
         assertThat(createdAccount.getSid()).isEqualTo(savedAccount.getSid());
         assertThat(createdAccount.getBalance()).isEqualByComparingTo(BigDecimal.TEN);
+        assertThat(createdAccount.getMemberships().size()).isEqualTo(1);
+        assertThat(createdAccount.getMemberships().getFirst().getUserSid()).isEqualTo(userSid);
+        assertThat(createdAccount.getMemberships().getFirst().getRole()).isEqualTo(MembershipRole.OWNER);
+        assertThat(createdAccount.getMemberships().getFirst().getAccount()).isEqualTo(savedAccount);
     }
 
 }

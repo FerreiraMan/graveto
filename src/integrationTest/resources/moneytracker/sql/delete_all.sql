@@ -1,1 +1,1 @@
-TRUNCATE transactions, accounts RESTART IDENTITY CASCADE;
+TRUNCATE transactions, account_membership, accounts RESTART IDENTITY CASCADE;

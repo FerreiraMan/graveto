@@ -38,4 +38,14 @@ public class AccountMembership extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private MembershipRole role;
 
+    public static AccountMembership create(final UUID userSid, final MembershipRole role) {
+
+        final AccountMembership am = new AccountMembership();
+
+        am.setUserSid(userSid);
+        am.setRole(role);
+
+        return am;
+    }
+
 }
