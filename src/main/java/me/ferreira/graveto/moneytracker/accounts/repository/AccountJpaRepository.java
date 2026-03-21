@@ -15,6 +15,10 @@ public interface AccountJpaRepository extends JpaRepository<Account, Long> {
 
     List<Account> findAllByStatus(final AccountStatus status);
 
+    @Query(value = "SELECT a FROM Account a JOIN FETCH a.memberships WHERE a.sid = ?1 AND EXISTS " +
+            "(SELECT 1 FROM AccountMembership am WHERE am.account = a AND am.userSid = ?2)")
+    Optional<Account> findBySidAndUserSid(final UUID accountSid, final UUID userSid);
+
     @Query(value = "SELECT a FROM Account a LEFT JOIN FETCH a.memberships WHERE a.sid = ?1")
     Optional<Account> findBySidWithMemberships(final UUID sid);
 

@@ -1,12 +1,14 @@
 package me.ferreira.graveto.moneytracker.accounts.service.impl;
 
 import lombok.AllArgsConstructor;
+import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.AccountMembership;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
 import me.ferreira.graveto.moneytracker.accounts.repository.AccountRepository;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
 import me.ferreira.graveto.moneytracker.accounts.service.command.CreateAccountCommand;
+import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,4 +46,13 @@ public class AccountServiceImpl implements AccountService {
 
         return createdAccount;
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Account fetchAccount(FetchAccountCommand command) {
+
+        return accountRepository.findBySidAndUserSid(command.accountSid(), command.userSid())
+                .orElseThrow(() -> new AccountNotFoundException(command.accountSid()));
+    }
+
 }

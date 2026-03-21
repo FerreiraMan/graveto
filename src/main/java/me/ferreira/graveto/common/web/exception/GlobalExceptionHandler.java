@@ -1,6 +1,7 @@
 package me.ferreira.graveto.common.web.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
 import org.springframework.http.*;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
@@ -72,6 +73,12 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleIllegalArgumentException(final IllegalArgumentException ex, final HttpServletRequest request) {
 
         return createBaseProblemDetail(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(AccountNotFoundException.class)
+    public ProblemDetail handleAccountNotFoundException(final AccountNotFoundException ex, final HttpServletRequest request) {
+
+        return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
     private ProblemDetail createBaseProblemDetail(final HttpStatus status, final String detailMessage, final HttpServletRequest request) {
