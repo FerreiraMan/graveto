@@ -8,6 +8,7 @@ import me.ferreira.graveto.moneytracker.accounts.service.command.CreateAccountCo
 import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.web.dto.request.CreateAccountRequestDTO;
 import me.ferreira.graveto.moneytracker.accounts.web.dto.response.AccountResponseDTO;
+import me.ferreira.graveto.moneytracker.accounts.web.dto.response.AccountSummaryResponseDTO;
 import me.ferreira.graveto.moneytracker.accounts.web.dto.response.FullAccountResponseDTO;
 import me.ferreira.graveto.moneytracker.accounts.web.dto.response.MembershipResponseDTO;
 import org.springframework.http.ResponseEntity;
@@ -76,6 +77,25 @@ public class AccountController {
                 account.getInstitution(),
                 membershipResponseDTO
         );
+
+        return ResponseEntity.ok().body(responseDTO);
+    }
+
+    @GetMapping(produces = "application/json")
+    public ResponseEntity<List<AccountSummaryResponseDTO>> fetchAllAccounts(
+            @RequestHeader("X-User-Sid") final UUID userSid) {
+
+        final List<Account> accounts = accountService.fetchAllAccounts(userSid);
+
+        final List<AccountSummaryResponseDTO> responseDTO = accounts.stream()
+                .map(acc -> new AccountSummaryResponseDTO(
+                    acc.getSid(),
+                    acc.getInstitution(),
+                    acc.getBalance(),
+                    acc.getBaseCurrency().name(),
+                    acc.getStatus().name())
+                )
+                .toList();
 
         return ResponseEntity.ok().body(responseDTO);
     }

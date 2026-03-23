@@ -81,7 +81,7 @@ public class AccountControllerTest {
         assertThat(testResult).bodyJson()
                 .extractingPath("$.sid").asString().isEqualTo(accountSid.toString());
         assertThat(testResult).bodyJson()
-                .extractingPath("$.status").asString().isEqualTo("ACTIVE");
+                .extractingPath("$.status").asString().isEqualTo(AccountStatus.ACTIVE.name());
     }
 
     @ParameterizedTest
@@ -150,8 +150,6 @@ public class AccountControllerTest {
         assertThat(testResult).bodyJson()
                 .extractingPath("$.balance").asNumber().isEqualTo(balance.intValue());
         assertThat(testResult).bodyJson()
-                .extractingPath("$.status").asString().isEqualTo("ACTIVE");
-        assertThat(testResult).bodyJson()
                 .extractingPath("$.users[0].sid").asString().isEqualTo(userSid.toString());
     }
 
@@ -184,6 +182,43 @@ public class AccountControllerTest {
                 .bodyJson()
                 .extractingPath("$.detail").asString()
                 .isEqualTo("Account with SID %s was not found or you do not have permission to view it.", accountSid);
+    }
+
+    @Test
+    void shouldFetchAllAccountsSuccessfully() {
+        // Arrange
+        final UUID accountSid = UUID.randomUUID();
+        final UUID userSid = UUID.randomUUID();
+        final BigDecimal balance = BigDecimal.TEN;
+        final String institution = "Santander";
+
+        final Account mockAccount = new Account();
+        mockAccount.setSid(accountSid);
+        mockAccount.setBalance(balance);
+        mockAccount.setBaseCurrency(Currency.EUR);
+        mockAccount.setInstitution(institution);
+        mockAccount.setStatus(AccountStatus.ACTIVE);
+
+        when(service.fetchAllAccounts(userSid)).thenReturn(List.of(mockAccount));
+
+        // Act
+        final MvcTestResult testResult = mvc.get()
+                .uri("/accounts")
+                .header("X-User-Sid", userSid)
+                .exchange();
+
+        // Assert
+        assertThat(testResult).hasStatus(HttpStatus.OK);
+        assertThat(testResult).bodyJson()
+                .extractingPath("$[0].sid").asString().isEqualTo(accountSid.toString());
+        assertThat(testResult).bodyJson()
+                .extractingPath("$[0].status").asString().isEqualTo(AccountStatus.ACTIVE.name());
+        assertThat(testResult).bodyJson()
+                .extractingPath("$[0].institution").asString().isEqualTo(institution);
+        assertThat(testResult).bodyJson()
+                .extractingPath("$[0].baseCurrency").asString().isEqualTo(Currency.EUR.name());
+        assertThat(testResult).bodyJson()
+                .extractingPath("$[0].balance").asNumber().isEqualTo(balance.intValue());
     }
 
     private static Stream<Arguments> invalidAccountCreationRequests() {

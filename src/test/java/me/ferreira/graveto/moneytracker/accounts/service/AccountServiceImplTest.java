@@ -19,6 +19,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -105,6 +107,37 @@ public class AccountServiceImplTest {
         assertThatThrownBy(() -> {
             service.fetchAccount(command);
         }).isInstanceOf(AccountNotFoundException.class);
+    }
+
+    @Test
+    void shouldReturnListOfAccounts() {
+        // Arrange
+        final UUID userSid = UUID.randomUUID();
+        final BigDecimal balance = BigDecimal.TEN;
+        final Account expectedAccount = AccountUtils.createAccount(balance);
+
+        when(accountRepository.findAllByUserSid(userSid)).thenReturn(List.of(expectedAccount));
+
+        // Act
+        final List<Account> accountList = service.fetchAllAccounts(userSid);
+
+        //Assert
+        assertThat(accountList.get(0).getSid()).isEqualTo(expectedAccount.getSid());
+        assertThat(accountList.get(0).getBalance()).isEqualByComparingTo(expectedAccount.getBalance());
+        assertThat(accountList.get(0).getInstitution()).isEqualTo(expectedAccount.getInstitution());
+    }
+
+    @Test
+    void shouldReturnEmptyListIfNoAccountIsFound() {
+        // Arrange
+        final UUID userSid = UUID.randomUUID();
+        when(accountRepository.findAllByUserSid(userSid)).thenReturn(Collections.emptyList());
+
+        // Act
+        final List<Account> accountList = service.fetchAllAccounts(userSid);
+
+        //Assert
+        assertThat(accountList).isEmpty();
     }
 
 }

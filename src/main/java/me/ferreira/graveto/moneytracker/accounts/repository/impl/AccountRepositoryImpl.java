@@ -38,6 +38,11 @@ public class AccountRepositoryImpl implements AccountRepository {
     }
 
     @Override
+    public List<Account> findAllByUserSid(UUID userSid) {
+        return repository.findAllByUserSid(userSid);
+    }
+
+    @Override
     public List<Account> findByStatus(final AccountStatus status) {
         return repository.findAllByStatus(status);
     }

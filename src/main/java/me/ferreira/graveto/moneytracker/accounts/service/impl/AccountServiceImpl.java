@@ -13,6 +13,9 @@ import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.UUID;
+
 @Service
 @AllArgsConstructor
 public class AccountServiceImpl implements AccountService {
@@ -53,6 +56,13 @@ public class AccountServiceImpl implements AccountService {
 
         return accountRepository.findBySidAndUserSid(command.accountSid(), command.userSid())
                 .orElseThrow(() -> new AccountNotFoundException(command.accountSid()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Account> fetchAllAccounts(UUID userSid) {
+
+        return accountRepository.findAllByUserSid(userSid);
     }
 
 }
