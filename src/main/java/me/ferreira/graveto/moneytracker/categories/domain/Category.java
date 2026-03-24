@@ -51,6 +51,9 @@ public class Category extends BaseEntity {
     @JoinColumn(name = "parent_id")
     private Category parent;
 
+    @Column(name = "is_internal", nullable = false)
+    private boolean isInternal = false;
+
     @OneToMany(mappedBy = "parent")
     private List<Category> children = new ArrayList<>();
 

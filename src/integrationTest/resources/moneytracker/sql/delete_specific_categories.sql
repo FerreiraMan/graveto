@@ -1,0 +1,1 @@
+DELETE FROM categories c WHERE c.name in ('Parent', 'Child');

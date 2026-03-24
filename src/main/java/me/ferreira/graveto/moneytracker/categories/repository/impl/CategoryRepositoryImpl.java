@@ -22,6 +22,11 @@ public class CategoryRepositoryImpl implements CategoryRepository {
     }
 
     @Override
+    public List<Category> saveAll(List<Category> categoryList) {
+        return repository.saveAll(categoryList);
+    }
+
+    @Override
     public Optional<Category> findBySid(UUID categorySid) {
         return repository.findBySid(categorySid);
     }
@@ -32,7 +37,7 @@ public class CategoryRepositoryImpl implements CategoryRepository {
     }
 
     @Override
-    public List<Category> findByUserSid(UUID userSid) {
+    public List<Category> findAllByUserSid(UUID userSid) {
         return repository.findAllByUserSid(userSid);
     }
 

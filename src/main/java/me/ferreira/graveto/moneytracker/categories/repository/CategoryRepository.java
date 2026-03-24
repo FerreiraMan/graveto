@@ -10,10 +10,12 @@ public interface CategoryRepository {
 
     Category save(Category category);
 
+    List<Category> saveAll(List<Category> categoryList);
+
     Optional<Category> findBySid(UUID categorySid);
 
     List<Category> findByUserSidIsNull();
 
-    List<Category> findByUserSid(UUID userSid);
+    List<Category> findAllByUserSid(UUID userSid);
 
 }

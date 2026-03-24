@@ -1,6 +1,10 @@
 package me.ferreira.graveto.moneytracker.utils.common;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.CollectionType;
+import org.springframework.test.web.servlet.assertj.MvcTestResult;
+
+import java.util.List;
 
 public class ControllerUtils {
 
@@ -10,6 +14,21 @@ public class ControllerUtils {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static <E> E convertIntoObject(final MvcTestResult payload, final Class<E> targetClass) throws Exception {
+
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final String json = payload.getResponse().getContentAsString();
+        return objectMapper.readValue(json, targetClass);
+    }
+
+    public static <E> List<E> convertIntoObjectList(final MvcTestResult payload, final Class<E> targetClass) throws Exception {
+
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final String json = payload.getResponse().getContentAsString();
+        final CollectionType listType = objectMapper.getTypeFactory().constructCollectionType(List.class, targetClass);
+        return objectMapper.readValue(json, listType);
     }
 
 }
