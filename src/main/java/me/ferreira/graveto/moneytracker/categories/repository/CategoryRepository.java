@@ -18,4 +18,6 @@ public interface CategoryRepository {
 
     List<Category> findAllByUserSid(UUID userSid);
 
+    boolean existsByNameForUserOrSystem(String name, UUID userSid);
+
 }

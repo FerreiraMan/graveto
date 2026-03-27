@@ -1,0 +1,2 @@
+ALTER TABLE categories
+ALTER COLUMN name TYPE VARCHAR(255) COLLATE ignore_accents;

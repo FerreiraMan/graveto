@@ -57,4 +57,21 @@ public class Category extends BaseEntity {
     @OneToMany(mappedBy = "parent")
     private List<Category> children = new ArrayList<>();
 
+    public static Category create(
+            final String name,
+            final String displayName,
+            final UUID userSid,
+            final Category parent) {
+
+        final Category cat = new Category();
+
+        cat.setSid(UUID.randomUUID());
+
+        cat.setName(name);
+        cat.setDisplayName(displayName);
+        cat.setParent(parent);
+        cat.setUserSid(userSid);
+
+        return cat;
+    }
 }

@@ -181,7 +181,7 @@ public class AccountControllerTest {
                 .hasStatus(HttpStatus.NOT_FOUND)
                 .bodyJson()
                 .extractingPath("$.detail").asString()
-                .isEqualTo("Account with SID %s was not found or you do not have permission to view it.", accountSid);
+                .isEqualTo("Account with SID [%s] was not found or you do not have permission to view it.", accountSid);
     }
 
     @Test

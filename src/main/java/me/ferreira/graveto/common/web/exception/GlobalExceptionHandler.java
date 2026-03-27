@@ -2,6 +2,9 @@ package me.ferreira.graveto.common.web.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
+import me.ferreira.graveto.common.web.exception.moneytracker.CategoryAlreadyExistsException;
+import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundException;
+import me.ferreira.graveto.common.web.exception.moneytracker.IllegalCategoryHierarchyException;
 import org.springframework.http.*;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
@@ -79,6 +82,24 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleAccountNotFoundException(final AccountNotFoundException ex, final HttpServletRequest request) {
 
         return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(CategoryAlreadyExistsException.class)
+    public ProblemDetail handleCategoryAlreadyExistsException(final CategoryAlreadyExistsException ex, final HttpServletRequest request) {
+
+        return createBaseProblemDetail(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(CategoryNotFoundException.class)
+    public ProblemDetail handleCategoryNotFoundException(final CategoryNotFoundException ex, final HttpServletRequest request) {
+
+        return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(IllegalCategoryHierarchyException.class)
+    public ProblemDetail handleIllegalCategoryHierarchyException(final IllegalCategoryHierarchyException ex, final HttpServletRequest request) {
+
+        return createBaseProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request);
     }
 
     private ProblemDetail createBaseProblemDetail(final HttpStatus status, final String detailMessage, final HttpServletRequest request) {

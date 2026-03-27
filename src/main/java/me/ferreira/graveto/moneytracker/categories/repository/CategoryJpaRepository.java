@@ -10,13 +10,18 @@ import java.util.UUID;
 
 public interface CategoryJpaRepository extends JpaRepository<Category, Long> {
 
+    @Query(value = "SELECT c FROM Category c LEFT JOIN FETCH c.parent WHERE c.sid = ?1")
     Optional<Category> findBySid(final UUID sid);
 
     List<Category> findAllByUserSidIsNull();
 
     @Query(value = "SELECT c FROM Category c LEFT JOIN FETCH c.parent " +
-                    "WHERE c.isInternal IS FALSE " +
-                    "AND (c.userSid IS NULL OR c.userSid = ?1)")
+                   "WHERE c.isInternal IS FALSE " +
+                   "AND (c.userSid IS NULL OR c.userSid = ?1)")
     List<Category> findAllByUserSid(final UUID userSid);
+
+    @Query(value = "SELECT COUNT(c) > 0 FROM Category c " +
+                   "WHERE c.name = ?1 AND (c.userSid = ?2 OR c.userSid is NULL)")
+    boolean existsByNameForUserOrSystem(final String name, final UUID userSid);
 
 }

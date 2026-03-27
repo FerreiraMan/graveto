@@ -17,17 +17,17 @@ public class CategoryRepositoryImpl implements CategoryRepository {
     private final CategoryJpaRepository repository;
 
     @Override
-    public Category save(Category category) {
+    public Category save(final Category category) {
         return repository.save(category);
     }
 
     @Override
-    public List<Category> saveAll(List<Category> categoryList) {
+    public List<Category> saveAll(final List<Category> categoryList) {
         return repository.saveAll(categoryList);
     }
 
     @Override
-    public Optional<Category> findBySid(UUID categorySid) {
+    public Optional<Category> findBySid(final UUID categorySid) {
         return repository.findBySid(categorySid);
     }
 
@@ -37,8 +37,13 @@ public class CategoryRepositoryImpl implements CategoryRepository {
     }
 
     @Override
-    public List<Category> findAllByUserSid(UUID userSid) {
+    public List<Category> findAllByUserSid(final UUID userSid) {
         return repository.findAllByUserSid(userSid);
+    }
+
+    @Override
+    public boolean existsByNameForUserOrSystem(final String name, final UUID userSid) {
+        return repository.existsByNameForUserOrSystem(name, userSid);
     }
 
 }
