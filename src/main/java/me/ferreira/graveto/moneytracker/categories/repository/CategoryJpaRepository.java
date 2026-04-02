@@ -13,6 +13,12 @@ public interface CategoryJpaRepository extends JpaRepository<Category, Long> {
     @Query(value = "SELECT c FROM Category c LEFT JOIN FETCH c.parent WHERE c.sid = ?1")
     Optional<Category> findBySid(final UUID sid);
 
+    @Query(value = "SELECT c FROM Category c LEFT JOIN FETCH c.parent " +
+                   "WHERE c.sid = ?1 " +
+                   "AND c.isInternal IS FALSE " +
+                   "AND (c.userSid IS NULL OR c.userSid = ?2)")
+    Optional<Category> findBySidOrUserSid(final UUID sid, final UUID userSid);
+
     List<Category> findAllByUserSidIsNull();
 
     @Query(value = "SELECT c FROM Category c LEFT JOIN FETCH c.parent " +

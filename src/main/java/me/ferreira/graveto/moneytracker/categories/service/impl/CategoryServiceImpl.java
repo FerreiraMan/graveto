@@ -9,6 +9,7 @@ import me.ferreira.graveto.moneytracker.categories.domain.SystemCategory;
 import me.ferreira.graveto.moneytracker.categories.repository.CategoryRepository;
 import me.ferreira.graveto.moneytracker.categories.service.CategoryService;
 import me.ferreira.graveto.moneytracker.categories.service.command.CreateCategoryCommand;
+import me.ferreira.graveto.moneytracker.categories.service.command.FetchCategoryCommand;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +34,14 @@ public class CategoryServiceImpl implements CategoryService {
 
         return categoryRepository.findBySid(SystemCategory.INITIAL_BALANCE.getSid())
                 .orElseThrow(() -> new IllegalStateException(SYSTEM_CATEGORY_NOT_FOUND));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Category fetchCategory(FetchCategoryCommand command) {
+
+        return categoryRepository.findBySidOrUserSid(command.categorySid(), command.userSid())
+                .orElseThrow(() -> new CategoryNotFoundException(command.categorySid()));
     }
 
     @Override

@@ -8,8 +8,6 @@ import me.ferreira.graveto.moneytracker.accounts.repository.AccountRepository;
 import me.ferreira.graveto.moneytracker.accounts.service.command.CreateAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.service.impl.AccountServiceImpl;
-import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
-import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
 import me.ferreira.graveto.moneytracker.utils.AccountUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +15,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -36,7 +35,7 @@ public class AccountServiceImplTest {
     @InjectMocks
     private AccountServiceImpl service;
     @Mock
-    private TransactionService transactionService;
+    private ApplicationEventPublisher publisher;
     @Mock
     private AccountRepository accountRepository;
 
@@ -54,8 +53,6 @@ public class AccountServiceImplTest {
         );
 
         when(accountRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
-        final Transaction mockTransaction = new Transaction();
-        when(transactionService.createOpeningBalance(any(), any())).thenReturn(mockTransaction);
 
         // Act
         final Account createdAccount = service.createAccount(command);
@@ -81,7 +78,7 @@ public class AccountServiceImplTest {
         // Arrange
         final UUID accountSid = UUID.randomUUID();
         final UUID userSid = UUID.randomUUID();
-        final Account expectedAccount = AccountUtils.createAccount(accountSid, userSid);
+        final Account expectedAccount = AccountUtils.createAccount(accountSid, userSid, MembershipRole.OWNER);
         final FetchAccountCommand command = new FetchAccountCommand(accountSid, userSid);
 
         when(accountRepository.findBySidAndUserSid(userSid, accountSid)).thenReturn(Optional.of(expectedAccount));

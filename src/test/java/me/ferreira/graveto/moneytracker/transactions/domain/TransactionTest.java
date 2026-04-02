@@ -7,6 +7,7 @@ import me.ferreira.graveto.moneytracker.utils.CategoryUtils;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -32,6 +33,31 @@ public class TransactionTest {
         assertThat(transaction.getCurrency()).isEqualTo(account.getBaseCurrency());
         assertThat(transaction.getType()).isEqualTo(TransactionType.OPENING_BALANCE);
         assertThat(transaction.getStatus()).isEqualTo(TransactionStatus.ACTIVE);
+    }
+
+    @Test
+    void shouldCreateTransactionWithGeneratedSid() {
+        // Arrange
+        final BigDecimal amount = new BigDecimal("1000.50");
+        final Currency currency = Currency.EUR;
+        final String description = "Lunch";
+        final String institution = "Santander";
+        final Account account = Account.create(amount, currency, institution);
+        final Category validCategory = CategoryUtils.createInitialBalanceCategory();
+        final LocalDateTime occurredAt = LocalDateTime.now();
+
+        // Act
+        final Transaction transaction = Transaction.create(account, amount, description, validCategory, TransactionType.EXPENSE, occurredAt);
+
+        // Assert
+        assertThat(transaction.getSid()).isNotNull();
+        assertThat(transaction.getAccount().getSid()).isEqualTo(account.getSid());
+        assertThat(transaction.getAmount()).isEqualTo(account.getBalance());
+        assertThat(transaction.getCategory()).isEqualTo(validCategory);
+        assertThat(transaction.getCurrency()).isEqualTo(account.getBaseCurrency());
+        assertThat(transaction.getType()).isEqualTo(TransactionType.EXPENSE);
+        assertThat(transaction.getStatus()).isEqualTo(TransactionStatus.ACTIVE);
+        assertThat(transaction.getOccurredAt()).isEqualTo(occurredAt);
     }
 
 }

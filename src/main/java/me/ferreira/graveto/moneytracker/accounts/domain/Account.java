@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.common.jpa.BaseEntity;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import org.hibernate.annotations.DynamicUpdate;
 
 import java.math.BigDecimal;
@@ -71,6 +72,15 @@ public class Account extends BaseEntity {
         acc.setStatus(AccountStatus.ACTIVE);
 
         return acc;
+    }
+
+    public void updateBalance(
+            final BigDecimal amount,
+            final TransactionType transactionType) {
+
+        this.balance = this.balance.add(
+                amount.multiply(BigDecimal.valueOf(transactionType.getBalanceMultiplier()))
+        );
     }
 
 }

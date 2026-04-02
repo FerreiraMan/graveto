@@ -212,7 +212,7 @@ public class CategoryServiceImplTest {
         assertThatThrownBy(() -> {
             service.createCategory(command);
         }).isInstanceOf(CategoryNotFoundException.class)
-                .hasMessage("Category with SID [" + parentSid + "] was not found.");
+                .hasMessage("Category with SID [" + parentSid + "] was not found or does not belong to the user.");
     }
 
     @Test

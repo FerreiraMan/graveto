@@ -9,7 +9,8 @@ import me.ferreira.graveto.moneytracker.accounts.repository.AccountRepository;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
 import me.ferreira.graveto.moneytracker.accounts.service.command.CreateAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
-import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
+import me.ferreira.graveto.moneytracker.accounts.domain.event.AccountCreatedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,8 +21,8 @@ import java.util.UUID;
 @AllArgsConstructor
 public class AccountServiceImpl implements AccountService {
 
-    private final TransactionService transactionService;
     private final AccountRepository accountRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -42,10 +43,7 @@ public class AccountServiceImpl implements AccountService {
 
         final Account createdAccount = accountRepository.save(account);
 
-        transactionService.createOpeningBalance(
-                createdAccount,
-                createdAccount.getBalance()
-        );
+        eventPublisher.publishEvent(new AccountCreatedEvent(createdAccount, createdAccount.getBalance()));
 
         return createdAccount;
     }

@@ -14,6 +14,8 @@ public interface CategoryRepository {
 
     Optional<Category> findBySid(UUID categorySid);
 
+    Optional<Category> findBySidOrUserSid(UUID categorySid, UUID userSid);
+
     List<Category> findByUserSidIsNull();
 
     List<Category> findAllByUserSid(UUID userSid);

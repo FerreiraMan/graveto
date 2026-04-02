@@ -1,10 +1,7 @@
 package me.ferreira.graveto.common.web.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
-import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
-import me.ferreira.graveto.common.web.exception.moneytracker.CategoryAlreadyExistsException;
-import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundException;
-import me.ferreira.graveto.common.web.exception.moneytracker.IllegalCategoryHierarchyException;
+import me.ferreira.graveto.common.web.exception.moneytracker.*;
 import org.springframework.http.*;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
@@ -100,6 +97,12 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleIllegalCategoryHierarchyException(final IllegalCategoryHierarchyException ex, final HttpServletRequest request) {
 
         return createBaseProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(InsufficientPermissionsException.class)
+    public ProblemDetail handleInsufficientPermissionsException(final InsufficientPermissionsException ex, final HttpServletRequest request) {
+
+        return createBaseProblemDetail(HttpStatus.FORBIDDEN, ex.getMessage(), request);
     }
 
     private ProblemDetail createBaseProblemDetail(final HttpStatus status, final String detailMessage, final HttpServletRequest request) {
