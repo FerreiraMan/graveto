@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class TransactionServiceImplTest {
+public class CreateTransactionServiceImplTest {
 
     @InjectMocks
     private TransactionServiceImpl service;

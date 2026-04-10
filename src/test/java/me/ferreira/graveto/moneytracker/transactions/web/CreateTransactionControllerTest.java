@@ -1,5 +1,6 @@
 package me.ferreira.graveto.moneytracker.transactions.web;
 
+import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
@@ -30,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 @WebMvcTest(controllers = TransactionController.class)
-public class TransactionControllerTest {
+public class CreateTransactionControllerTest {
 
     @Autowired
     private MockMvcTester mvc;
@@ -59,9 +60,14 @@ public class TransactionControllerTest {
                 occurredAt
         );
 
+        final Category mockCategory = new Category();
+        mockCategory.setDisplayName("Gas");
+
         final Transaction mockTransaction = new Transaction();
         mockTransaction.setSid(transactionSid);
         mockTransaction.setStatus(TransactionStatus.ACTIVE);
+        mockTransaction.setType(TransactionType.EXPENSE);
+        mockTransaction.setCategory(mockCategory);
 
         final ArgumentCaptor<CreateTransactionCommand> commandCaptor = ArgumentCaptor.forClass(CreateTransactionCommand.class);
         when(service.createTransaction(commandCaptor.capture())).thenReturn(mockTransaction);

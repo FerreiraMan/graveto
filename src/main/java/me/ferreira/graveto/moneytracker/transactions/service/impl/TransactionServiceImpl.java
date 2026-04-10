@@ -15,6 +15,8 @@ import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.repository.TransactionRepository;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.CreateTransactionCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.command.FindAllTransactionsCommand;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -49,6 +51,15 @@ public class TransactionServiceImpl implements TransactionService {
         );
 
         return transactionRepository.save(transaction);
+    }
+
+    @Override
+    @Transactional
+    public Page<Transaction> findAll(final FindAllTransactionsCommand command) {
+
+        accountService.fetchAccount(new FetchAccountCommand(command.userSid(), command.accountSid()));
+
+        return transactionRepository.findAll(command);
     }
 
     private void validateUserCanCreateTransaction(final Account account, final UUID userSid) {

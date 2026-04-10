@@ -23,6 +23,11 @@ public class AccountRepositoryImpl implements AccountRepository {
     }
 
     @Override
+    public List<Account> saveAll(List<Account> accounts) {
+        return repository.saveAll(accounts);
+    }
+
+    @Override
     public Optional<Account> findBySid(final UUID sid) {
         return repository.findBySid(sid);
     }

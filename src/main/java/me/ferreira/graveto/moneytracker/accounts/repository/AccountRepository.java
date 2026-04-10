@@ -11,6 +11,8 @@ public interface AccountRepository {
 
     Account save(Account account);
 
+    List<Account> saveAll(List<Account> accounts);
+
     Optional<Account> findBySid(UUID sid);
 
     Optional<Account> findBySidAndUserSid(UUID sid, UUID userSid);
