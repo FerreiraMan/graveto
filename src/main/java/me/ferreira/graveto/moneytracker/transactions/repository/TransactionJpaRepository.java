@@ -15,6 +15,7 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface TransactionJpaRepository extends JpaRepository<Transaction, Long>, JpaSpecificationExecutor<Transaction> {
@@ -31,4 +32,5 @@ public interface TransactionJpaRepository extends JpaRepository<Transaction, Lon
     @EntityGraph(attributePaths = {Transaction_.CATEGORY})
     Page<Transaction> findAll(@Nullable final Specification<Transaction> spec, @NonNull final Pageable pageable);
 
+    Optional<Transaction> findBySid(final UUID sid);
 }

@@ -3,6 +3,7 @@ package me.ferreira.graveto.moneytracker.transactions.service.impl;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsException;
+import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.AccountMembership;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
@@ -15,11 +16,13 @@ import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.repository.TransactionRepository;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.CreateTransactionCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.command.DeleteTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.FindAllTransactionsCommand;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
+import java.util.function.Predicate;
 
 @Service
 @AllArgsConstructor
@@ -37,7 +40,7 @@ public class TransactionServiceImpl implements TransactionService {
 
         final Account account = accountService.fetchAccount(new FetchAccountCommand(command.userSid(), command.accountSid()));
 
-        validateUserCanCreateTransaction(account, command.userSid());
+        validateUserPermission(account, command.userSid(), MembershipRole::canCreateTransaction, "create");
 
         account.updateBalance(command.amount(), command.transactionType());
 
@@ -62,18 +65,33 @@ public class TransactionServiceImpl implements TransactionService {
         return transactionRepository.findAll(command);
     }
 
-    private void validateUserCanCreateTransaction(final Account account, final UUID userSid) {
+    @Override
+    @Transactional
+    public Transaction deleteTransaction(final DeleteTransactionCommand command) {
 
-        final boolean canCreate = account.getMemberships().stream()
+        final Transaction transaction = transactionRepository.findBySid(command.transactionSid())
+                .orElseThrow(() -> new TransactionNotFoundException(command.transactionSid()));
+
+        validateUserPermission(transaction.getAccount(), command.userSid(), MembershipRole::canDeleteTransaction, "delete");
+
+        transaction.markAsDeleted();
+        transaction.getAccount().reverseBalanceImpact(transaction.getAmount(), transaction.getType());
+
+        return transaction;
+    }
+
+    private void validateUserPermission(final Account account, final UUID userSid, final Predicate<MembershipRole> permissionCheck,
+        final String actionName) {
+
+        final boolean isAuthorized = account.getMemberships().stream()
                 .filter(m -> userSid.equals(m.getUserSid()))
                 .findFirst()
                 .map(AccountMembership::getRole)
-                .map(MembershipRole::canCreateTransaction)
-                .orElse(false);
+                .filter(permissionCheck)
+                .isPresent();
 
-        if (!canCreate) {
-
-            throw new InsufficientPermissionsException("User does not have the required role to create transactions for this account.");
+        if (!isAuthorized) {
+            throw new InsufficientPermissionsException(actionName);
         }
     }
 

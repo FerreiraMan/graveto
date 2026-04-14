@@ -83,4 +83,10 @@ public class Account extends BaseEntity {
         );
     }
 
+    public void reverseBalanceImpact(final BigDecimal amount, final TransactionType transactionType) {
+
+        final BigDecimal reverseMultiplier = BigDecimal.valueOf(transactionType.getBalanceMultiplier()).negate();
+        this.balance = this.balance.add(amount.multiply(reverseMultiplier));
+    }
+
 }

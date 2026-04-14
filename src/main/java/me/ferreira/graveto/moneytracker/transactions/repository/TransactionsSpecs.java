@@ -3,6 +3,7 @@ package me.ferreira.graveto.moneytracker.transactions.repository;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account_;
 import me.ferreira.graveto.moneytracker.categories.domain.Category_;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction_;
 import me.ferreira.graveto.moneytracker.transactions.service.command.FindAllTransactionsCommand;
@@ -72,9 +73,19 @@ public class TransactionsSpecs {
         );
     }
 
+    public static PredicateSpecification<Transaction> hasStatus(final TransactionStatus transactionStatus) {
+
+        final TransactionStatus targetStatus = (transactionStatus == null) ? TransactionStatus.ACTIVE : transactionStatus;
+
+        return (from, builder) ->
+                builder.equal(from.get(Transaction_.status), targetStatus
+        );
+    }
+
     public static PredicateSpecification<Transaction> buildFromCommand(final FindAllTransactionsCommand command) {
 
         return isFromAccount(command.accountSid())
+            .and(hasStatus(command.status()))
             .and(hasCategory(command.categorySid()))
             .and(withinDateRange(command.startDate(), command.endDate()))
             .and(ofType(command.type()));

@@ -113,4 +113,14 @@ public class Transaction extends BaseEntity {
         return tx;
     }
 
+    public void markAsDeleted() {
+
+        if (this.status == TransactionStatus.DELETED) {
+            throw new IllegalStateException("Transaction is already deleted.");
+        }
+
+        this.status = TransactionStatus.DELETED;
+        this.deletedAt = LocalDateTime.now();
+    }
+
 }

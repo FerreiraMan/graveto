@@ -15,6 +15,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -36,6 +37,11 @@ public class TransactionRepositoryImpl implements TransactionRepository {
     @Override
     public Page<Transaction> findAllByAccountId(final Long accountId, final Pageable pageable) {
         return repository.findAllByAccountId(accountId, pageable);
+    }
+
+    @Override
+    public Optional<Transaction> findBySid(final UUID sid) {
+        return repository.findBySid(sid);
     }
 
     @Override

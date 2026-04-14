@@ -6,9 +6,10 @@ import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction_;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.CreateTransactionCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.command.DeleteTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.FindAllTransactionsCommand;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.CreateTransactionRequestDTO;
-import me.ferreira.graveto.moneytracker.transactions.web.dto.request.TransactionFilterDTO;
+import me.ferreira.graveto.moneytracker.transactions.web.dto.request.TransactionFilterRequestDTO;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.response.TransactionResponseDTO;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
@@ -72,7 +73,7 @@ public class TransactionController {
 
     @GetMapping(produces = "application/json")
     public ResponseEntity<Page<TransactionResponseDTO>> findAll(
-            @Valid @ModelAttribute final TransactionFilterDTO requestDTO,
+            @Valid @ModelAttribute final TransactionFilterRequestDTO requestDTO,
             @RequestHeader("X-User-Sid") final UUID userSid,
             @PageableDefault(size = 20) @SortDefault(sort = Transaction_.OCCURRED_AT, direction = Sort.Direction.DESC) final Pageable pageable) {
 
@@ -83,6 +84,7 @@ public class TransactionController {
                 requestDTO.startDate(),
                 requestDTO.endDate(),
                 requestDTO.type(),
+                requestDTO.status(),
                 pageable
         );
 
@@ -98,6 +100,28 @@ public class TransactionController {
                     t.getStatus().name(),
                     t.getOccurredAt()
                 ));
+
+        return ResponseEntity.ok().body(responseDTO);
+    }
+
+    @DeleteMapping(path = TRANSACTION_SID_PATH, produces = "application/json")
+    public ResponseEntity<TransactionResponseDTO> deleteTransaction(
+            @RequestHeader("X-User-Sid") final UUID userSid,
+            @PathVariable final UUID sid) {
+
+        final DeleteTransactionCommand command = new DeleteTransactionCommand(userSid, sid);
+
+        final Transaction transaction = transactionService.deleteTransaction(command);
+
+        final TransactionResponseDTO responseDTO = new TransactionResponseDTO(
+                transaction.getSid(),
+                null,
+                null,
+                null,
+                null,
+                transaction.getStatus().name(),
+                null
+        );
 
         return ResponseEntity.ok().body(responseDTO);
     }

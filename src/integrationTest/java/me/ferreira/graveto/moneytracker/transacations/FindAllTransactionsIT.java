@@ -50,6 +50,7 @@ public class FindAllTransactionsIT extends BaseIntegrationTest {
 
     private List<Transaction> allTransactions;
     private Transaction guaranteedMatch;
+    private Transaction guaranteedDeletedMatch;
 
     @BeforeAll
     void setupData() {
@@ -68,9 +69,19 @@ public class FindAllTransactionsIT extends BaseIntegrationTest {
                 LocalDate.now().minusDays(5)
         );
 
+        guaranteedDeletedMatch = TransactionTestFactory.createTransaction(
+                ACCOUNT_1,
+                firstCategory,
+                TransactionType.EXPENSE,
+                new BigDecimal("111.11"),
+                TransactionStatus.DELETED,
+                LocalDate.now().minusDays(2)
+        );
+
         final List<Account> accounts = List.of(ACCOUNT_1, ACCOUNT_2);
         final List<Category> categories = List.of(firstCategory, secondCategory);
         final TransactionType[] types = TransactionType.values();
+        final TransactionStatus[] statuses = TransactionStatus.values();
         final ThreadLocalRandom random = ThreadLocalRandom.current();
 
         final List<Transaction> noise = IntStream.range(0, 50)
@@ -79,12 +90,13 @@ public class FindAllTransactionsIT extends BaseIntegrationTest {
                     categories.get(random.nextInt(categories.size())),
                     types[random.nextInt(types.length)],
                     BigDecimal.valueOf(random.nextDouble(1.0, 500.0)).setScale(2, RoundingMode.HALF_UP),
-                    TransactionStatus.ACTIVE,
+                    statuses[random.nextInt(statuses.length)],
                     LocalDate.now().minusDays(random.nextInt(0, 31))
             ))
             .collect(Collectors.toList());
 
         noise.add(guaranteedMatch);
+        noise.add(guaranteedDeletedMatch);
         allTransactions = transactionRepository.saveAll(noise);
     }
 
@@ -101,6 +113,7 @@ public class FindAllTransactionsIT extends BaseIntegrationTest {
                 .filter(t -> t.getAccount().getSid().equals(targetAccountSid))
                 .filter(t -> t.getCategory().getSid().equals(targetCategorySid))
                 .filter(t -> t.getType() == targetType)
+                .filter(t -> t.getStatus() == TransactionStatus.ACTIVE)
                 .filter(t -> !t.getOccurredAt().toLocalDate().isBefore(startDate))
                 .filter(t -> !t.getOccurredAt().toLocalDate().isAfter(endDate))
                 .count();
@@ -124,7 +137,36 @@ public class FindAllTransactionsIT extends BaseIntegrationTest {
                 .body("totalElements", is((int) expectedCount))
                 .body("content.sid", hasItem(guaranteedMatch.getSid().toString()))
                 .body("content.every { it.type == '" + targetType.name() + "' }", is(true))
-                .body("content.every { it.categoryName == '" + firstCategory.getDisplayName() + "' }", is(true));
+                .body("content.every { it.categoryName == '" + firstCategory.getDisplayName() + "' }", is(true))
+                .body("content.every { it.status == 'ACTIVE' }", is(true));;
+    }
+
+    @Test
+    void shouldReturnOnlyDeletedTransactionsWhenRequested() {
+        // Arrange
+        final UUID targetAccountSid = ACCOUNT_1.getSid();
+        final TransactionStatus targetStatus = TransactionStatus.DELETED;
+
+        long expectedCount = allTransactions.stream()
+                .filter(t -> t.getAccount().getSid().equals(targetAccountSid))
+                .filter(t -> t.getStatus() == targetStatus)
+                .count();
+
+        // Act & Assert
+        given()
+                .header("X-User-Sid", ACCOUNT_OWNER)
+                .queryParam("accountSid", targetAccountSid)
+                .queryParam("status", targetStatus.name())
+                .queryParam("size", 100)
+                .when()
+                .get("/transactions")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(200)
+                .body("totalElements", is((int) expectedCount))
+                .body("content.sid", hasItem(guaranteedDeletedMatch.getSid().toString()))
+                .body("content.sid", not(hasItem(guaranteedMatch.getSid().toString())))
+                .body("content.every { it.status == '" + targetStatus.name() + "' }", is(true));
     }
 
     @Test

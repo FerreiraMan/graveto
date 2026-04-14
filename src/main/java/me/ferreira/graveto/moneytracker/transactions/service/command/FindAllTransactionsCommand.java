@@ -1,5 +1,6 @@
 package me.ferreira.graveto.moneytracker.transactions.service.command;
 
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import org.springframework.data.domain.Pageable;
 
@@ -13,5 +14,6 @@ public record FindAllTransactionsCommand(
    LocalDate startDate,
    LocalDate endDate,
    TransactionType type,
+   TransactionStatus status,
    Pageable pageable
 ) {}

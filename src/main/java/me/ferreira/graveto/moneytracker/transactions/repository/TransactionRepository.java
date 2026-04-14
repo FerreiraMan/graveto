@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface TransactionRepository {
@@ -17,6 +18,8 @@ public interface TransactionRepository {
     List<Transaction> saveAll(List<Transaction> transactions);
 
     Page<Transaction> findAllByAccountId(Long accountId, Pageable pageable);
+
+    Optional<Transaction> findBySid(UUID sid);
 
     List<Transaction> findAllByCorrelationId(UUID correlationId);
 

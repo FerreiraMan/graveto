@@ -6,6 +6,7 @@ import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
 import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
 import me.ferreira.graveto.moneytracker.categories.service.CategoryService;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.repository.TransactionRepository;
 import me.ferreira.graveto.moneytracker.transactions.service.command.FindAllTransactionsCommand;
@@ -70,6 +71,7 @@ public class FindAllTransactionsServiceImplTest {
                 startDate,
                 endDate,
                 TransactionType.EXPENSE,
+                TransactionStatus.ACTIVE,
                 pageable
         );
 
