@@ -1,4 +1,4 @@
-package me.ferreira.graveto.moneytracker.transacations;
+package me.ferreira.graveto.moneytracker.transactions;
 
 import io.restassured.http.ContentType;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;

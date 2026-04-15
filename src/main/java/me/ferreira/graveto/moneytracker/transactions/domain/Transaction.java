@@ -123,4 +123,19 @@ public class Transaction extends BaseEntity {
         this.deletedAt = LocalDateTime.now();
     }
 
+    public void updateDetails(final BigDecimal amount,
+                              final Category category,
+                              final String description,
+                              final TransactionType transactionType) {
+
+        if (this.status == TransactionStatus.DELETED) {
+            throw new IllegalStateException("Cannot update a deleted transaction.");
+        }
+
+        this.amount = amount;
+        this.category = category;
+        this.description = description;
+        this.type = transactionType;
+    }
+
 }

@@ -8,8 +8,10 @@ import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.CreateTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.DeleteTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.FindAllTransactionsCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.command.UpdateTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.CreateTransactionRequestDTO;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.TransactionFilterRequestDTO;
+import me.ferreira.graveto.moneytracker.transactions.web.dto.request.UpdateTransactionRequestDTO;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.response.TransactionResponseDTO;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
@@ -120,6 +122,36 @@ public class TransactionController {
                 null,
                 null,
                 transaction.getStatus().name(),
+                null
+        );
+
+        return ResponseEntity.ok().body(responseDTO);
+    }
+
+    @PatchMapping(path = TRANSACTION_SID_PATH, produces = "application/json")
+    public ResponseEntity<TransactionResponseDTO> updateTransaction(
+            @RequestHeader("X-User-Sid") final UUID userSid,
+            @PathVariable final UUID sid,
+            @RequestBody final UpdateTransactionRequestDTO requestDTO) {
+
+        final UpdateTransactionCommand command = new UpdateTransactionCommand(
+                userSid,
+                sid,
+                requestDTO.transactionType(),
+                requestDTO.categorySid(),
+                requestDTO.amount(),
+                StringUtils.trimToNull(requestDTO.description())
+        );
+
+        final Transaction transaction = transactionService.updateTransaction(command);
+
+        final TransactionResponseDTO responseDTO = new TransactionResponseDTO(
+                transaction.getSid(),
+                transaction.getAmount(),
+                transaction.getCategory().getDisplayName(),
+                transaction.getDescription(),
+                transaction.getType().name(),
+                null,
                 null
         );
 

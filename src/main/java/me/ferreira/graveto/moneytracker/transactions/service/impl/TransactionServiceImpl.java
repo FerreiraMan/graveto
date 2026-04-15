@@ -13,14 +13,17 @@ import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.service.CategoryService;
 import me.ferreira.graveto.moneytracker.categories.service.command.FetchCategoryCommand;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.repository.TransactionRepository;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.CreateTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.DeleteTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.FindAllTransactionsCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.command.UpdateTransactionCommand;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 import java.util.function.Predicate;
 
@@ -76,6 +79,51 @@ public class TransactionServiceImpl implements TransactionService {
 
         transaction.markAsDeleted();
         transaction.getAccount().reverseBalanceImpact(transaction.getAmount(), transaction.getType());
+
+        return transaction;
+    }
+
+    @Override
+    @Transactional
+    public Transaction updateTransaction(final UpdateTransactionCommand command) {
+
+        final Transaction transaction = transactionRepository.findBySid(command.transactionSid())
+                .orElseThrow(() -> new TransactionNotFoundException(command.transactionSid()));
+
+        validateUserPermission(transaction.getAccount(), command.userSid(), MembershipRole::canUpdateTransaction, "update");
+
+        final BigDecimal effectiveAmount = command.amount() != null ? command.amount() : transaction.getAmount();
+        final TransactionType effectiveType = command.transactionType() != null ? command.transactionType() : transaction.getType();
+        final String effectiveDescription = command.description() != null ? command.description() : transaction.getDescription();
+        Category effectiveCategory = transaction.getCategory();
+
+        if (command.categorySid() != null && !command.categorySid().equals(transaction.getCategory().getSid())) {
+
+            effectiveCategory = categoryService.fetchCategory(
+                    new FetchCategoryCommand(command.userSid(), command.categorySid())
+            );
+        }
+
+        final Account account = transaction.getAccount();
+
+        final boolean requiresBalanceCalculation =
+                transaction.getAmount().compareTo(effectiveAmount) != 0 ||
+                transaction.getType() != effectiveType;
+
+        if (requiresBalanceCalculation) {
+            account.reverseBalanceImpact(transaction.getAmount(), transaction.getType());
+        }
+
+        transaction.updateDetails(
+                effectiveAmount,
+                effectiveCategory,
+                effectiveDescription,
+                effectiveType
+        );
+
+        if (requiresBalanceCalculation) {
+            account.updateBalance(transaction.getAmount(), transaction.getType());
+        }
 
         return transaction;
     }
