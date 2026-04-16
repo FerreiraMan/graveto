@@ -9,7 +9,7 @@ import java.util.UUID;
 
 public interface CategoryService {
 
-    Category getInitialBalanceCategory();
+    Category fetchInternalCategory(UUID systemCategorySid);
 
     Category fetchCategory(FetchCategoryCommand command);
 

@@ -18,6 +18,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -38,13 +39,38 @@ public class CategoryServiceImplTest {
     private CategoryRepository categoryRepository;
 
     @Test
-    void shouldReturnInitialBalanceCategory() {
+    void shouldThrowIfInternalCategoryDoesNotExistOnSystemCategories() {
+        // Arrange
+        final UUID randomSid = UUID.randomUUID();
+
+        // Act & Assert
+        assertThatThrownBy(() -> {
+            service.fetchInternalCategory(randomSid);
+        }).isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Requested SID is not a valid Internal Category.");
+    }
+
+    @Test
+    void shouldThrowIfInternalCategoryDoesNotExistOnDatabase() {
+        // Arrange
+        final Category expectedCategory = CategoryUtils.createInitialBalanceCategory();
+        when(categoryRepository.findBySid(SystemCategory.INITIAL_BALANCE.getSid())).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatThrownBy(() -> {
+            service.fetchInternalCategory(expectedCategory.getSid());
+        }).isInstanceOf(IllegalStateException.class)
+                .hasMessage("Internal Category is missing from the database.");
+    }
+
+    @Test
+    void shouldReturnInternalCategory() {
         // Arrange
         final Category expectedCategory = CategoryUtils.createInitialBalanceCategory();
         when(categoryRepository.findBySid(SystemCategory.INITIAL_BALANCE.getSid())).thenReturn(Optional.of(expectedCategory));
 
         // Act
-        final Category fetchedCategory = service.getInitialBalanceCategory();
+        final Category fetchedCategory = service.fetchInternalCategory(SystemCategory.INITIAL_BALANCE.getSid());
 
         // Assert
         assertThat(fetchedCategory)
@@ -76,7 +102,7 @@ public class CategoryServiceImplTest {
     }
 
     @Test
-    void shouldThrowIfNoSystemCategoriesAreReturned() {
+    void shouldThrowIfNoDefaultCategoriesAreReturned() {
         // Arrange
         final UUID userSid = UUID.randomUUID();
         final Category expectedCategory = CategoryUtils.createCategory("Gas", userSid, null, false);
@@ -86,7 +112,7 @@ public class CategoryServiceImplTest {
         assertThatThrownBy(() -> {
             service.fetchAllCategories(userSid);
         }).isInstanceOf(IllegalStateException.class)
-                .hasMessage("CRITICAL: System categories are missing from the database.");
+                .hasMessage("CRITICAL: Default Categories are missing from the database.");
     }
 
     @Test
@@ -123,7 +149,7 @@ public class CategoryServiceImplTest {
     }
 
     @Test
-    void shouldCreateCategoryWithSystemCategoryAsParent() {
+    void shouldCreateCategoryWithDefaultCategoryAsParent() {
         // Arrange
         final String expectedCategoryName = "Video games";
         final String sanitizedName = "VIDEO_GAMES";

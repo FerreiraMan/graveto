@@ -22,18 +22,23 @@ import java.util.UUID;
 @AllArgsConstructor
 public class CategoryServiceImpl implements CategoryService {
 
+    public static final String INTERNAL_CATEGORY_SID_INVALID = "Requested SID is not a valid Internal Category.";
+    public static final String INTERNAL_CATEGORY_NOT_FOUND = "Internal Category is missing from the database.";
     public static final String CATEGORY_NAME_NOT_PRESENT = "Category name cannot be empty.";
-    public static final String SYSTEM_CATEGORY_NOT_FOUND = "System category is missing from the database.";
-    public static final String SYSTEM_CATEGORIES_NOT_FOUND = "CRITICAL: System categories are missing from the database.";
+    public static final String DEFAULT_CATEGORIES_NOT_FOUND = "CRITICAL: Default Categories are missing from the database.";
 
     private final CategoryRepository categoryRepository;
 
     @Override
     @Transactional(readOnly = true)
-    public Category getInitialBalanceCategory() {
+    public Category fetchInternalCategory(final UUID systemCategorySid) {
 
-        return categoryRepository.findBySid(SystemCategory.INITIAL_BALANCE.getSid())
-                .orElseThrow(() -> new IllegalStateException(SYSTEM_CATEGORY_NOT_FOUND));
+        if (!SystemCategory.allSids().contains(systemCategorySid)) {
+            throw new IllegalArgumentException(INTERNAL_CATEGORY_SID_INVALID);
+        }
+
+        return categoryRepository.findBySid(systemCategorySid)
+                .orElseThrow(() -> new IllegalStateException(INTERNAL_CATEGORY_NOT_FOUND));
     }
 
     @Override
@@ -54,7 +59,7 @@ public class CategoryServiceImpl implements CategoryService {
                 .anyMatch(c -> Objects.isNull(c.getUserSid()));
 
         if(!hasSystemCategories) {
-            throw new IllegalStateException(SYSTEM_CATEGORIES_NOT_FOUND);
+            throw new IllegalStateException(DEFAULT_CATEGORIES_NOT_FOUND);
         }
 
         return categories;
