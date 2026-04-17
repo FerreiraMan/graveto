@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.common.jpa.BaseEntity;
+import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsException;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import org.hibernate.annotations.DynamicUpdate;
 
@@ -14,6 +15,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 @Getter
 @Setter
@@ -72,6 +74,22 @@ public class Account extends BaseEntity {
         acc.setStatus(AccountStatus.ACTIVE);
 
         return acc;
+    }
+
+    public void validateUserPermission(final UUID userSid,
+                                       final Predicate<MembershipRole> permissionCheck,
+                                       final String actionName) {
+
+        final boolean isAuthorized = this.memberships.stream()
+                .filter(m -> userSid.equals(m.getUserSid()))
+                .findFirst()
+                .map(AccountMembership::getRole)
+                .filter(permissionCheck)
+                .isPresent();
+
+        if (!isAuthorized) {
+            throw new InsufficientPermissionsException(actionName);
+        }
     }
 
     public void updateBalance(

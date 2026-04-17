@@ -41,7 +41,7 @@ public class AccountCreationEventListenerTest {
 
         final AccountCreatedEvent event = new AccountCreatedEvent(account, BigDecimal.TEN);
 
-        when(categoryService.getInitialBalanceCategory()).thenReturn(mockCategory);
+        when(categoryService.fetchInternalCategory(any())).thenReturn(mockCategory);
         when(transactionRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
 
         // Act

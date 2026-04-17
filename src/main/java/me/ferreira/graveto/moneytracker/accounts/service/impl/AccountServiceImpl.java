@@ -50,7 +50,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     @Transactional(readOnly = true)
-    public Account fetchAccount(FetchAccountCommand command) {
+    public Account fetchAccount(final FetchAccountCommand command) {
 
         return accountRepository.findBySidAndUserSid(command.accountSid(), command.userSid())
                 .orElseThrow(() -> new AccountNotFoundException(command.accountSid()));
@@ -58,7 +58,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Account> fetchAllAccounts(UUID userSid) {
+    public List<Account> fetchAllAccounts(final UUID userSid) {
 
         return accountRepository.findAllByUserSid(userSid);
     }

@@ -2,10 +2,8 @@ package me.ferreira.graveto.moneytracker.transactions.service.impl;
 
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
-import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsException;
 import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
-import me.ferreira.graveto.moneytracker.accounts.domain.AccountMembership;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
 import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
@@ -24,8 +22,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.UUID;
-import java.util.function.Predicate;
 
 @Service
 @AllArgsConstructor
@@ -43,7 +39,7 @@ public class TransactionServiceImpl implements TransactionService {
 
         final Account account = accountService.fetchAccount(new FetchAccountCommand(command.userSid(), command.accountSid()));
 
-        validateUserPermission(account, command.userSid(), MembershipRole::canCreateTransaction, "create");
+        account.validateUserPermission(command.userSid(), MembershipRole::canCreateTransaction, "create");
 
         account.updateBalance(command.amount(), command.transactionType());
 
@@ -75,10 +71,12 @@ public class TransactionServiceImpl implements TransactionService {
         final Transaction transaction = transactionRepository.findBySid(command.transactionSid())
                 .orElseThrow(() -> new TransactionNotFoundException(command.transactionSid()));
 
-        validateUserPermission(transaction.getAccount(), command.userSid(), MembershipRole::canDeleteTransaction, "delete");
+        final Account account = transaction.getAccount();
+
+        account.validateUserPermission(command.userSid(), MembershipRole::canDeleteTransaction, "delete");
 
         transaction.markAsDeleted();
-        transaction.getAccount().reverseBalanceImpact(transaction.getAmount(), transaction.getType());
+        account.reverseBalanceImpact(transaction.getAmount(), transaction.getType());
 
         return transaction;
     }
@@ -90,7 +88,9 @@ public class TransactionServiceImpl implements TransactionService {
         final Transaction transaction = transactionRepository.findBySid(command.transactionSid())
                 .orElseThrow(() -> new TransactionNotFoundException(command.transactionSid()));
 
-        validateUserPermission(transaction.getAccount(), command.userSid(), MembershipRole::canUpdateTransaction, "update");
+        final Account account = transaction.getAccount();
+
+        account.validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction, "update");
 
         final BigDecimal effectiveAmount = command.amount() != null ? command.amount() : transaction.getAmount();
         final TransactionType effectiveType = command.transactionType() != null ? command.transactionType() : transaction.getType();
@@ -103,8 +103,6 @@ public class TransactionServiceImpl implements TransactionService {
                     new FetchCategoryCommand(command.userSid(), command.categorySid())
             );
         }
-
-        final Account account = transaction.getAccount();
 
         final boolean requiresBalanceCalculation =
                 transaction.getAmount().compareTo(effectiveAmount) != 0 ||
@@ -126,21 +124,6 @@ public class TransactionServiceImpl implements TransactionService {
         }
 
         return transaction;
-    }
-
-    private void validateUserPermission(final Account account, final UUID userSid, final Predicate<MembershipRole> permissionCheck,
-        final String actionName) {
-
-        final boolean isAuthorized = account.getMemberships().stream()
-                .filter(m -> userSid.equals(m.getUserSid()))
-                .findFirst()
-                .map(AccountMembership::getRole)
-                .filter(permissionCheck)
-                .isPresent();
-
-        if (!isAuthorized) {
-            throw new InsufficientPermissionsException(actionName);
-        }
     }
 
 }

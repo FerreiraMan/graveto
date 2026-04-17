@@ -113,6 +113,33 @@ public class Transaction extends BaseEntity {
         return tx;
     }
 
+    public static Transaction createTransferTransaction(
+            final Account account,
+            final BigDecimal amount,
+            final String description,
+            final UUID correlationId,
+            final Category category,
+            final TransactionType transactionType,
+            final LocalDateTime occurredAt) {
+
+        final Transaction tx = new Transaction();
+
+        tx.setSid(UUID.randomUUID());
+        tx.setOccurredAt(occurredAt);
+
+        tx.setAccount(account);
+        tx.setAmount(amount);
+        tx.setDescription(description);
+        tx.setCorrelationId(correlationId);
+        tx.setCurrency(account.getBaseCurrency());
+        tx.setCategory(category);
+
+        tx.setType(transactionType);
+        tx.setStatus(TransactionStatus.ACTIVE);
+
+        return tx;
+    }
+
     public void markAsDeleted() {
 
         if (this.status == TransactionStatus.DELETED) {

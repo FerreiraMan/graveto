@@ -20,6 +20,7 @@ import java.util.UUID;
 
 public interface TransactionJpaRepository extends JpaRepository<Transaction, Long>, JpaSpecificationExecutor<Transaction> {
 
+    @EntityGraph(attributePaths = {Transaction_.ACCOUNT})
     List<Transaction> findAllByCorrelationId(UUID correlationId);
 
     Page<Transaction> findAllByAccountId(final Long accountId, final Pageable pageable);
