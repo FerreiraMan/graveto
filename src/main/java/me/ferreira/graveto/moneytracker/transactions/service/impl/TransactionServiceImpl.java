@@ -22,6 +22,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Service
 @AllArgsConstructor
@@ -88,6 +89,8 @@ public class TransactionServiceImpl implements TransactionService {
         final Transaction transaction = transactionRepository.findBySid(command.transactionSid())
                 .orElseThrow(() -> new TransactionNotFoundException(command.transactionSid()));
 
+        validateTransactionTypeInvariants(transaction, command);
+
         final Account account = transaction.getAccount();
 
         account.validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction, "update");
@@ -95,6 +98,7 @@ public class TransactionServiceImpl implements TransactionService {
         final BigDecimal effectiveAmount = command.amount() != null ? command.amount() : transaction.getAmount();
         final TransactionType effectiveType = command.transactionType() != null ? command.transactionType() : transaction.getType();
         final String effectiveDescription = command.description() != null ? command.description() : transaction.getDescription();
+        final LocalDateTime effectiveOccurredAt = command.occurredAt() != null ? command.occurredAt() : transaction.getOccurredAt();
         Category effectiveCategory = transaction.getCategory();
 
         if (command.categorySid() != null && !command.categorySid().equals(transaction.getCategory().getSid())) {
@@ -116,7 +120,8 @@ public class TransactionServiceImpl implements TransactionService {
                 effectiveAmount,
                 effectiveCategory,
                 effectiveDescription,
-                effectiveType
+                effectiveType,
+                effectiveOccurredAt
         );
 
         if (requiresBalanceCalculation) {
@@ -124,6 +129,17 @@ public class TransactionServiceImpl implements TransactionService {
         }
 
         return transaction;
+    }
+
+    private void validateTransactionTypeInvariants(final Transaction transaction, final UpdateTransactionCommand command) {
+
+        if (transaction.getCorrelationId() != null) {
+            throw new IllegalStateException("This transaction is part of a transfer and must be updated via the Transfer API.");
+        }
+
+        if (command.transactionType() == TransactionType.TRANSFER_IN || command.transactionType() == TransactionType.TRANSFER_OUT) {
+            throw new IllegalArgumentException("Cannot change a standard transaction into a transfer. Please create a new Transfer instead.");
+        }
     }
 
 }

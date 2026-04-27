@@ -65,6 +65,53 @@ public class UpdateTransactionServiceImplTest {
     }
 
     @Test
+    void shouldThrowIfTransactionIsPartOfTransferDuringTransactionUpdate() {
+        // Arrange
+        final Transaction transaction = new Transaction();
+        transaction.setCorrelationId(UUID.randomUUID());
+
+        when(transactionRepository.findBySid(any())).thenReturn(Optional.of(transaction));
+
+        // Act & Assert
+        assertThatThrownBy(() -> {
+            service.updateTransaction(Mockito.mock(UpdateTransactionCommand.class));
+        }).isInstanceOf(IllegalStateException.class)
+                .hasMessage("This transaction is part of a transfer and must be updated via the Transfer API.");
+    }
+
+    @Test
+    void shouldThrowIfAttemptToUpdateToTransferInTypeTransactionUpdate() {
+        // Arrange
+        final UUID userSid = UUID.randomUUID();
+        final Transaction transaction = new Transaction();
+        final UpdateTransactionCommand command = new UpdateTransactionCommand(userSid, null, TransactionType.TRANSFER_IN, null, null, null, null);
+
+        when(transactionRepository.findBySid(any())).thenReturn(Optional.of(transaction));
+
+        // Act & Assert
+        assertThatThrownBy(() -> {
+            service.updateTransaction(command);
+        }).isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Cannot change a standard transaction into a transfer. Please create a new Transfer instead.");
+    }
+
+    @Test
+    void shouldThrowIfAttemptToUpdateToTransferOutTypeTransactionUpdate() {
+        // Arrange
+        final UUID userSid = UUID.randomUUID();
+        final Transaction transaction = new Transaction();
+        final UpdateTransactionCommand command = new UpdateTransactionCommand(userSid, null, TransactionType.TRANSFER_OUT, null, null, null, null);
+
+        when(transactionRepository.findBySid(any())).thenReturn(Optional.of(transaction));
+
+        // Act & Assert
+        assertThatThrownBy(() -> {
+            service.updateTransaction(command);
+        }).isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Cannot change a standard transaction into a transfer. Please create a new Transfer instead.");
+    }
+
+    @Test
     void shouldThrowIfUserIsNotAuthorizedToUpdateTransaction() {
         // Arrange
         final UUID userSid = UUID.randomUUID();
@@ -94,7 +141,7 @@ public class UpdateTransactionServiceImplTest {
         transaction.setCategory(category);
         final UUID categorySid = UUID.randomUUID();
 
-        final UpdateTransactionCommand command = new UpdateTransactionCommand(userSid, null, null, categorySid, null, null);
+        final UpdateTransactionCommand command = new UpdateTransactionCommand(userSid, null, null, categorySid, null, null, null);
 
         when(transactionRepository.findBySid(any())).thenReturn(Optional.of(transaction));
         when(categoryService.fetchCategory(any())).thenThrow(new CategoryNotFoundException(categorySid));
@@ -112,7 +159,7 @@ public class UpdateTransactionServiceImplTest {
         final UUID userSid = UUID.randomUUID();
         final UUID transactionSid = UUID.randomUUID();
         final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, MembershipRole.OWNER);
-        final UpdateTransactionCommand command = new UpdateTransactionCommand(userSid, transactionSid, null, null, BigDecimal.TEN, null);
+        final UpdateTransactionCommand command = new UpdateTransactionCommand(userSid, transactionSid, null, null, BigDecimal.TEN, null, null);
 
         final Transaction transaction = new Transaction();
         transaction.setAccount(account);
@@ -138,11 +185,13 @@ public class UpdateTransactionServiceImplTest {
         final Category persistedCategory = CategoryUtils.createCategory("Gas", userSid, null, false);
         final BigDecimal persistedBalance = BigDecimal.TEN;
         final String persistedDescription = "Diesel for Car 1";
+        final LocalDateTime persistedOccurreddAt = LocalDateTime.now().minusDays(5);
         final LocalDateTime persistedUpdatedAt = LocalDateTime.now().minusDays(10);
 
         final UpdateTransactionCommand command = new UpdateTransactionCommand(
                 userSid,
                 transactionSid,
+                null,
                 null,
                 null,
                 null,
@@ -155,6 +204,7 @@ public class UpdateTransactionServiceImplTest {
         transaction.setAmount(persistedBalance);
         transaction.setDescription(persistedDescription);
         transaction.setType(TransactionType.EXPENSE);
+        transaction.setOccurredAt(persistedOccurreddAt);
         transaction.setUpdatedAt(persistedUpdatedAt);
 
         when(transactionRepository.findBySid(transactionSid)).thenReturn(Optional.of(transaction));
@@ -167,6 +217,7 @@ public class UpdateTransactionServiceImplTest {
         assertThat(updatedTransaction.getCategory()).isEqualTo(persistedCategory);
         assertThat(updatedTransaction.getDescription()).isEqualTo(persistedDescription);
         assertThat(updatedTransaction.getType()).isEqualTo(TransactionType.EXPENSE);
+        assertThat(updatedTransaction.getOccurredAt()).isEqualTo(persistedOccurreddAt);
         assertThat(updatedTransaction.getUpdatedAt()).isEqualTo(persistedUpdatedAt);
     }
 
@@ -241,7 +292,7 @@ public class UpdateTransactionServiceImplTest {
                 // Initial Balance 100 -> Expected Balance 80
                 Arguments.of(
                         TransactionType.EXPENSE, new BigDecimal("10.00"), // Persisted state
-                        new UpdateTransactionCommand(userSid, txSid, null, null, new BigDecimal("30.00"), null),
+                        new UpdateTransactionCommand(userSid, txSid, null, null, new BigDecimal("30.00"), null, null),
                         new BigDecimal("80.00"), // Expected Balance
                         new BigDecimal("30.00"), // Expected Amount
                         TransactionType.EXPENSE  // Expected Type
@@ -252,7 +303,7 @@ public class UpdateTransactionServiceImplTest {
                 // Initial Balance 100 -> Expected Balance 120
                 Arguments.of(
                         TransactionType.EXPENSE, new BigDecimal("10.00"),
-                        new UpdateTransactionCommand(userSid, txSid, TransactionType.INCOME, null, null, null),
+                        new UpdateTransactionCommand(userSid, txSid, TransactionType.INCOME, null, null, null, null),
                         new BigDecimal("120.00"),
                         new BigDecimal("10.00"),
                         TransactionType.INCOME
@@ -263,7 +314,7 @@ public class UpdateTransactionServiceImplTest {
                 // Initial Balance 100 -> Expected Balance 140
                 Arguments.of(
                         TransactionType.EXPENSE, new BigDecimal("10.00"),
-                        new UpdateTransactionCommand(userSid, txSid, TransactionType.INCOME, null, new BigDecimal("30.00"), null),
+                        new UpdateTransactionCommand(userSid, txSid, TransactionType.INCOME, null, new BigDecimal("30.00"), null, null),
                         new BigDecimal("140.00"),
                         new BigDecimal("30.00"),
                         TransactionType.INCOME
@@ -274,7 +325,7 @@ public class UpdateTransactionServiceImplTest {
                 // Initial Balance 100 -> Expected Balance 100
                 Arguments.of(
                         TransactionType.EXPENSE, new BigDecimal("10.00"),
-                        new UpdateTransactionCommand(userSid, txSid, null, newCategorySid, null, "Updated Description"),
+                        new UpdateTransactionCommand(userSid, txSid, null, newCategorySid, null, "Updated Description", null),
                         new BigDecimal("100.00"),
                         new BigDecimal("10.00"),
                         TransactionType.EXPENSE

@@ -19,6 +19,8 @@ import org.springframework.test.context.jdbc.Sql;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,6 +46,7 @@ public class UpdateTransactionIT extends BaseIntegrationTest {
         final Category initialCategory = categoryList.getFirst();
         final Category newCategory = categoryList.getLast();
         final BigDecimal initialBalance = BigDecimal.valueOf(100);
+        final LocalDateTime newOccurredAt = LocalDateTime.now().minusDays(2);
 
         final Account account = AccountTestFactory.createAccountWithOwner(userSid, "Santander", initialBalance);
         accountRepository.save(account);
@@ -56,7 +59,8 @@ public class UpdateTransactionIT extends BaseIntegrationTest {
                 TransactionType.EXPENSE,
                 newCategory.getSid(),
                 BigDecimal.valueOf(20),
-                "New description"
+                "New description",
+                newOccurredAt
         );
 
         // Act
@@ -83,6 +87,7 @@ public class UpdateTransactionIT extends BaseIntegrationTest {
         assertThat(updatedTransaction.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(20));
         assertThat(updatedTransaction.getDescription()).isEqualTo("New description");
         assertThat(updatedTransaction.getType()).isEqualTo(TransactionType.EXPENSE);
+        assertThat(updatedTransaction.getOccurredAt().truncatedTo(ChronoUnit.MILLIS)).isEqualTo(newOccurredAt.truncatedTo(ChronoUnit.MILLIS));
         assertThat(updatedAccount.getBalance()).isEqualByComparingTo(BigDecimal.valueOf(70));
     }
 

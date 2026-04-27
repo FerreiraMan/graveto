@@ -6,7 +6,6 @@ import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.UpdateTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.UpdateTransactionRequestDTO;
-import me.ferreira.graveto.moneytracker.utils.common.ControllerUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -22,6 +21,7 @@ import org.springframework.test.web.servlet.assertj.MvcTestResult;
 import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -45,12 +45,14 @@ public class UpdateTransactionControllerTest {
         final UUID transactionSid = UUID.randomUUID();
         final UUID categorySid = UUID.randomUUID();
         final Transaction mockTransaction = getTransaction(transactionSid);
+        final LocalDateTime newOccurredAt = LocalDateTime.now();
 
         final UpdateTransactionRequestDTO requestDTO = new UpdateTransactionRequestDTO(
                 TransactionType.EXPENSE,
                 categorySid,
                 BigDecimal.TEN,
-                "Diesel for car 2"
+                "Diesel for car 2",
+                newOccurredAt
         );
 
         final ArgumentCaptor<UpdateTransactionCommand> commandCaptor = ArgumentCaptor.forClass(UpdateTransactionCommand.class);
@@ -60,7 +62,7 @@ public class UpdateTransactionControllerTest {
         final MvcTestResult testResult = mvc.patch()
                 .uri("/transactions/{sid}", transactionSid)
                 .header("X-User-Sid", userSid)
-                .content(ControllerUtils.asJsonString(requestDTO))
+                .content(objectMapper.writeValueAsString(requestDTO))
                 .contentType(MediaType.APPLICATION_JSON)
                 .exchange();
 
@@ -74,7 +76,7 @@ public class UpdateTransactionControllerTest {
         assertThat(capturedCommand.categorySid()).isEqualTo(requestDTO.categorySid());
         assertThat(capturedCommand.amount()).isEqualByComparingTo(requestDTO.amount());
         assertThat(capturedCommand.description()).isEqualTo(requestDTO.description());
-
+        assertThat(capturedCommand.occurredAt()).isEqualTo(requestDTO.occurredAt());
 
         assertThat(testResult).bodyJson()
                 .extractingPath("$.sid").asString().isEqualTo(mockTransaction.getSid().toString());
@@ -89,7 +91,6 @@ public class UpdateTransactionControllerTest {
 
         assertThat(testResult).bodyJson().hasNoNullFieldsOrProperties();
         assertThat(testResult).bodyJson().doesNotHavePath("$.status");
-        assertThat(testResult).bodyJson().doesNotHavePath("$.occurredAt");
     }
 
     @ParameterizedTest()
@@ -99,7 +100,7 @@ public class UpdateTransactionControllerTest {
         final MvcTestResult testResult = mvc.patch()
                 .uri("/transactions/{transactionSid}", sid)
                 .header("X-User-Sid", UUID.randomUUID())
-                .content(ControllerUtils.asJsonString(requestDTO))
+                .content(objectMapper.writeValueAsString(requestDTO))
                 .contentType(MediaType.APPLICATION_JSON)
                 .exchange();
 
@@ -126,7 +127,10 @@ public class UpdateTransactionControllerTest {
 
     private static Stream<Arguments> invalidPayloadOnUpdateRequest() {
         return Stream.of(
-                Arguments.of("invalid_sid", new UpdateTransactionRequestDTO(null, null, null, null)),
+                Arguments.of("invalid_sid", new UpdateTransactionRequestDTO(null, null, null, null, null)),
+                Arguments.of(UUID.randomUUID().toString(), new UpdateTransactionRequestDTO(null, null, BigDecimal.ZERO, null, null)),
+                Arguments.of(UUID.randomUUID().toString(), new UpdateTransactionRequestDTO(null, null, BigDecimal.TEN.negate(), null, null)),
+                Arguments.of(UUID.randomUUID().toString(), new UpdateTransactionRequestDTO(null, null, null, null, LocalDateTime.now().plusDays(1))),
                 Arguments.of(UUID.randomUUID().toString(), null)
         );
     }

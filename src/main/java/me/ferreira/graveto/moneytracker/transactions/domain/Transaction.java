@@ -153,7 +153,8 @@ public class Transaction extends BaseEntity {
     public void updateDetails(final BigDecimal amount,
                               final Category category,
                               final String description,
-                              final TransactionType transactionType) {
+                              final TransactionType transactionType,
+                              final LocalDateTime occurredAt) {
 
         if (this.status == TransactionStatus.DELETED) {
             throw new IllegalStateException("Cannot update a deleted transaction.");
@@ -163,6 +164,7 @@ public class Transaction extends BaseEntity {
         this.category = category;
         this.description = description;
         this.type = transactionType;
+        this.occurredAt = occurredAt;
     }
 
 }

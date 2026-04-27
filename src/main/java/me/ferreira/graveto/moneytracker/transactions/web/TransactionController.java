@@ -132,7 +132,7 @@ public class TransactionController {
     public ResponseEntity<TransactionResponseDTO> updateTransaction(
             @RequestHeader("X-User-Sid") final UUID userSid,
             @PathVariable final UUID sid,
-            @RequestBody final UpdateTransactionRequestDTO requestDTO) {
+            @Valid @RequestBody final UpdateTransactionRequestDTO requestDTO) {
 
         final UpdateTransactionCommand command = new UpdateTransactionCommand(
                 userSid,
@@ -140,7 +140,8 @@ public class TransactionController {
                 requestDTO.transactionType(),
                 requestDTO.categorySid(),
                 requestDTO.amount(),
-                StringUtils.trimToNull(requestDTO.description())
+                StringUtils.trimToNull(requestDTO.description()),
+                requestDTO.occurredAt()
         );
 
         final Transaction transaction = transactionService.updateTransaction(command);
@@ -152,7 +153,7 @@ public class TransactionController {
                 transaction.getDescription(),
                 transaction.getType().name(),
                 null,
-                null
+                transaction.getOccurredAt()
         );
 
         return ResponseEntity.ok().body(responseDTO);
