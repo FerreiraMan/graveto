@@ -5,9 +5,11 @@ import lombok.RequiredArgsConstructor;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
 import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.CreateTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.DeleteTransferCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.UpdateTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.TransferService;
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.payload.TransferResult;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.transfer.CreateTransferRequestDTO;
+import me.ferreira.graveto.moneytracker.transactions.web.dto.request.transfer.UpdateTransferRequestDTO;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.response.transfer.TransferResponseDTO;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
@@ -76,6 +78,33 @@ public class TransferController {
                 deletedTransfer.expense().getAmount(),
                 deletedTransfer.expense().getCorrelationId(),
                 TransactionStatus.DELETED
+        );
+
+        return ResponseEntity.ok().body(responseDTO);
+    }
+
+    @PatchMapping(path = TRANSFER_SID_PATH, produces = "application/json")
+    public ResponseEntity<TransferResponseDTO> updateTransfer(
+            @RequestHeader("X-User-Sid") final UUID userSid,
+            @PathVariable final UUID correlationId,
+            @Valid @RequestBody final UpdateTransferRequestDTO requestDTO) {
+
+        final UpdateTransferCommand command = new UpdateTransferCommand(
+                userSid,
+                correlationId,
+                requestDTO.amount(),
+                StringUtils.trimToNull(requestDTO.description()),
+                requestDTO.occurredAt()
+        );
+
+        final TransferResult updatedTransfer = transferService.updateTransfer(command);
+
+        final TransferResponseDTO responseDTO = new TransferResponseDTO(
+                updatedTransfer.expense().getAccount().getSid(),
+                updatedTransfer.income().getAccount().getSid(),
+                updatedTransfer.expense().getAmount(),
+                updatedTransfer.expense().getCorrelationId(),
+                null
         );
 
         return ResponseEntity.ok().body(responseDTO);

@@ -14,11 +14,13 @@ import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.repository.TransactionRepository;
 import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.CreateTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.DeleteTransferCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.UpdateTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.TransferService;
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.payload.TransferResult;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -85,23 +87,10 @@ public class TransferServiceImpl implements TransferService {
 
         final List<Transaction> transferTransactions = transactionRepository.findAllByCorrelationId(command.correlationId());
 
-        if (transferTransactions.size() != 2) {
-            throw new IllegalStateException("Transfer is associated with an incorrect amount of transactions.");
-        }
+        validateTransferIntegrity(transferTransactions);
 
-        final Transaction first = transferTransactions.get(0);
-        final Transaction second = transferTransactions.get(1);
-
-        final boolean hasCorrectTypes =
-                (first.getType() == TransactionType.TRANSFER_OUT && second.getType() == TransactionType.TRANSFER_IN) ||
-                        (first.getType() == TransactionType.TRANSFER_IN && second.getType() == TransactionType.TRANSFER_OUT);
-
-        if (!hasCorrectTypes) {
-            throw new IllegalStateException("Corrupted transfer does not contain exactly one IN and one OUT transaction.");
-        }
-
-        final Transaction out = first.getType() == TransactionType.TRANSFER_OUT ? first : second;
-        final Transaction in = first.getType() == TransactionType.TRANSFER_IN ? first : second;
+        final Transaction out = transferTransactions.get(0).getType() == TransactionType.TRANSFER_OUT ? transferTransactions.get(0) : transferTransactions.get(1);
+        final Transaction in = transferTransactions.get(0).getType() == TransactionType.TRANSFER_IN ? transferTransactions.get(0) : transferTransactions.get(1);
 
         out.getAccount().validateUserPermission(command.userSid(), MembershipRole::canDeleteTransaction, "delete transfer");
         in.getAccount().validateUserPermission(command.userSid(), MembershipRole::canDeleteTransaction, "delete transfer");
@@ -113,6 +102,60 @@ public class TransferServiceImpl implements TransferService {
         in.getAccount().reverseBalanceImpact(in.getAmount(), in.getType());
 
         return new TransferResult(out, in);
+    }
+
+    @Override
+    @Transactional
+    public TransferResult updateTransfer(final UpdateTransferCommand command) {
+
+        final List<Transaction> transferTransactions = transactionRepository.findAllByCorrelationId(command.correlationId());
+
+        validateTransferIntegrity(transferTransactions);
+
+        final Transaction out = transferTransactions.get(0).getType() == TransactionType.TRANSFER_OUT ? transferTransactions.get(0) : transferTransactions.get(1);
+        final Transaction in = transferTransactions.get(0).getType() == TransactionType.TRANSFER_IN ? transferTransactions.get(0) : transferTransactions.get(1);
+
+        out.getAccount().validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction, "update transfer");
+        in.getAccount().validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction, "update transfer");
+
+        final BigDecimal effectiveAmount = command.amount() != null ? command.amount() : out.getAmount();
+        final String effectiveDescription = command.description() != null ? command.description() : out.getDescription();
+        final LocalDateTime effectiveOccurredAt = command.occurredAt() != null ? command.occurredAt() : out.getOccurredAt();
+
+        final boolean requiresBalanceCalculation = out.getAmount().compareTo(effectiveAmount) != 0;
+
+        if (requiresBalanceCalculation) {
+            out.getAccount().reverseBalanceImpact(out.getAmount(), out.getType());
+            in.getAccount().reverseBalanceImpact(in.getAmount(), in.getType());
+        }
+
+        out.updateDetails(effectiveAmount, out.getCategory(), effectiveDescription, out.getType(), effectiveOccurredAt);
+        in.updateDetails(effectiveAmount, in.getCategory(), effectiveDescription, in.getType(), effectiveOccurredAt);
+
+        if (requiresBalanceCalculation) {
+            out.getAccount().updateBalance(out.getAmount(), out.getType());
+            in.getAccount().updateBalance(in.getAmount(), in.getType());
+        }
+
+        return new TransferResult(out, in);
+    }
+
+    private void validateTransferIntegrity(final List<Transaction> transactions) {
+
+        if (transactions.size() != 2) {
+            throw new IllegalStateException("Transfer is associated with an incorrect amount of transactions.");
+        }
+
+        final Transaction first = transactions.get(0);
+        final Transaction second = transactions.get(1);
+
+        final boolean hasCorrectTypes =
+                (first.getType() == TransactionType.TRANSFER_OUT && second.getType() == TransactionType.TRANSFER_IN) ||
+                        (first.getType() == TransactionType.TRANSFER_IN && second.getType() == TransactionType.TRANSFER_OUT);
+
+        if (!hasCorrectTypes) {
+            throw new IllegalStateException("Corrupted transfer does not contain exactly one IN and one OUT transaction.");
+        }
     }
 
 }
