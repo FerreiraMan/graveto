@@ -2,7 +2,9 @@ package me.ferreira.graveto.moneytracker.transactions.web;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
 import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.CreateTransferCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.DeleteTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.TransferService;
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.payload.TransferResult;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.transfer.CreateTransferRequestDTO;
@@ -22,7 +24,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TransferController {
 
-    private static final String TRANSFER_SID_PATH = "/{sid}";
+    private static final String TRANSFER_SID_PATH = "/{correlationId}";
 
     private final TransferService transferService;
 
@@ -46,7 +48,8 @@ public class TransferController {
                 createdTransfer.expense().getAccount().getSid(),
                 createdTransfer.income().getAccount().getSid(),
                 createdTransfer.expense().getAmount(),
-                createdTransfer.expense().getCorrelationId()
+                createdTransfer.expense().getCorrelationId(),
+                null
         );
 
         final URI location = ServletUriComponentsBuilder
@@ -56,6 +59,26 @@ public class TransferController {
                 .toUri();
 
         return ResponseEntity.created(location).body(response);
+    }
+
+    @DeleteMapping(path = TRANSFER_SID_PATH, produces = "application/json")
+    public ResponseEntity<TransferResponseDTO> deleteTransfer(
+            @RequestHeader("X-User-Sid") final UUID userSid,
+            @PathVariable final UUID correlationId) {
+
+        final DeleteTransferCommand command = new DeleteTransferCommand(userSid, correlationId);
+
+        final TransferResult deletedTransfer = transferService.deleteTransfer(command);
+
+        final TransferResponseDTO responseDTO = new TransferResponseDTO(
+                deletedTransfer.expense().getAccount().getSid(),
+                deletedTransfer.income().getAccount().getSid(),
+                deletedTransfer.expense().getAmount(),
+                deletedTransfer.expense().getCorrelationId(),
+                TransactionStatus.DELETED
+        );
+
+        return ResponseEntity.ok().body(responseDTO);
     }
 
 }

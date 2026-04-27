@@ -13,6 +13,7 @@ import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.repository.TransactionRepository;
 import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.CreateTransferCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.DeleteTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.TransferService;
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.payload.TransferResult;
 import org.springframework.stereotype.Service;
@@ -74,6 +75,42 @@ public class TransferServiceImpl implements TransferService {
         );
 
         transactionRepository.saveAll(List.of(out, in));
+
+        return new TransferResult(out, in);
+    }
+
+    @Override
+    @Transactional
+    public TransferResult deleteTransfer(final DeleteTransferCommand command) {
+
+        final List<Transaction> transferTransactions = transactionRepository.findAllByCorrelationId(command.correlationId());
+
+        if (transferTransactions.size() != 2) {
+            throw new IllegalStateException("Transfer is associated with an incorrect amount of transactions.");
+        }
+
+        final Transaction first = transferTransactions.get(0);
+        final Transaction second = transferTransactions.get(1);
+
+        final boolean hasCorrectTypes =
+                (first.getType() == TransactionType.TRANSFER_OUT && second.getType() == TransactionType.TRANSFER_IN) ||
+                        (first.getType() == TransactionType.TRANSFER_IN && second.getType() == TransactionType.TRANSFER_OUT);
+
+        if (!hasCorrectTypes) {
+            throw new IllegalStateException("Corrupted transfer does not contain exactly one IN and one OUT transaction.");
+        }
+
+        final Transaction out = first.getType() == TransactionType.TRANSFER_OUT ? first : second;
+        final Transaction in = first.getType() == TransactionType.TRANSFER_IN ? first : second;
+
+        out.getAccount().validateUserPermission(command.userSid(), MembershipRole::canDeleteTransaction, "delete transfer");
+        in.getAccount().validateUserPermission(command.userSid(), MembershipRole::canDeleteTransaction, "delete transfer");
+
+        out.markAsDeleted();
+        out.getAccount().reverseBalanceImpact(out.getAmount(), out.getType());
+
+        in.markAsDeleted();
+        in.getAccount().reverseBalanceImpact(in.getAmount(), in.getType());
 
         return new TransferResult(out, in);
     }

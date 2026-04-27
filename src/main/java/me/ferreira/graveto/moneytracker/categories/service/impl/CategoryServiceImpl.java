@@ -22,10 +22,10 @@ import java.util.UUID;
 @AllArgsConstructor
 public class CategoryServiceImpl implements CategoryService {
 
-    public static final String INTERNAL_CATEGORY_SID_INVALID = "Requested SID is not a valid Internal Category.";
-    public static final String INTERNAL_CATEGORY_NOT_FOUND = "Internal Category is missing from the database.";
-    public static final String CATEGORY_NAME_NOT_PRESENT = "Category name cannot be empty.";
-    public static final String DEFAULT_CATEGORIES_NOT_FOUND = "CRITICAL: Default Categories are missing from the database.";
+    private static final String INTERNAL_CATEGORY_SID_INVALID = "Requested SID is not a valid Internal Category.";
+    private static final String INTERNAL_CATEGORY_NOT_FOUND = "Internal Category is missing from the database.";
+    private static final String CATEGORY_NAME_NOT_PRESENT = "Category name cannot be empty.";
+    private static final String DEFAULT_CATEGORIES_NOT_FOUND = "CRITICAL: Default Categories are missing from the database.";
 
     private final CategoryRepository categoryRepository;
 
