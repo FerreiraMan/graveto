@@ -14,5 +14,6 @@ public record TransactionResponseDTO(
     String description,
     String type,
     String status,
+    UUID correlationId,
     LocalDateTime occurredAt
 ) {}

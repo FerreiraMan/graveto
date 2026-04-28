@@ -74,6 +74,11 @@ public class TransactionServiceImpl implements TransactionService {
 
         final Account account = transaction.getAccount();
 
+        if (transaction.getCorrelationId() != null
+                || transaction.getType() == TransactionType.TRANSFER_IN || transaction.getType() == TransactionType.TRANSFER_OUT) {
+            throw new IllegalStateException("This transaction is part of a transfer and must be deleted via the Transfer API.");
+        }
+
         account.validateUserPermission(command.userSid(), MembershipRole::canDeleteTransaction, "delete");
 
         transaction.markAsDeleted();

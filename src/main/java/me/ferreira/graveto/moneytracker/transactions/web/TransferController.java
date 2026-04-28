@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
 import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.CreateTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.DeleteTransferCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.FetchTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.UpdateTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.TransferService;
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.payload.TransferResult;
@@ -29,6 +30,29 @@ public class TransferController {
     private static final String TRANSFER_SID_PATH = "/{correlationId}";
 
     private final TransferService transferService;
+
+    @GetMapping(path = TRANSFER_SID_PATH, produces = "application/json")
+    public ResponseEntity<TransferResponseDTO> fetchTransfer(
+            @RequestHeader("X-User-Sid") final UUID userSid,
+            @PathVariable final UUID correlationId) {
+
+        final FetchTransferCommand command = new FetchTransferCommand(
+                userSid,
+                correlationId
+        );
+
+        final TransferResult transfer = transferService.fetchTransfer(command);
+
+        final TransferResponseDTO response = new TransferResponseDTO(
+                transfer.expense().getAccount().getSid(),
+                transfer.income().getAccount().getSid(),
+                transfer.expense().getAmount(),
+                transfer.expense().getCorrelationId(),
+                transfer.expense().getStatus()
+        );
+
+        return ResponseEntity.ok().body(response);
+    }
 
     @PostMapping(produces = "application/json")
     public ResponseEntity<TransferResponseDTO> createTransfer(

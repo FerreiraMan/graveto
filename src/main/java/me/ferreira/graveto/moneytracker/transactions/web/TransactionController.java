@@ -61,6 +61,7 @@ public class TransactionController {
                 createdTransaction.getDescription(),
                 createdTransaction.getType().name(),
                 createdTransaction.getStatus().name(),
+                createdTransaction.getCorrelationId(),
                 createdTransaction.getOccurredAt()
         );
 
@@ -100,6 +101,7 @@ public class TransactionController {
                     t.getDescription(),
                     t.getType().name(),
                     t.getStatus().name(),
+                    t.getCorrelationId(),
                     t.getOccurredAt()
                 ));
 
@@ -122,6 +124,7 @@ public class TransactionController {
                 null,
                 null,
                 transaction.getStatus().name(),
+                transaction.getCorrelationId(),
                 null
         );
 
@@ -153,6 +156,7 @@ public class TransactionController {
                 transaction.getDescription(),
                 transaction.getType().name(),
                 null,
+                transaction.getCorrelationId(),
                 transaction.getOccurredAt()
         );
 

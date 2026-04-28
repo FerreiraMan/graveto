@@ -14,6 +14,7 @@ import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.repository.TransactionRepository;
 import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.CreateTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.DeleteTransferCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.FetchTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.UpdateTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.TransferService;
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.payload.TransferResult;
@@ -31,6 +32,22 @@ public class TransferServiceImpl implements TransferService {
     private final AccountService accountService;
     private final CategoryService categoryService;
     private final TransactionRepository transactionRepository;
+
+    @Override
+    @Transactional
+    public TransferResult fetchTransfer(final FetchTransferCommand command) {
+
+        final List<Transaction> transferTransactions = transactionRepository.findAllByCorrelationId(command.correlationId());
+
+        validateTransferIntegrity(transferTransactions);
+
+        final Transaction out = transferTransactions.get(0).getType() == TransactionType.TRANSFER_OUT ? transferTransactions.get(0) : transferTransactions.get(1);
+        final Transaction in = transferTransactions.get(0).getType() == TransactionType.TRANSFER_IN ? transferTransactions.get(0) : transferTransactions.get(1);
+
+        out.getAccount().validateUserPermission(command.userSid(), MembershipRole::canReadTransaction, "read transfer");
+
+        return new TransferResult(out, in);
+    }
 
     @Override
     @Transactional

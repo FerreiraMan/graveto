@@ -61,6 +61,40 @@ public class DeleteTransactionServiceImplTest {
     }
 
     @Test
+    void shouldThrowIfTransactionHasCorrelationIdDuringTransactionDeletion() {
+        // Arrange
+        final UUID transactionSid = UUID.randomUUID();
+        final Transaction transaction = new Transaction();
+        transaction.setSid(transactionSid);
+        transaction.setCorrelationId(UUID.randomUUID());
+
+        when(transactionRepository.findBySid(any())).thenReturn(Optional.of(transaction));
+
+        // Act & Assert
+        assertThatThrownBy(() -> {
+            service.deleteTransaction(Mockito.mock(DeleteTransactionCommand.class));
+        }).isInstanceOf(IllegalStateException.class)
+                .hasMessage("This transaction is part of a transfer and must be deleted via the Transfer API.");
+    }
+
+    @Test
+    void shouldThrowIfTransactionIsOfTypeTransferDuringTransactionDeletion() {
+        // Arrange
+        final UUID transactionSid = UUID.randomUUID();
+        final Transaction transaction = new Transaction();
+        transaction.setSid(transactionSid);
+        transaction.setType(TransactionType.TRANSFER_IN);
+
+        when(transactionRepository.findBySid(any())).thenReturn(Optional.of(transaction));
+
+        // Act & Assert
+        assertThatThrownBy(() -> {
+            service.deleteTransaction(Mockito.mock(DeleteTransactionCommand.class));
+        }).isInstanceOf(IllegalStateException.class)
+                .hasMessage("This transaction is part of a transfer and must be deleted via the Transfer API.");
+    }
+
+    @Test
     void shouldThrowIfUserIsNotAuthorizedToDeleteTransaction() {
         // Arrange
         final UUID userSid = UUID.randomUUID();
