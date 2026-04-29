@@ -52,7 +52,8 @@ public class CategoryController {
         final CreateCategoryCommand command = new CreateCategoryCommand(
             userSid,
             requestDTO.name().trim(),
-            requestDTO.parentSid()
+            requestDTO.parentSid(),
+            requestDTO.transactionType()
         );
 
         final Category createdCategory = categoryService.createCategory(command);

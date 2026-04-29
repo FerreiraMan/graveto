@@ -5,6 +5,7 @@ import me.ferreira.graveto.moneytracker.categories.service.CategoryService;
 import me.ferreira.graveto.moneytracker.categories.service.command.CreateCategoryCommand;
 import me.ferreira.graveto.moneytracker.categories.web.dto.request.CreateCategoryRequestDTO;
 import me.ferreira.graveto.moneytracker.categories.web.dto.response.CategoryResponseDTO;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.utils.CategoryUtils;
 import me.ferreira.graveto.moneytracker.utils.common.ControllerUtils;
 import org.junit.jupiter.api.Test;
@@ -82,7 +83,7 @@ public class CategoryControllerTest {
         final UUID parentSid = UUID.randomUUID();
         final String categoryName = "Videogames";
 
-        final CreateCategoryRequestDTO request = new CreateCategoryRequestDTO(categoryName, parentSid);
+        final CreateCategoryRequestDTO request = new CreateCategoryRequestDTO(categoryName, parentSid, TransactionType.EXPENSE);
 
         final Category mockParent = new Category();
         mockParent.setSid(parentSid);
@@ -124,9 +125,11 @@ public class CategoryControllerTest {
 
     @ParameterizedTest
     @MethodSource("invalidCategoryCreationRequest")
-    void shouldReturnBadRequestForInvalidPayloadsOnCategoryCreation(final String name) {
+    void shouldReturnBadRequestForInvalidPayloadsOnCategoryCreation(final String name,
+                                                                    final TransactionType transactionType,
+                                                                    final String invalidParam) {
 
-        final CreateCategoryRequestDTO request = new CreateCategoryRequestDTO(name, null);
+        final CreateCategoryRequestDTO request = new CreateCategoryRequestDTO(name, null, transactionType);
 
         final MvcTestResult testResult = mvc.post()
                 .uri("/categories")
@@ -139,14 +142,15 @@ public class CategoryControllerTest {
         assertThat(testResult)
                 .hasStatus(HttpStatus.BAD_REQUEST)
                 .bodyJson()
-                .hasPath("$.invalid_params." + "name");
+                .hasPath("$.invalid_params." + invalidParam);
     }
 
     private static Stream<Arguments> invalidCategoryCreationRequest() {
         return Stream.of(
-                Arguments.of((Object) null),
-                Arguments.of(""),
-                Arguments.of("   ")
+                Arguments.of((Object) null, TransactionType.EXPENSE, "name"),
+                Arguments.of("", TransactionType.EXPENSE, "name"),
+                Arguments.of("   ", TransactionType.EXPENSE, "name"),
+                Arguments.of("Lunch", null, "transactionType")
         );
     }
 

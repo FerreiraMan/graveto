@@ -8,6 +8,7 @@ import me.ferreira.graveto.moneytracker.categories.domain.SystemCategory;
 import me.ferreira.graveto.moneytracker.categories.repository.CategoryRepository;
 import me.ferreira.graveto.moneytracker.categories.service.command.CreateCategoryCommand;
 import me.ferreira.graveto.moneytracker.categories.service.impl.CategoryServiceImpl;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.utils.CategoryUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,7 +19,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -125,7 +125,8 @@ public class CategoryServiceImplTest {
         final CreateCategoryCommand command = new CreateCategoryCommand(
                 userSid,
                 expectedCategoryName,
-                parentSid
+                parentSid,
+                TransactionType.EXPENSE
         );
         final Category parentCategory = CategoryUtils.createCategory("Leisure", userSid, null, false);
 
@@ -157,7 +158,8 @@ public class CategoryServiceImplTest {
         final CreateCategoryCommand command = new CreateCategoryCommand(
                 userSid,
                 expectedCategoryName,
-                null
+                null,
+                TransactionType.EXPENSE
         );
 
         when(categoryRepository.existsByNameForUserOrSystem(any(), any())).thenReturn(false);
@@ -183,7 +185,7 @@ public class CategoryServiceImplTest {
     void shouldSanitizeValidCategoryNames(final String receivedName, final String expectedSanitizedName) {
         // Arrange
         final UUID userSid = UUID.randomUUID();
-        final CreateCategoryCommand command = new CreateCategoryCommand(userSid, receivedName, null);
+        final CreateCategoryCommand command = new CreateCategoryCommand(userSid, receivedName, null, TransactionType.EXPENSE);
 
         // Act & Assert
         when(categoryRepository.existsByNameForUserOrSystem(anyString(), eq(userSid))).thenReturn(false);
@@ -200,7 +202,7 @@ public class CategoryServiceImplTest {
     void shouldThrowOnBlankCategoryNames(final String receivedName, final String expectedSanitizedName) {
         // Arrange
         final UUID userSid = UUID.randomUUID();
-        final CreateCategoryCommand command = new CreateCategoryCommand(userSid, receivedName, null);
+        final CreateCategoryCommand command = new CreateCategoryCommand(userSid, receivedName, null, TransactionType.EXPENSE);
 
         // Act & Assert
         assertThatThrownBy(() -> {
@@ -213,7 +215,7 @@ public class CategoryServiceImplTest {
     void shouldThrowIfCategoryAlreadyExists() {
         // Arrange
         final String name = "Videogames";
-        final CreateCategoryCommand command = new CreateCategoryCommand(UUID.randomUUID(), name, UUID.randomUUID());
+        final CreateCategoryCommand command = new CreateCategoryCommand(UUID.randomUUID(), name, UUID.randomUUID(), TransactionType.EXPENSE);
 
         when(categoryRepository.existsByNameForUserOrSystem(any(), any())).thenReturn(true);
 
@@ -229,7 +231,7 @@ public class CategoryServiceImplTest {
         // Arrange
         final String name = "Videogames";
         final UUID parentSid = UUID.randomUUID();
-        final CreateCategoryCommand command = new CreateCategoryCommand(UUID.randomUUID(), name, parentSid);
+        final CreateCategoryCommand command = new CreateCategoryCommand(UUID.randomUUID(), name, parentSid, TransactionType.EXPENSE);
 
         when(categoryRepository.existsByNameForUserOrSystem(any(), any())).thenReturn(false);
         when(categoryRepository.findBySid(parentSid)).thenReturn(Optional.empty());
@@ -249,7 +251,7 @@ public class CategoryServiceImplTest {
         final String name = "Videogames";
         final UUID parentSid = UUID.randomUUID();
         final Category parentCategory = CategoryUtils.createCategory("Leisure", externalUser, null, false);
-        final CreateCategoryCommand command = new CreateCategoryCommand(userSid, name, parentSid);
+        final CreateCategoryCommand command = new CreateCategoryCommand(userSid, name, parentSid, TransactionType.EXPENSE);
 
         when(categoryRepository.existsByNameForUserOrSystem(any(), any())).thenReturn(false);
         when(categoryRepository.findBySid(parentSid)).thenReturn(Optional.of(parentCategory));

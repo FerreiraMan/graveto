@@ -88,7 +88,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         }
 
-        final Category category = Category.create(sanitizedName, command.name(), command.userSid(), parentCategory);
+        final Category category = Category.create(sanitizedName, command.name(), command.userSid(), parentCategory, command.transactionType());
 
         return categoryRepository.save(category);
     }

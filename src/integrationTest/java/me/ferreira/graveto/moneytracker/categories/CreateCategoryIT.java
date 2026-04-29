@@ -5,6 +5,7 @@ import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.repository.CategoryRepository;
 import me.ferreira.graveto.moneytracker.categories.web.dto.request.CreateCategoryRequestDTO;
 import me.ferreira.graveto.moneytracker.config.BaseIntegrationTest;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.utils.CategoryTestFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +40,7 @@ public class CreateCategoryIT extends BaseIntegrationTest {
         final String expectedCategoryName = "Oil Gas";
         final String expectedSanitizedName = "OIL_GAS";
         final CreateCategoryRequestDTO requestDTO = new CreateCategoryRequestDTO(
-                expectedCategoryName, parentCategory.getSid()
+                expectedCategoryName, parentCategory.getSid(), TransactionType.EXPENSE
         );
         final UUID userSid = UUID.randomUUID();
 
@@ -65,6 +66,7 @@ public class CreateCategoryIT extends BaseIntegrationTest {
         assertThat(savedCategory.getDisplayName()).isEqualTo(expectedCategoryName);
         assertThat(savedCategory.getUserSid()).isEqualTo(userSid);
         assertThat(savedCategory.getParent().getSid()).isEqualTo(this.parentCategory.getSid());
+        assertThat(savedCategory.getTransactionType()).isEqualTo(TransactionType.EXPENSE);
     }
 
 }

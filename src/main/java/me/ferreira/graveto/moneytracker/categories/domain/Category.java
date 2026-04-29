@@ -1,16 +1,7 @@
 package me.ferreira.graveto.moneytracker.categories.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.SequenceGenerator;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -19,6 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import me.ferreira.graveto.common.jpa.BaseEntity;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import org.hibernate.annotations.DynamicUpdate;
 
 @Getter
@@ -54,6 +46,10 @@ public class Category extends BaseEntity {
     @Column(name = "is_internal", nullable = false)
     private boolean isInternal = false;
 
+    @Column(name = "transaction_type", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private TransactionType transactionType;
+
     @OneToMany(mappedBy = "parent")
     private List<Category> children = new ArrayList<>();
 
@@ -61,7 +57,8 @@ public class Category extends BaseEntity {
             final String name,
             final String displayName,
             final UUID userSid,
-            final Category parent) {
+            final Category parent,
+            final TransactionType transactionType) {
 
         final Category cat = new Category();
 
@@ -71,7 +68,9 @@ public class Category extends BaseEntity {
         cat.setDisplayName(displayName);
         cat.setParent(parent);
         cat.setUserSid(userSid);
+        cat.setTransactionType(transactionType);
 
         return cat;
     }
+
 }
