@@ -2,6 +2,7 @@ package me.ferreira.graveto.moneytracker.transactions.repository;
 
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
+import me.ferreira.graveto.moneytracker.transactions.domain.projection.MonthlyAggregateProjection;
 import me.ferreira.graveto.moneytracker.transactions.service.command.FindAllTransactionsCommand;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,5 +27,7 @@ public interface TransactionRepository {
     BigDecimal calculateBalance(Long accountId, TransactionStatus transactionStatus);
 
     Page<Transaction> findAll(FindAllTransactionsCommand command);
+
+    List<MonthlyAggregateProjection> calculateMonthlyAggregates(int year, UUID accountSid);
 
 }

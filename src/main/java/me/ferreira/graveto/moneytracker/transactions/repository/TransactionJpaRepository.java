@@ -3,6 +3,7 @@ package me.ferreira.graveto.moneytracker.transactions.repository;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction_;
+import me.ferreira.graveto.moneytracker.transactions.domain.projection.MonthlyAggregateProjection;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
@@ -34,4 +35,7 @@ public interface TransactionJpaRepository extends JpaRepository<Transaction, Lon
     Page<Transaction> findAll(@Nullable final Specification<Transaction> spec, @NonNull final Pageable pageable);
 
     Optional<Transaction> findBySid(final UUID sid);
+
+    //List<MonthlyAggregateProjection> calculateMonthlyAggregates(final int year, final UUID accountSid);
+
 }

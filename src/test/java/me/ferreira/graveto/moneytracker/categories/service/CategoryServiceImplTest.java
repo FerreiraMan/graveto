@@ -85,7 +85,7 @@ public class CategoryServiceImplTest {
     void shouldReturnAllCategories() {
         // Arrange
         final UUID userSid = UUID.randomUUID();
-        final Category expectedCategory = CategoryUtils.createCategory("Gas", null, null, false);
+        final Category expectedCategory = CategoryUtils.createCategory("Gas", null, null, false, TransactionType.EXPENSE);
         when(categoryRepository.findAllByUserSid(userSid)).thenReturn(List.of(expectedCategory));
 
         // Act
@@ -105,7 +105,7 @@ public class CategoryServiceImplTest {
     void shouldThrowIfNoDefaultCategoriesAreReturned() {
         // Arrange
         final UUID userSid = UUID.randomUUID();
-        final Category expectedCategory = CategoryUtils.createCategory("Gas", userSid, null, false);
+        final Category expectedCategory = CategoryUtils.createCategory("Gas", userSid, null, false, TransactionType.EXPENSE);
         when(categoryRepository.findAllByUserSid(userSid)).thenReturn(List.of(expectedCategory));
 
         // Act & Assert
@@ -128,7 +128,7 @@ public class CategoryServiceImplTest {
                 parentSid,
                 TransactionType.EXPENSE
         );
-        final Category parentCategory = CategoryUtils.createCategory("Leisure", userSid, null, false);
+        final Category parentCategory = CategoryUtils.createCategory("Leisure", userSid, null, false, TransactionType.EXPENSE);
 
         when(categoryRepository.existsByNameForUserOrSystem(any(), any())).thenReturn(false);
         when(categoryRepository.findBySid(parentSid)).thenReturn(Optional.of(parentCategory));
@@ -250,7 +250,7 @@ public class CategoryServiceImplTest {
         final UUID externalUser = UUID.randomUUID();
         final String name = "Videogames";
         final UUID parentSid = UUID.randomUUID();
-        final Category parentCategory = CategoryUtils.createCategory("Leisure", externalUser, null, false);
+        final Category parentCategory = CategoryUtils.createCategory("Leisure", externalUser, null, false, TransactionType.EXPENSE);
         final CreateCategoryCommand command = new CreateCategoryCommand(userSid, name, parentSid, TransactionType.EXPENSE);
 
         when(categoryRepository.existsByNameForUserOrSystem(any(), any())).thenReturn(false);

@@ -3,6 +3,7 @@ package me.ferreira.graveto.moneytracker.transactions.repository.impl;
 import lombok.AllArgsConstructor;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
+import me.ferreira.graveto.moneytracker.transactions.domain.projection.MonthlyAggregateProjection;
 import me.ferreira.graveto.moneytracker.transactions.repository.TransactionJpaRepository;
 import me.ferreira.graveto.moneytracker.transactions.repository.TransactionRepository;
 import me.ferreira.graveto.moneytracker.transactions.repository.TransactionsSpecs;
@@ -61,6 +62,11 @@ public class TransactionRepositoryImpl implements TransactionRepository {
         final Specification<Transaction> classicSpec = Specification.where(predicateSpec);
 
         return repository.findAll(classicSpec, command.pageable());
+    }
+
+    @Override
+    public List<MonthlyAggregateProjection> calculateMonthlyAggregates(int year, UUID accountSid) {
+        return List.of();
     }
 
 }

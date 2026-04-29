@@ -92,6 +92,25 @@ public class CreateTransactionServiceImplTest {
     }
 
     @Test
+    void shouldThrowIfCategoryTransactionTypeIsDifferentThanTransactionType() {
+        // Arrange
+        final Category category = CategoryUtils.createCategory("Lunch", null, null, false, TransactionType.EXPENSE);
+
+        final CreateTransactionCommand command = new CreateTransactionCommand(
+                UUID.randomUUID(), UUID.randomUUID(), category.getSid(), BigDecimal.TEN, "", TransactionType.INCOME, LocalDateTime.now()
+        );
+
+        when(categoryService.fetchCategory(any())).thenReturn(category);
+
+        // Act & Assert
+        assertThatThrownBy(() -> {
+            service.createTransaction(command);
+        }).isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(String.format("Category type [%s] does not match the requested transaction type [%s].",
+                        category.getTransactionType().name(), command.transactionType().name()));
+    }
+
+    @Test
     void shouldCreateExpenseTransaction() {
         // Arrange
         final UUID userSid = UUID.randomUUID();
@@ -127,7 +146,7 @@ public class CreateTransactionServiceImplTest {
         // Arrange
         final UUID userSid = account.getMemberships().getFirst().getUserSid();
         final String categoryName = "Restaurants";
-        final Category category = CategoryUtils.createCategory(categoryName, null, null, false);
+        final Category category = CategoryUtils.createCategory(categoryName, null, null, false, transactionType);
         final LocalDateTime occurredAt = LocalDateTime.now().minusDays(1);
 
         final String description = "Lunch";

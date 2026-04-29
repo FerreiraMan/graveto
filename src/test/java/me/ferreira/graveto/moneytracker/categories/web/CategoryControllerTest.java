@@ -41,8 +41,8 @@ public class CategoryControllerTest {
         // Arrange
         final UUID userSid = UUID.randomUUID();
 
-        final Category parentCategory = CategoryUtils.createCategory("Gas", null, null, false);
-        final Category childCategory = CategoryUtils.createCategory("Diesel", userSid, parentCategory, false);
+        final Category parentCategory = CategoryUtils.createCategory("Gas", null, null, false, TransactionType.EXPENSE);
+        final Category childCategory = CategoryUtils.createCategory("Diesel", userSid, parentCategory, false, TransactionType.EXPENSE);
 
         when(service.fetchAllCategories(userSid)).thenReturn(List.of(parentCategory, childCategory));
 

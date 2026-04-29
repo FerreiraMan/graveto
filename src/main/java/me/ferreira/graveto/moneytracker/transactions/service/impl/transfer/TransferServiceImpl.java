@@ -44,7 +44,7 @@ public class TransferServiceImpl implements TransferService {
         final Transaction out = transferTransactions.get(0).getType() == TransactionType.TRANSFER_OUT ? transferTransactions.get(0) : transferTransactions.get(1);
         final Transaction in = transferTransactions.get(0).getType() == TransactionType.TRANSFER_IN ? transferTransactions.get(0) : transferTransactions.get(1);
 
-        out.getAccount().validateUserPermission(command.userSid(), MembershipRole::canReadTransaction, "read transfer");
+        out.getAccount().validateUserPermission(command.userSid(), MembershipRole::canReadTransaction, "read transfer transactions");
 
         return new TransferResult(out, in);
     }
@@ -63,8 +63,8 @@ public class TransferServiceImpl implements TransferService {
         final Account sourceAccount = accountService.fetchAccount(new FetchAccountCommand(userSid, command.sourceAccountSid()));
         final Account destinationAccount = accountService.fetchAccount(new FetchAccountCommand(userSid, command.destinationAccountSid()));
 
-        sourceAccount.validateUserPermission(userSid, MembershipRole::canCreateTransaction, "create transfer");
-        destinationAccount.validateUserPermission(userSid, MembershipRole::canCreateTransaction, "create transfer");
+        sourceAccount.validateUserPermission(userSid, MembershipRole::canCreateTransaction, "create transfer transactions");
+        destinationAccount.validateUserPermission(userSid, MembershipRole::canCreateTransaction, "create transfer transactions");
 
         sourceAccount.updateBalance(amount, TransactionType.TRANSFER_OUT);
         destinationAccount.updateBalance(amount, TransactionType.TRANSFER_IN);
@@ -109,8 +109,8 @@ public class TransferServiceImpl implements TransferService {
         final Transaction out = transferTransactions.get(0).getType() == TransactionType.TRANSFER_OUT ? transferTransactions.get(0) : transferTransactions.get(1);
         final Transaction in = transferTransactions.get(0).getType() == TransactionType.TRANSFER_IN ? transferTransactions.get(0) : transferTransactions.get(1);
 
-        out.getAccount().validateUserPermission(command.userSid(), MembershipRole::canDeleteTransaction, "delete transfer");
-        in.getAccount().validateUserPermission(command.userSid(), MembershipRole::canDeleteTransaction, "delete transfer");
+        out.getAccount().validateUserPermission(command.userSid(), MembershipRole::canDeleteTransaction, "delete transfer transactions");
+        in.getAccount().validateUserPermission(command.userSid(), MembershipRole::canDeleteTransaction, "delete transfer transactions");
 
         out.markAsDeleted();
         out.getAccount().reverseBalanceImpact(out.getAmount(), out.getType());
@@ -132,8 +132,8 @@ public class TransferServiceImpl implements TransferService {
         final Transaction out = transferTransactions.get(0).getType() == TransactionType.TRANSFER_OUT ? transferTransactions.get(0) : transferTransactions.get(1);
         final Transaction in = transferTransactions.get(0).getType() == TransactionType.TRANSFER_IN ? transferTransactions.get(0) : transferTransactions.get(1);
 
-        out.getAccount().validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction, "update transfer");
-        in.getAccount().validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction, "update transfer");
+        out.getAccount().validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction, "update transfer transactions");
+        in.getAccount().validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction, "update transfer transactions");
 
         final BigDecimal effectiveAmount = command.amount() != null ? command.amount() : out.getAmount();
         final String effectiveDescription = command.description() != null ? command.description() : out.getDescription();

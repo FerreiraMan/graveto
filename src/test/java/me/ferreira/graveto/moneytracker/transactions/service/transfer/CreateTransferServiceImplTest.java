@@ -147,8 +147,8 @@ public class CreateTransferServiceImplTest {
         final Account destAccount = AccountUtils.createAccount(UUID.randomUUID(), userSid, MembershipRole.OWNER);
         destAccount.setBalance(new BigDecimal("50.00"));
 
-        final Category outCategory = CategoryUtils.createCategory("Transfer Out", null, null, true);
-        final Category inCategory = CategoryUtils.createCategory("Transfer In", null, null, true);
+        final Category outCategory = CategoryUtils.createCategory("Transfer Out", null, null, true, TransactionType.TRANSFER_OUT);
+        final Category inCategory = CategoryUtils.createCategory("Transfer In", null, null, true, TransactionType.TRANSFER_IN);
 
         final CreateTransferCommand command = new CreateTransferCommand(
                 userSid, sourceAccount.getSid(), destAccount.getSid(), transferAmount, description, occurredAt

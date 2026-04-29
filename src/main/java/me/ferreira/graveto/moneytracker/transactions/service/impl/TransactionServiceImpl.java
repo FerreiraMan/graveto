@@ -1,6 +1,5 @@
 package me.ferreira.graveto.moneytracker.transactions.service.impl;
 
-import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
@@ -12,17 +11,17 @@ import me.ferreira.graveto.moneytracker.categories.service.CategoryService;
 import me.ferreira.graveto.moneytracker.categories.service.command.FetchCategoryCommand;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
+import me.ferreira.graveto.moneytracker.transactions.domain.projection.MonthlyAggregateProjection;
 import me.ferreira.graveto.moneytracker.transactions.repository.TransactionRepository;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
-import me.ferreira.graveto.moneytracker.transactions.service.command.CreateTransactionCommand;
-import me.ferreira.graveto.moneytracker.transactions.service.command.DeleteTransactionCommand;
-import me.ferreira.graveto.moneytracker.transactions.service.command.FindAllTransactionsCommand;
-import me.ferreira.graveto.moneytracker.transactions.service.command.UpdateTransactionCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.command.*;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @AllArgsConstructor
@@ -38,9 +37,11 @@ public class TransactionServiceImpl implements TransactionService {
 
         final Category category = categoryService.fetchCategory(new FetchCategoryCommand(command.userSid(), command.categorySid()));
 
+        validateSameTypeOnCategory(category.getTransactionType(), command.transactionType());
+
         final Account account = accountService.fetchAccount(new FetchAccountCommand(command.userSid(), command.accountSid()));
 
-        account.validateUserPermission(command.userSid(), MembershipRole::canCreateTransaction, "create");
+        account.validateUserPermission(command.userSid(), MembershipRole::canCreateTransaction, "create transactions");
 
         account.updateBalance(command.amount(), command.transactionType());
 
@@ -79,7 +80,7 @@ public class TransactionServiceImpl implements TransactionService {
             throw new IllegalStateException("This transaction is part of a transfer and must be deleted via the Transfer API.");
         }
 
-        account.validateUserPermission(command.userSid(), MembershipRole::canDeleteTransaction, "delete");
+        account.validateUserPermission(command.userSid(), MembershipRole::canDeleteTransaction, "delete transactions");
 
         transaction.markAsDeleted();
         account.reverseBalanceImpact(transaction.getAmount(), transaction.getType());
@@ -98,7 +99,7 @@ public class TransactionServiceImpl implements TransactionService {
 
         final Account account = transaction.getAccount();
 
-        account.validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction, "update");
+        account.validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction, "update transactions");
 
         final BigDecimal effectiveAmount = command.amount() != null ? command.amount() : transaction.getAmount();
         final TransactionType effectiveType = command.transactionType() != null ? command.transactionType() : transaction.getType();
@@ -112,6 +113,8 @@ public class TransactionServiceImpl implements TransactionService {
                     new FetchCategoryCommand(command.userSid(), command.categorySid())
             );
         }
+
+        validateSameTypeOnCategory(effectiveCategory.getTransactionType(), effectiveType);
 
         final boolean requiresBalanceCalculation =
                 transaction.getAmount().compareTo(effectiveAmount) != 0 ||
@@ -134,6 +137,24 @@ public class TransactionServiceImpl implements TransactionService {
         }
 
         return transaction;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MonthlyAggregateProjection> generateMonthlyAggregates(final GenerateMonthlyAggregateCommand command) {
+
+        return transactionRepository.calculateMonthlyAggregates(command.year(), command.accountSid());
+    }
+
+    private void validateSameTypeOnCategory(final TransactionType categoryTransactionType,
+                                            final TransactionType transactionType) {
+
+        if (categoryTransactionType != transactionType) {
+            throw new IllegalArgumentException(
+                    String.format("Category type [%s] does not match the requested transaction type [%s].",
+                            categoryTransactionType.name(), transactionType.name())
+            );
+        }
     }
 
     private void validateTransactionTypeInvariants(final Transaction transaction, final UpdateTransactionCommand command) {

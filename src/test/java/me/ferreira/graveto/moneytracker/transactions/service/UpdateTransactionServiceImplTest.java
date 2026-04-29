@@ -135,7 +135,7 @@ public class UpdateTransactionServiceImplTest {
         // Arrange
         final UUID userSid = UUID.randomUUID();
         final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, MembershipRole.OWNER);
-        final Category category = CategoryUtils.createCategory("Gas", userSid, null, false);
+        final Category category = CategoryUtils.createCategory("Gas", userSid, null, false, TransactionType.EXPENSE);
         final Transaction transaction = new Transaction();
         transaction.setAccount(account);
         transaction.setCategory(category);
@@ -161,10 +161,14 @@ public class UpdateTransactionServiceImplTest {
         final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, MembershipRole.OWNER);
         final UpdateTransactionCommand command = new UpdateTransactionCommand(userSid, transactionSid, null, null, BigDecimal.TEN, null, null);
 
+        final Category mockCategory = new Category();
+        mockCategory.setTransactionType(TransactionType.EXPENSE);
+
         final Transaction transaction = new Transaction();
         transaction.setAccount(account);
         transaction.setAmount(BigDecimal.ONE);
         transaction.setStatus(TransactionStatus.DELETED);
+        transaction.setCategory(mockCategory);
         transaction.setType(TransactionType.EXPENSE);
 
         when(transactionRepository.findBySid(transactionSid)).thenReturn(Optional.of(transaction));
@@ -177,12 +181,71 @@ public class UpdateTransactionServiceImplTest {
     }
 
     @Test
+    void shouldThrowIfUpdatedCategoryTransactionTypeIsDifferentThanCurrentCategoryTransactionType() {
+        // Arrange
+        final UUID userSid = UUID.randomUUID();
+        final UUID transactionSid = UUID.randomUUID();
+        final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, MembershipRole.OWNER);
+        final Category category = CategoryUtils.createCategory("Lunch", null, null, false, TransactionType.INCOME);
+        final UpdateTransactionCommand command = new UpdateTransactionCommand(userSid, transactionSid, TransactionType.EXPENSE, category.getSid(), BigDecimal.TEN, null, null);
+
+        final Category mockCategory = new Category();
+        mockCategory.setTransactionType(TransactionType.INCOME);
+
+        final Transaction transaction = new Transaction();
+        transaction.setAccount(account);
+        transaction.setCategory(mockCategory);
+        transaction.setAmount(BigDecimal.ONE);
+        transaction.setStatus(TransactionStatus.ACTIVE);
+        transaction.setType(TransactionType.EXPENSE);
+
+        when(transactionRepository.findBySid(transactionSid)).thenReturn(Optional.of(transaction));
+        when(categoryService.fetchCategory(any())).thenReturn(category);
+
+        // Act & Assert
+        assertThatThrownBy(() -> {
+            service.updateTransaction(command);
+        }).isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(String.format("Category type [%s] does not match the requested transaction type [%s].",
+                        category.getTransactionType().name(), command.transactionType().name()));
+    }
+
+    @Test
+    void shouldThrowIfUpdatedTransactionTypeDoesNotMatchPersistedCategoryType() {
+        // Arrange
+        final UUID userSid = UUID.randomUUID();
+        final UUID transactionSid = UUID.randomUUID();
+        final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, MembershipRole.OWNER);
+
+        final Category persistedCategory = CategoryUtils.createCategory("Salary", null, null, false, TransactionType.INCOME);
+        final Transaction transaction = new Transaction();
+        transaction.setAccount(account);
+        transaction.setCategory(persistedCategory);
+        transaction.setAmount(BigDecimal.TEN);
+        transaction.setStatus(TransactionStatus.ACTIVE);
+        transaction.setType(TransactionType.INCOME);
+
+        final UpdateTransactionCommand command = new UpdateTransactionCommand(
+                userSid, transactionSid, TransactionType.EXPENSE, null, null, null, null
+        );
+
+        when(transactionRepository.findBySid(transactionSid)).thenReturn(Optional.of(transaction));
+
+        // Act & Assert
+        assertThatThrownBy(() -> {
+            service.updateTransaction(command);
+        }).isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(String.format("Category type [%s] does not match the requested transaction type [%s].",
+                        persistedCategory.getTransactionType().name(), command.transactionType().name()));
+    }
+
+    @Test
     void shouldKeepPersistedFieldsIfNoUpdatedFieldWasSent() {
         // Arrange
         final UUID userSid = UUID.randomUUID();
         final UUID transactionSid = UUID.randomUUID();
         final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, MembershipRole.OWNER);
-        final Category persistedCategory = CategoryUtils.createCategory("Gas", userSid, null, false);
+        final Category persistedCategory = CategoryUtils.createCategory("Gas", userSid, null, false, TransactionType.EXPENSE);
         final BigDecimal persistedBalance = BigDecimal.TEN;
         final String persistedDescription = "Diesel for Car 1";
         final LocalDateTime persistedOccurreddAt = LocalDateTime.now().minusDays(5);
@@ -237,7 +300,7 @@ public class UpdateTransactionServiceImplTest {
         final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, MembershipRole.OWNER);
         account.setBalance(BigDecimal.valueOf(100));
 
-        final Category persistedCategory = CategoryUtils.createCategory("Gas", userSid, null, false);
+        final Category persistedCategory = CategoryUtils.createCategory("Gas", userSid, null, false, expectedType);
         final String persistedDescription = "Diesel for Car 1";
 
         final Transaction persistedTransaction = createTransaction(
@@ -247,7 +310,7 @@ public class UpdateTransactionServiceImplTest {
         when(transactionRepository.findBySid(command.transactionSid())).thenReturn(Optional.of(persistedTransaction));
 
         if (command.categorySid() != null) {
-            final Category newCategory = CategoryUtils.createCategory("New Category", userSid, null, false);
+            final Category newCategory = CategoryUtils.createCategory("New Category", userSid, null, false, expectedType);
             newCategory.setSid(command.categorySid());
             when(categoryService.fetchCategory(any())).thenReturn(newCategory);
         }

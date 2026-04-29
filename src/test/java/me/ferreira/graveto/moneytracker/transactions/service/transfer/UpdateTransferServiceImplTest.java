@@ -126,8 +126,8 @@ public class UpdateTransferServiceImplTest {
         final Account inAccount = AccountUtils.createAccount(UUID.randomUUID(), userSid, MembershipRole.OWNER);
         inAccount.setBalance(new BigDecimal("100.00").add(persistedAmount));
 
-        final Category outCategory = CategoryUtils.createCategory("Transfer Out", userSid, null, true);
-        final Category inCategory = CategoryUtils.createCategory("Transfer In", userSid, null, true);
+        final Category outCategory = CategoryUtils.createCategory("Transfer Out", userSid, null, true, TransactionType.TRANSFER_OUT);
+        final Category inCategory = CategoryUtils.createCategory("Transfer In", userSid, null, true, TransactionType.TRANSFER_IN);
         final String persistedDescription = "Initial Transfer";
         final LocalDateTime persistedOccurredAt = LocalDateTime.now().minusDays(2);
 

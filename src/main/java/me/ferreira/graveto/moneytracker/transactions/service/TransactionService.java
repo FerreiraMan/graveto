@@ -1,11 +1,11 @@
 package me.ferreira.graveto.moneytracker.transactions.service;
 
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
-import me.ferreira.graveto.moneytracker.transactions.service.command.CreateTransactionCommand;
-import me.ferreira.graveto.moneytracker.transactions.service.command.DeleteTransactionCommand;
-import me.ferreira.graveto.moneytracker.transactions.service.command.FindAllTransactionsCommand;
-import me.ferreira.graveto.moneytracker.transactions.service.command.UpdateTransactionCommand;
+import me.ferreira.graveto.moneytracker.transactions.domain.projection.MonthlyAggregateProjection;
+import me.ferreira.graveto.moneytracker.transactions.service.command.*;
 import org.springframework.data.domain.Page;
+
+import java.util.List;
 
 public interface TransactionService {
 
@@ -16,5 +16,7 @@ public interface TransactionService {
     Transaction deleteTransaction(DeleteTransactionCommand command);
 
     Transaction updateTransaction(UpdateTransactionCommand command);
+
+    List<MonthlyAggregateProjection> generateMonthlyAggregates(GenerateMonthlyAggregateCommand command);
 
 }
