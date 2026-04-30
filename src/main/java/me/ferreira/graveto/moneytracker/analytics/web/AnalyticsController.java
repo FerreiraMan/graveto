@@ -1,10 +1,6 @@
 package me.ferreira.graveto.moneytracker.analytics.web;
 
 import lombok.RequiredArgsConstructor;
-import me.ferreira.graveto.moneytracker.accounts.domain.Account;
-import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
-import me.ferreira.graveto.moneytracker.accounts.web.dto.response.FullAccountResponseDTO;
-import me.ferreira.graveto.moneytracker.accounts.web.dto.response.MembershipResponseDTO;
 import me.ferreira.graveto.moneytracker.analytics.service.AnalyticService;
 import me.ferreira.graveto.moneytracker.analytics.service.command.CashFlowCommand;
 import me.ferreira.graveto.moneytracker.analytics.service.payload.CashFlowResult;
@@ -27,7 +23,7 @@ public class AnalyticsController {
     private final AnalyticService analyticService;
 
     @GetMapping(path = ACCOUNT_SID_PATH + CASH_FLOW, produces = "application/json")
-    public ResponseEntity<CashFlowReportResponseDTO> fetchAccount(
+    public ResponseEntity<CashFlowReportResponseDTO> fetchCashFlowReport(
             @RequestHeader("X-User-Sid") final UUID userSid,
             @PathVariable final UUID accountSid,
             @RequestParam(required = false) final Integer year) {
@@ -38,7 +34,23 @@ public class AnalyticsController {
 
         final CashFlowResult cashFlowResult = analyticService.generateCashFlowReport(command);
 
+        final List<CashFlowReportResponseDTO.MonthlyCashFlowDTO> mappedMonthlyFlows = cashFlowResult.monthlyCashFlow().stream()
+                .map(m -> new CashFlowReportResponseDTO.MonthlyCashFlowDTO(
+                        m.month(),
+                        m.income(),
+                        m.expense(),
+                        m.netFlow()
+                ))
+                .toList();
 
-        return null;
+        final CashFlowReportResponseDTO response = new CashFlowReportResponseDTO(
+                cashFlowResult.year(),
+                cashFlowResult.yearlyIncome(),
+                cashFlowResult.yearlyExpense(),
+                cashFlowResult.yearlyNetFlow(),
+                mappedMonthlyFlows
+        );
+
+        return ResponseEntity.ok().body(response);
     }
 }

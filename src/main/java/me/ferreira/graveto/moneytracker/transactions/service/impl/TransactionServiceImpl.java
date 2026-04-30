@@ -10,6 +10,7 @@ import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.service.CategoryService;
 import me.ferreira.graveto.moneytracker.categories.service.command.FetchCategoryCommand;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.domain.projection.MonthlyAggregateProjection;
 import me.ferreira.graveto.moneytracker.transactions.repository.TransactionRepository;
@@ -143,7 +144,7 @@ public class TransactionServiceImpl implements TransactionService {
     @Transactional(readOnly = true)
     public List<MonthlyAggregateProjection> generateMonthlyAggregates(final GenerateMonthlyAggregateCommand command) {
 
-        return transactionRepository.calculateMonthlyAggregates(command.year(), command.accountSid());
+        return transactionRepository.calculateMonthlyAggregates(command.year(), command.accountSid(), TransactionStatus.ACTIVE);
     }
 
     private void validateSameTypeOnCategory(final TransactionType categoryTransactionType,

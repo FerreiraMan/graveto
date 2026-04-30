@@ -65,8 +65,9 @@ public class TransactionRepositoryImpl implements TransactionRepository {
     }
 
     @Override
-    public List<MonthlyAggregateProjection> calculateMonthlyAggregates(int year, UUID accountSid) {
-        return List.of();
+    public List<MonthlyAggregateProjection> calculateMonthlyAggregates(final int year, final UUID accountSid,
+                                                                       final TransactionStatus status) {
+        return repository.calculateMonthlyAggregates(year, accountSid, status);
     }
 
 }

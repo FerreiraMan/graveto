@@ -36,6 +36,11 @@ public interface TransactionJpaRepository extends JpaRepository<Transaction, Lon
 
     Optional<Transaction> findBySid(final UUID sid);
 
-    //List<MonthlyAggregateProjection> calculateMonthlyAggregates(final int year, final UUID accountSid);
+    @Query(value = "SELECT EXTRACT(MONTH FROM t.occurredAt) AS month, t.type AS type, SUM(t.amount) AS totalAmount FROM Transaction t " +
+            "WHERE EXTRACT(YEAR FROM t.occurredAt) = ?1 " +
+            "AND t.account.sid = ?2 " +
+            "AND t.status = ?3 " +
+            "GROUP BY EXTRACT(MONTH FROM t.occurredAt), t.type")
+    List<MonthlyAggregateProjection> calculateMonthlyAggregates(final int year, final UUID accountSid, final TransactionStatus status);
 
 }

@@ -28,6 +28,6 @@ public interface TransactionRepository {
 
     Page<Transaction> findAll(FindAllTransactionsCommand command);
 
-    List<MonthlyAggregateProjection> calculateMonthlyAggregates(int year, UUID accountSid);
+    List<MonthlyAggregateProjection> calculateMonthlyAggregates(int year, UUID accountSid, TransactionStatus status);
 
 }
