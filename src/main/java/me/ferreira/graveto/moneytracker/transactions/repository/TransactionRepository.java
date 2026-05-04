@@ -2,6 +2,8 @@ package me.ferreira.graveto.moneytracker.transactions.repository;
 
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
+import me.ferreira.graveto.moneytracker.transactions.domain.projection.CategoryAggregateProjection;
 import me.ferreira.graveto.moneytracker.transactions.domain.projection.MonthlyAggregateProjection;
 import me.ferreira.graveto.moneytracker.transactions.service.command.FindAllTransactionsCommand;
 import org.springframework.data.domain.Page;
@@ -29,5 +31,7 @@ public interface TransactionRepository {
     Page<Transaction> findAll(FindAllTransactionsCommand command);
 
     List<MonthlyAggregateProjection> calculateMonthlyAggregates(int year, UUID accountSid, TransactionStatus status);
+
+    List<CategoryAggregateProjection> calculateCategoryAggregates(int year, UUID accountSid, TransactionStatus status, TransactionType type);
 
 }

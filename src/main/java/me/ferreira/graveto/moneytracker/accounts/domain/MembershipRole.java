@@ -10,19 +10,19 @@ public enum MembershipRole {
     private final boolean canDeleteTransaction;
     private final boolean canUpdateTransaction;
 
-    private final boolean canRequestCashFlowReport;
+    private final boolean canRequestReport;
 
     MembershipRole(final boolean canReadTransaction,
                    final boolean canCreateTransaction,
                    final boolean canDeleteTransaction,
                    final boolean canUpdateTransaction,
-                   final boolean canRequestCashFlowReport) {
+                   final boolean canRequestReport) {
 
         this.canReadTransaction = canReadTransaction;
         this.canCreateTransaction = canCreateTransaction;
         this.canDeleteTransaction = canDeleteTransaction;
         this.canUpdateTransaction = canUpdateTransaction;
-        this.canRequestCashFlowReport = canRequestCashFlowReport;
+        this.canRequestReport = canRequestReport;
     }
 
     public boolean canReadTransaction() {
@@ -41,8 +41,8 @@ public enum MembershipRole {
         return this.canUpdateTransaction;
     }
 
-    public boolean canRequestCashFlowReport() {
-        return this.canRequestCashFlowReport;
+    public boolean canRequestReport() {
+        return this.canRequestReport;
     }
 
 }

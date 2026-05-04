@@ -2,7 +2,9 @@ package me.ferreira.graveto.moneytracker.transactions.repository;
 
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction_;
+import me.ferreira.graveto.moneytracker.transactions.domain.projection.CategoryAggregateProjection;
 import me.ferreira.graveto.moneytracker.transactions.domain.projection.MonthlyAggregateProjection;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -42,5 +44,18 @@ public interface TransactionJpaRepository extends JpaRepository<Transaction, Lon
             "AND t.status = ?3 " +
             "GROUP BY EXTRACT(MONTH FROM t.occurredAt), t.type")
     List<MonthlyAggregateProjection> calculateMonthlyAggregates(final int year, final UUID accountSid, final TransactionStatus status);
+
+    @Query(value = "SELECT EXTRACT(MONTH FROM t.occurredAt) AS month, " +
+            "c.sid AS categorySid, " +
+            "SUM(t.amount) AS totalAmount " +
+            "FROM Transaction t " +
+            "JOIN t.category c " +
+            "WHERE EXTRACT(YEAR FROM t.occurredAt) = :year " +
+            "AND t.account.sid = :accountSid " +
+            "AND t.status = :status " +
+            "AND t.type = :type " +
+            "AND c.isInternal = false " +
+            "GROUP BY EXTRACT(MONTH FROM t.occurredAt), c.sid")
+    List<CategoryAggregateProjection> calculateCategoryAggregates(final int year, final UUID accountSid, final TransactionStatus status, final TransactionType type);
 
 }
