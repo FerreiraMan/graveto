@@ -3,7 +3,7 @@ package me.ferreira.graveto.moneytracker.categories;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.domain.SystemCategory;
 import me.ferreira.graveto.moneytracker.categories.repository.CategoryRepository;
-import me.ferreira.graveto.moneytracker.config.BaseIntegrationTest;
+import me.ferreira.graveto.moneytracker.config.MoneyTrackerBaseIntegrationTest;
 import me.ferreira.graveto.moneytracker.utils.CategoryTestFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +17,7 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Sql(scripts = {"/moneytracker/sql/delete_specific_categories.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
-public class FetchAllCategoriesIT extends BaseIntegrationTest {
+public class FetchAllCategoriesIT extends MoneyTrackerBaseIntegrationTest {
 
     private UUID ownerSid;
     private Category parentCategory;

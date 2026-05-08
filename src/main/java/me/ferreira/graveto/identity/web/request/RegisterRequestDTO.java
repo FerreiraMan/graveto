@@ -5,11 +5,11 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record RegisterRequestDTO(
-    @NotBlank
+    @NotBlank(message = "Email cannot be empty.")
     @Email(message = "Must be a well-formed email address")
     String email,
 
-    @NotBlank
+    @NotBlank(message = "Password cannot be empty.")
     @Size(min = 5, message = "Password does not comply with the defined minimum size.")
     String password
 ) {}

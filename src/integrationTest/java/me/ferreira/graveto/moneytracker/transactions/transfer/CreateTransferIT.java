@@ -5,7 +5,7 @@ import io.restassured.response.Response;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.repository.AccountRepository;
 import me.ferreira.graveto.moneytracker.categories.repository.CategoryRepository;
-import me.ferreira.graveto.moneytracker.config.BaseIntegrationTest;
+import me.ferreira.graveto.moneytracker.config.MoneyTrackerBaseIntegrationTest;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.repository.TransactionRepository;
@@ -25,7 +25,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @Sql(scripts = {"/moneytracker/sql/delete_all.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
-public class CreateTransferIT extends BaseIntegrationTest {
+public class CreateTransferIT extends MoneyTrackerBaseIntegrationTest {
 
     @Autowired
     private TransactionRepository transactionRepository;

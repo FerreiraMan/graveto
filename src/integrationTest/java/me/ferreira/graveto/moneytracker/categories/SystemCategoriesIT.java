@@ -3,7 +3,7 @@ package me.ferreira.graveto.moneytracker.categories;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.domain.SystemCategory;
 import me.ferreira.graveto.moneytracker.categories.repository.CategoryRepository;
-import me.ferreira.graveto.moneytracker.config.BaseIntegrationTest;
+import me.ferreira.graveto.moneytracker.config.MoneyTrackerBaseIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -12,7 +12,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SystemCategoriesIT extends BaseIntegrationTest {
+public class SystemCategoriesIT extends MoneyTrackerBaseIntegrationTest {
 
     @Autowired
     private CategoryRepository categoryRepository;
