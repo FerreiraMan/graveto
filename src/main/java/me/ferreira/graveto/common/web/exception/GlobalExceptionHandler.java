@@ -1,6 +1,7 @@
 package me.ferreira.graveto.common.web.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import me.ferreira.graveto.common.web.exception.identity.UserAlreadyExistsException;
 import me.ferreira.graveto.common.web.exception.moneytracker.*;
 import org.springframework.http.*;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -103,6 +104,12 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleInsufficientPermissionsException(final InsufficientPermissionsException ex, final HttpServletRequest request) {
 
         return createBaseProblemDetail(HttpStatus.FORBIDDEN, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ProblemDetail handleUserAlreadyExistsExceptionException(final UserAlreadyExistsException ex, final HttpServletRequest request) {
+
+        return createBaseProblemDetail(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
     private ProblemDetail createBaseProblemDetail(final HttpStatus status, final String detailMessage, final HttpServletRequest request) {

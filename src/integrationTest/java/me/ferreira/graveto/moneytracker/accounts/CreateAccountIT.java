@@ -33,7 +33,7 @@ public class CreateAccountIT extends BaseIntegrationTest {
     private TransactionRepository transactionRepository;
 
     @Test
-    void shouldCreateProduct() {
+    void shouldCreateAccount() {
         // Arrange
         final BigDecimal expectedBalance = BigDecimal.TEN;
         final String expectedInstitution = "Santander";

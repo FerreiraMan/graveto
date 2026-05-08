@@ -15,6 +15,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -30,7 +32,12 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.mockito.Mockito.when;
 
-@WebMvcTest(controllers = TransferController.class)
+@WebMvcTest(
+    controllers = TransferController.class,
+    excludeFilters = @ComponentScan.Filter(
+            type = FilterType.REGEX,
+            pattern = "me.ferreira.graveto.identity.*"
+))
 public class UpdateTransferControllerTest {
 
     @Autowired

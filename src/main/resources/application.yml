@@ -13,6 +13,7 @@ spring:
     locations:
       - classpath:db/migration/common
       - classpath:db/migration/moneytracker
+      - classpath:db/migration/identity
 
 server:
   servlet:
@@ -20,3 +21,9 @@ server:
 logging:
   level:
     org.springframework.web: DEBUG
+
+jwt:
+  signing-secret: jwt_graveto_secret
+  expiration-ms: 3600000
+  issuer: >
+    graveto-api
