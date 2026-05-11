@@ -1,6 +1,7 @@
 package me.ferreira.graveto.common.web.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import me.ferreira.graveto.common.web.exception.identity.TokenAuthenticationException;
 import me.ferreira.graveto.common.web.exception.identity.UserAlreadyExistsException;
 import me.ferreira.graveto.common.web.exception.moneytracker.*;
 import org.springframework.http.*;
@@ -110,6 +111,12 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleUserAlreadyExistsExceptionException(final UserAlreadyExistsException ex, final HttpServletRequest request) {
 
         return createBaseProblemDetail(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(TokenAuthenticationException.class)
+    public ProblemDetail handleTokenAuthenticationExceptionException(final TokenAuthenticationException ex, final HttpServletRequest request) {
+
+        return createBaseProblemDetail(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
     }
 
     private ProblemDetail createBaseProblemDetail(final HttpStatus status, final String detailMessage, final HttpServletRequest request) {
