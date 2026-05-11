@@ -7,6 +7,8 @@ import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.CreateTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.CreateTransactionRequestDTO;
+import me.ferreira.graveto.moneytracker.utils.common.AuthUtils;
+import me.ferreira.graveto.moneytracker.utils.common.TestSecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -16,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -31,6 +34,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 
 @WebMvcTest(
     controllers = TransactionController.class,
@@ -38,6 +42,7 @@ import static org.mockito.Mockito.when;
             type = FilterType.REGEX,
             pattern = "me.ferreira.graveto.identity.*"
 ))
+@Import(TestSecurityConfig.class)
 public class CreateTransactionControllerTest {
 
     @Autowired
@@ -81,11 +86,11 @@ public class CreateTransactionControllerTest {
 
         // Act
         final MvcTestResult testResult = mvc.post()
-                .uri("/transactions")
-                .header("X-User-Sid", userSid)
-                .content(objectMapper.writeValueAsString(request))
-                .contentType(MediaType.APPLICATION_JSON)
-                .exchange();
+            .uri("/transactions")
+            .with(authentication(AuthUtils.mockAuth(userSid)))
+            .content(objectMapper.writeValueAsString(request))
+            .contentType(MediaType.APPLICATION_JSON)
+            .exchange();
 
         // Assert
         assertThat(testResult).hasStatus(HttpStatus.CREATED);
@@ -135,11 +140,11 @@ public class CreateTransactionControllerTest {
 
         // Act
         final MvcTestResult testResult = mvc.post()
-                .uri("/transactions")
-                .header("X-User-Sid", userSid)
-                .content(objectMapper.writeValueAsString(request))
-                .contentType(MediaType.APPLICATION_JSON)
-                .exchange();
+            .uri("/transactions")
+            .with(authentication(AuthUtils.mockAuth(userSid)))
+            .content(objectMapper.writeValueAsString(request))
+            .contentType(MediaType.APPLICATION_JSON)
+            .exchange();
 
         // Assert
         final CreateTransactionCommand capturedCommand = commandCaptor.getValue();
@@ -154,12 +159,12 @@ public class CreateTransactionControllerTest {
             final String expectedErrorField) {
 
         final MvcTestResult testResult = mvc.post()
-                .uri("/transactions")
-                .content(objectMapper.writeValueAsString(request))
-                .contentType(MediaType.APPLICATION_JSON)
-                .header("X-User-Sid", UUID.randomUUID())
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange();
+            .uri("/transactions")
+            .content(objectMapper.writeValueAsString(request))
+            .contentType(MediaType.APPLICATION_JSON)
+            .with(authentication(AuthUtils.mockAuth(UUID.randomUUID())))
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange();
 
         assertThat(testResult)
                 .hasStatus(HttpStatus.BAD_REQUEST)

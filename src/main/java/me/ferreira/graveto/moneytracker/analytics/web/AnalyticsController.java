@@ -9,6 +9,7 @@ import me.ferreira.graveto.moneytracker.analytics.service.payload.CategorySpendi
 import me.ferreira.graveto.moneytracker.analytics.web.dto.CashFlowReportResponseDTO;
 import me.ferreira.graveto.moneytracker.analytics.web.dto.CategorySpendingReportResponseDTO;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Year;
@@ -28,7 +29,7 @@ public class AnalyticsController {
 
     @GetMapping(path = ACCOUNT_SID_PATH + CASH_FLOW, produces = "application/json")
     public ResponseEntity<CashFlowReportResponseDTO> fetchCashFlowReport(
-            @RequestHeader("X-User-Sid") final UUID userSid,
+            @AuthenticationPrincipal final UUID userSid,
             @PathVariable final UUID accountSid,
             @RequestParam(required = false) final Integer year) {
 
@@ -60,7 +61,7 @@ public class AnalyticsController {
 
     @GetMapping(path = ACCOUNT_SID_PATH + CATEGORY_SPENDING, produces = "application/json")
     public ResponseEntity<CategorySpendingReportResponseDTO> fetchCategorySpendingReport(
-            @RequestHeader("X-User-Sid") final UUID userSid,
+            @AuthenticationPrincipal final UUID userSid,
             @PathVariable final UUID accountSid,
             @RequestParam(required = false) final Integer year) {
 

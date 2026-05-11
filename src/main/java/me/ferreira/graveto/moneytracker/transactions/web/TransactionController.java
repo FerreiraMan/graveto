@@ -20,6 +20,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.SortDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -39,8 +40,8 @@ public class TransactionController {
 
     @PostMapping(produces = "application/json")
     public ResponseEntity<TransactionResponseDTO> createTransaction(
-            @Valid @RequestBody final CreateTransactionRequestDTO requestDTO,
-            @RequestHeader("X-User-Sid") final UUID userSid) {
+        @Valid @RequestBody final CreateTransactionRequestDTO requestDTO,
+        @AuthenticationPrincipal final UUID userSid) {
 
         final CreateTransactionCommand command = new CreateTransactionCommand(
                 userSid,
@@ -76,9 +77,9 @@ public class TransactionController {
 
     @GetMapping(produces = "application/json")
     public ResponseEntity<Page<TransactionResponseDTO>> findAll(
-            @Valid @ModelAttribute final TransactionFilterRequestDTO requestDTO,
-            @RequestHeader("X-User-Sid") final UUID userSid,
-            @PageableDefault(size = 20) @SortDefault(sort = Transaction_.OCCURRED_AT, direction = Sort.Direction.DESC) final Pageable pageable) {
+        @Valid @ModelAttribute final TransactionFilterRequestDTO requestDTO,
+        @AuthenticationPrincipal final UUID userSid,
+        @PageableDefault(size = 20) @SortDefault(sort = Transaction_.OCCURRED_AT, direction = Sort.Direction.DESC) final Pageable pageable) {
 
         final FindAllTransactionsCommand command = new FindAllTransactionsCommand(
                 userSid,
@@ -110,8 +111,8 @@ public class TransactionController {
 
     @DeleteMapping(path = TRANSACTION_SID_PATH, produces = "application/json")
     public ResponseEntity<TransactionResponseDTO> deleteTransaction(
-            @RequestHeader("X-User-Sid") final UUID userSid,
-            @PathVariable final UUID sid) {
+        @AuthenticationPrincipal final UUID userSid,
+        @PathVariable final UUID sid) {
 
         final DeleteTransactionCommand command = new DeleteTransactionCommand(userSid, sid);
 
@@ -133,9 +134,9 @@ public class TransactionController {
 
     @PatchMapping(path = TRANSACTION_SID_PATH, produces = "application/json")
     public ResponseEntity<TransactionResponseDTO> updateTransaction(
-            @RequestHeader("X-User-Sid") final UUID userSid,
-            @PathVariable final UUID sid,
-            @Valid @RequestBody final UpdateTransactionRequestDTO requestDTO) {
+        @AuthenticationPrincipal final UUID userSid,
+        @PathVariable final UUID sid,
+        @Valid @RequestBody final UpdateTransactionRequestDTO requestDTO) {
 
         final UpdateTransactionCommand command = new UpdateTransactionCommand(
                 userSid,

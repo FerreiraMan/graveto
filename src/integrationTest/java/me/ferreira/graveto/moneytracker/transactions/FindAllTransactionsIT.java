@@ -120,7 +120,7 @@ public class FindAllTransactionsIT extends MoneyTrackerBaseIntegrationTest {
 
         // Act & Assert
         given()
-                .header("X-User-Sid", ACCOUNT_OWNER)
+                .header("Authorization", "Bearer " + ACCOUNT_OWNER)
                 .queryParam("accountSid", targetAccountSid)
                 .queryParam("categorySid", targetCategorySid)
                 .queryParam("startDate", startDate.toString())
@@ -154,7 +154,7 @@ public class FindAllTransactionsIT extends MoneyTrackerBaseIntegrationTest {
 
         // Act & Assert
         given()
-                .header("X-User-Sid", ACCOUNT_OWNER)
+                .header("Authorization", "Bearer " + ACCOUNT_OWNER)
                 .queryParam("accountSid", targetAccountSid)
                 .queryParam("status", targetStatus.name())
                 .queryParam("size", 100)
@@ -186,7 +186,7 @@ public class FindAllTransactionsIT extends MoneyTrackerBaseIntegrationTest {
         // Act
         final List<String> sids =
                 given()
-                    .header("X-User-Sid", ACCOUNT_OWNER)
+                    .header("Authorization", "Bearer " + ACCOUNT_OWNER)
                     .queryParam("accountSid", ACCOUNT_1.getSid())
                     .queryParam("categorySid", firstCategory.getSid())
                     .queryParam("type", TransactionType.EXPENSE.name())

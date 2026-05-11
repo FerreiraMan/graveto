@@ -12,6 +12,7 @@ import me.ferreira.graveto.moneytracker.accounts.web.dto.response.AccountSummary
 import me.ferreira.graveto.moneytracker.accounts.web.dto.response.FullAccountResponseDTO;
 import me.ferreira.graveto.moneytracker.accounts.web.dto.response.MembershipResponseDTO;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -30,11 +31,11 @@ public class AccountController {
 
     @PostMapping(produces = "application/json")
     public ResponseEntity<AccountResponseDTO> createAccount(
-            @Valid @RequestBody final CreateAccountRequestDTO requestDTO,
-            @RequestHeader("X-User-Sid") final UUID userSid) {
+        @AuthenticationPrincipal final UUID userSid,
+        @Valid @RequestBody final CreateAccountRequestDTO requestDTO) {
 
         final CreateAccountCommand command = new CreateAccountCommand(
-                userSid,  //TODO to add user sid interception by security into the create account command
+                userSid,
                 requestDTO.currency(),
                 requestDTO.initialBalance(),
                 requestDTO.institution()
@@ -58,8 +59,8 @@ public class AccountController {
 
     @GetMapping(path = ACCOUNT_SID_PATH, produces = "application/json")
     public ResponseEntity<FullAccountResponseDTO> fetchAccount(
-            @RequestHeader("X-User-Sid") final UUID userSid,
-            @PathVariable final UUID sid) {
+        @AuthenticationPrincipal final UUID userSid,
+        @PathVariable final UUID sid) {
 
         final FetchAccountCommand command = new FetchAccountCommand(userSid, sid);
 
@@ -83,7 +84,7 @@ public class AccountController {
 
     @GetMapping(produces = "application/json")
     public ResponseEntity<List<AccountSummaryResponseDTO>> fetchAllAccounts(
-            @RequestHeader("X-User-Sid") final UUID userSid) {
+        @AuthenticationPrincipal final UUID userSid) {
 
         final List<Account> accounts = accountService.fetchAllAccounts(userSid);
 

@@ -45,8 +45,8 @@ public class CreateAccountIT extends MoneyTrackerBaseIntegrationTest {
         // Act
         final String accountSid =
                 given().
-                        header("X-User-Sid", userSid).
                         contentType(ContentType.JSON).
+                        header("Authorization", "Bearer " + userSid).
                         body(requestDTO).
                 when().
                         post("/accounts").

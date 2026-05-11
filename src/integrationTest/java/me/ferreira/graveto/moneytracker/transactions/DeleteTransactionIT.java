@@ -50,7 +50,7 @@ public class DeleteTransactionIT extends MoneyTrackerBaseIntegrationTest {
 
         // Act
         given().
-                header("X-User-Sid", userSid).
+                header("Authorization", "Bearer " + userSid).
                 pathParam("sid", transaction.getSid()).
                 contentType(ContentType.JSON).
         when().

@@ -36,7 +36,7 @@ public class FetchAllAccountsIT extends MoneyTrackerBaseIntegrationTest {
         // Act
         final List<String> extractedSids =
                 given().
-                        header("X-User-Sid", userSid).
+                        header("Authorization", "Bearer " + userSid).
                 when().
                         get("/accounts").
                 then().
@@ -63,7 +63,7 @@ public class FetchAllAccountsIT extends MoneyTrackerBaseIntegrationTest {
 
         // Act & Assert
         given().
-                header("X-User-Sid", userSidWithoutAccount).
+                header("Authorization", "Bearer " + userSidWithoutAccount).
         when().
                 get("/accounts").
         then().

@@ -5,6 +5,8 @@ import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.UpdateTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.UpdateTransactionRequestDTO;
+import me.ferreira.graveto.moneytracker.utils.common.AuthUtils;
+import me.ferreira.graveto.moneytracker.utils.common.TestSecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -14,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -28,6 +31,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 
 @WebMvcTest(
     controllers = TransactionController.class,
@@ -35,6 +39,7 @@ import static org.mockito.Mockito.when;
             type = FilterType.REGEX,
             pattern = "me.ferreira.graveto.identity.*"
 ))
+@Import(TestSecurityConfig.class)
 public class UpdateTransactionControllerTest {
 
     @Autowired
@@ -66,11 +71,11 @@ public class UpdateTransactionControllerTest {
 
         // Act
         final MvcTestResult testResult = mvc.patch()
-                .uri("/transactions/{sid}", transactionSid)
-                .header("X-User-Sid", userSid)
-                .content(objectMapper.writeValueAsString(requestDTO))
-                .contentType(MediaType.APPLICATION_JSON)
-                .exchange();
+            .uri("/transactions/{sid}", transactionSid)
+            .with(authentication(AuthUtils.mockAuth(userSid)))
+            .content(objectMapper.writeValueAsString(requestDTO))
+            .contentType(MediaType.APPLICATION_JSON)
+            .exchange();
 
         // Assert
         assertThat(testResult).hasStatus(HttpStatus.OK);
@@ -104,14 +109,14 @@ public class UpdateTransactionControllerTest {
     void shouldReturnBadRequestForInvalidRequestOnTransactionUpdate(final String sid, final UpdateTransactionRequestDTO requestDTO) {
 
         final MvcTestResult testResult = mvc.patch()
-                .uri("/transactions/{transactionSid}", sid)
-                .header("X-User-Sid", UUID.randomUUID())
-                .content(objectMapper.writeValueAsString(requestDTO))
-                .contentType(MediaType.APPLICATION_JSON)
-                .exchange();
+            .uri("/transactions/{transactionSid}", sid)
+            .with(authentication(AuthUtils.mockAuth(UUID.randomUUID())))
+            .content(objectMapper.writeValueAsString(requestDTO))
+            .contentType(MediaType.APPLICATION_JSON)
+            .exchange();
 
         assertThat(testResult)
-                .hasStatus(HttpStatus.BAD_REQUEST);
+            .hasStatus(HttpStatus.BAD_REQUEST);
     }
 
     private static Transaction getTransaction(final UUID transactionSid) {

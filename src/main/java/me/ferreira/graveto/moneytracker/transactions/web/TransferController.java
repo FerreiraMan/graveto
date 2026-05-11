@@ -14,6 +14,7 @@ import me.ferreira.graveto.moneytracker.transactions.web.dto.request.transfer.Up
 import me.ferreira.graveto.moneytracker.transactions.web.dto.response.transfer.TransferResponseDTO;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -33,8 +34,8 @@ public class TransferController {
 
     @GetMapping(path = TRANSFER_SID_PATH, produces = "application/json")
     public ResponseEntity<TransferResponseDTO> fetchTransfer(
-            @RequestHeader("X-User-Sid") final UUID userSid,
-            @PathVariable final UUID correlationId) {
+        @AuthenticationPrincipal final UUID userSid,
+        @PathVariable final UUID correlationId) {
 
         final FetchTransferCommand command = new FetchTransferCommand(
                 userSid,
@@ -56,8 +57,8 @@ public class TransferController {
 
     @PostMapping(produces = "application/json")
     public ResponseEntity<TransferResponseDTO> createTransfer(
-            @Valid @RequestBody final CreateTransferRequestDTO requestDTO,
-            @RequestHeader("X-User-Sid") final UUID userSid) {
+        @Valid @RequestBody final CreateTransferRequestDTO requestDTO,
+        @AuthenticationPrincipal final UUID userSid) {
 
         final CreateTransferCommand command = new CreateTransferCommand(
                 userSid,
@@ -89,8 +90,8 @@ public class TransferController {
 
     @DeleteMapping(path = TRANSFER_SID_PATH, produces = "application/json")
     public ResponseEntity<TransferResponseDTO> deleteTransfer(
-            @RequestHeader("X-User-Sid") final UUID userSid,
-            @PathVariable final UUID correlationId) {
+        @AuthenticationPrincipal final UUID userSid,
+        @PathVariable final UUID correlationId) {
 
         final DeleteTransferCommand command = new DeleteTransferCommand(userSid, correlationId);
 
@@ -109,9 +110,9 @@ public class TransferController {
 
     @PatchMapping(path = TRANSFER_SID_PATH, produces = "application/json")
     public ResponseEntity<TransferResponseDTO> updateTransfer(
-            @RequestHeader("X-User-Sid") final UUID userSid,
-            @PathVariable final UUID correlationId,
-            @Valid @RequestBody final UpdateTransferRequestDTO requestDTO) {
+        @AuthenticationPrincipal final UUID userSid,
+        @PathVariable final UUID correlationId,
+        @Valid @RequestBody final UpdateTransferRequestDTO requestDTO) {
 
         final UpdateTransferCommand command = new UpdateTransferCommand(
                 userSid,

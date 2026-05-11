@@ -75,7 +75,7 @@ public class UpdateTransferIT extends MoneyTrackerBaseIntegrationTest {
 
         // Act
         given().
-                header("X-User-Sid", userSid).
+                header("Authorization", "Bearer " + userSid).
                 pathParam("correlationId", correlationId).
                 contentType(ContentType.JSON).
                 body(requestDTO).

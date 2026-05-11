@@ -80,7 +80,7 @@ public class FetchCategorySpendingReportIT extends MoneyTrackerBaseIntegrationTe
 
         // Act
         final Response response = given().
-                header("X-User-Sid", userSid).
+                header("Authorization", "Bearer " + userSid).
                 pathParam("accountSid", account.getSid()).
                 queryParam("year", targetYear).
                 contentType(ContentType.JSON).

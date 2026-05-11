@@ -60,7 +60,7 @@ public class CreateTransactionIT extends MoneyTrackerBaseIntegrationTest {
         // Act
         final String transactionSid =
                 given().
-                        header("X-User-Sid", userSid).
+                        header("Authorization", "Bearer " + userSid).
                         contentType(ContentType.JSON).
                         body(requestDTO).
                 when().

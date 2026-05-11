@@ -65,7 +65,7 @@ public class UpdateTransactionIT extends MoneyTrackerBaseIntegrationTest {
 
         // Act
         given().
-                header("X-User-Sid", userSid).
+                header("Authorization", "Bearer " + userSid).
                 pathParam("sid", transaction.getSid()).
                 contentType(ContentType.JSON).
                 body(requestDTO).

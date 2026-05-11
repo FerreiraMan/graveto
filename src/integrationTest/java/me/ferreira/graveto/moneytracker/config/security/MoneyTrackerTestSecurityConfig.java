@@ -11,7 +11,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @TestConfiguration
 @EnableWebSecurity
-public class MoneytrackerTestSecurityConfig {
+public class MoneyTrackerTestSecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {

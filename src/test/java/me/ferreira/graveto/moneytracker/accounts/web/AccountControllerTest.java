@@ -10,7 +10,9 @@ import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
 import me.ferreira.graveto.moneytracker.accounts.service.command.CreateAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.web.dto.request.CreateAccountRequestDTO;
+import me.ferreira.graveto.moneytracker.utils.common.AuthUtils;
 import me.ferreira.graveto.moneytracker.utils.common.ControllerUtils;
+import me.ferreira.graveto.moneytracker.utils.common.TestSecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -20,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -34,6 +37,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 
 @WebMvcTest(
     controllers = AccountController.class,
@@ -41,6 +45,7 @@ import static org.mockito.Mockito.when;
             type = FilterType.REGEX,
             pattern = "me.ferreira.graveto.identity.*"
 ))
+@Import(TestSecurityConfig.class)
 public class AccountControllerTest {
 
     @Autowired
@@ -70,11 +75,11 @@ public class AccountControllerTest {
 
         // Act
         final MvcTestResult testResult = mvc.post()
-                .uri("/accounts")
-                .header("X-User-Sid", userSid)
-                .content(ControllerUtils.asJsonString(request))
-                .contentType(MediaType.APPLICATION_JSON)
-                .exchange();
+            .uri("/accounts")
+            .with(authentication(AuthUtils.mockAuth(userSid)))
+            .content(ControllerUtils.asJsonString(request))
+            .contentType(MediaType.APPLICATION_JSON)
+            .exchange();
 
         // Assert
         assertThat(testResult).hasStatus(HttpStatus.CREATED);
@@ -98,17 +103,17 @@ public class AccountControllerTest {
             final String expectedErrorField) {
 
         final MvcTestResult testResult = mvc.post()
-                .uri("/accounts")
-                .content(ControllerUtils.asJsonString(request))
-                .contentType(MediaType.APPLICATION_JSON)
-                .header("X-User-Sid", UUID.randomUUID())
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange();
+            .uri("/accounts")
+            .content(ControllerUtils.asJsonString(request))
+            .contentType(MediaType.APPLICATION_JSON)
+            .with(authentication(AuthUtils.mockAuth(UUID.randomUUID())))
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange();
 
         assertThat(testResult)
-                .hasStatus(HttpStatus.BAD_REQUEST)
-                .bodyJson()
-                .hasPath("$.invalid_params." + expectedErrorField);
+            .hasStatus(HttpStatus.BAD_REQUEST)
+            .bodyJson()
+            .hasPath("$.invalid_params." + expectedErrorField);
     }
 
     @Test
@@ -135,9 +140,9 @@ public class AccountControllerTest {
 
         // Act
         final MvcTestResult testResult = mvc.get()
-                .uri("/accounts/{accountSid}", accountSid)
-                .header("X-User-Sid", userSid)
-                .exchange();
+            .uri("/accounts/{accountSid}", accountSid)
+            .with(authentication(AuthUtils.mockAuth(userSid)))
+            .exchange();
 
         // Assert
         assertThat(testResult).hasStatus(HttpStatus.OK);
@@ -164,12 +169,12 @@ public class AccountControllerTest {
     void shouldReturnBadRequestForInvalidRequestOnAccountFetch() {
 
         final MvcTestResult testResult = mvc.get()
-                .uri("/accounts/{accountSid}", "invalid_sid")
-                .header("X-User-Sid", UUID.randomUUID())
-                .exchange();
+            .uri("/accounts/{accountSid}", "invalid_sid")
+            .with(authentication(AuthUtils.mockAuth(UUID.randomUUID())))
+            .exchange();
 
         assertThat(testResult)
-                .hasStatus(HttpStatus.BAD_REQUEST);
+            .hasStatus(HttpStatus.BAD_REQUEST);
     }
 
     @Test
@@ -180,15 +185,15 @@ public class AccountControllerTest {
         when(service.fetchAccount(any())).thenThrow(new AccountNotFoundException(accountSid));
 
         final MvcTestResult testResult = mvc.get()
-                .uri("/accounts/{accountSid}", accountSid)
-                .header("X-User-Sid", UUID.randomUUID())
-                .exchange();
+            .uri("/accounts/{accountSid}", accountSid)
+            .with(authentication(AuthUtils.mockAuth(UUID.randomUUID())))
+            .exchange();
 
         assertThat(testResult)
-                .hasStatus(HttpStatus.NOT_FOUND)
-                .bodyJson()
-                .extractingPath("$.detail").asString()
-                .isEqualTo("Account with SID [%s] was not found or you do not have permission to view it.", accountSid);
+            .hasStatus(HttpStatus.NOT_FOUND)
+            .bodyJson()
+            .extractingPath("$.detail").asString()
+            .isEqualTo("Account with SID [%s] was not found or you do not have permission to view it.", accountSid);
     }
 
     @Test
@@ -210,9 +215,9 @@ public class AccountControllerTest {
 
         // Act
         final MvcTestResult testResult = mvc.get()
-                .uri("/accounts")
-                .header("X-User-Sid", userSid)
-                .exchange();
+            .uri("/accounts")
+            .with(authentication(AuthUtils.mockAuth(userSid)))
+            .exchange();
 
         // Assert
         assertThat(testResult).hasStatus(HttpStatus.OK);

@@ -58,7 +58,7 @@ public class CreateTransferIT extends MoneyTrackerBaseIntegrationTest {
 
         // Act
         final Response response = given().
-                header("X-User-Sid", userSid).
+                header("Authorization", "Bearer " + userSid).
                 contentType(ContentType.JSON).
                 body(requestDTO).
                 when().

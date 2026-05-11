@@ -41,7 +41,7 @@ public class FetchAllCategoriesIT extends MoneyTrackerBaseIntegrationTest {
         // Act & Assert
         final List<String> extractedSids =
                 given().
-                        header("X-User-Sid", ownerSid).
+                        header("Authorization", "Bearer " + ownerSid).
                 when().
                         get("/categories").
                 then().
@@ -60,7 +60,7 @@ public class FetchAllCategoriesIT extends MoneyTrackerBaseIntegrationTest {
         // Act & Assert
         final List<String> extractedSids =
                 given().
-                        header("X-User-Sid", UUID.randomUUID()).
+                        header("Authorization", "Bearer " + UUID.randomUUID()).
                 when().
                         get("/categories").
                 then().
@@ -82,7 +82,7 @@ public class FetchAllCategoriesIT extends MoneyTrackerBaseIntegrationTest {
         // Act & Assert
         final List<String> extractedSids =
                 given().
-                        header("X-User-Sid", UUID.randomUUID()).
+                        header("Authorization", "Bearer " + UUID.randomUUID()).
                 when().
                         get("/categories").
                 then().

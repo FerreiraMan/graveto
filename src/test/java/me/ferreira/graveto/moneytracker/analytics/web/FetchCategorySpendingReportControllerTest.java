@@ -3,12 +3,15 @@ package me.ferreira.graveto.moneytracker.analytics.web;
 import me.ferreira.graveto.moneytracker.analytics.service.AnalyticService;
 import me.ferreira.graveto.moneytracker.analytics.service.command.CategorySpendingCommand;
 import me.ferreira.graveto.moneytracker.analytics.service.payload.CategorySpendingResult;
+import me.ferreira.graveto.moneytracker.utils.common.AuthUtils;
+import me.ferreira.graveto.moneytracker.utils.common.TestSecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
@@ -23,6 +26,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 
 @WebMvcTest(
     controllers = AnalyticsController.class,
@@ -30,6 +34,7 @@ import static org.mockito.Mockito.when;
             type = FilterType.REGEX,
             pattern = "me.ferreira.graveto.identity.*"
 ))
+@Import(TestSecurityConfig.class)
 public class FetchCategorySpendingReportControllerTest {
 
     @Autowired
@@ -77,7 +82,7 @@ public class FetchCategorySpendingReportControllerTest {
         final MvcTestResult testResult = mvc.get()
                 .uri("/analytics/{accountSid}/category-spending", accountSid)
                 .queryParam("year", String.valueOf(targetYear))
-                .header("X-User-Sid", userSid)
+                .with(authentication(AuthUtils.mockAuth(userSid)))
                 .exchange();
 
         // Assert
@@ -122,7 +127,7 @@ public class FetchCategorySpendingReportControllerTest {
         // Act
         mvc.get()
                 .uri("/analytics/{accountSid}/category-spending", accountSid)
-                .header("X-User-Sid", userSid)
+                .with(authentication(AuthUtils.mockAuth(userSid)))
                 .exchange();
 
         // Assert
@@ -135,7 +140,7 @@ public class FetchCategorySpendingReportControllerTest {
         // Act
         final MvcTestResult testResult = mvc.get()
                 .uri("/analytics/{accountSid}/category-spending", "invalid-uuid-string")
-                .header("X-User-Sid", UUID.randomUUID())
+                .with(authentication(AuthUtils.mockAuth(UUID.randomUUID())))
                 .exchange();
 
         // Assert

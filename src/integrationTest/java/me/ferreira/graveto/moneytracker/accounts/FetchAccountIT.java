@@ -33,7 +33,7 @@ public class FetchAccountIT extends MoneyTrackerBaseIntegrationTest {
         // Act
         final Response response =
                 given().
-                        header("X-User-Sid", userSid).
+                        header("Authorization", "Bearer " + userSid).
                         pathParam("sid", savedAccount.getSid()).
                 when().
                         get("/accounts/{sid}").

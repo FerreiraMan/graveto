@@ -8,6 +8,7 @@ import me.ferreira.graveto.moneytracker.categories.service.command.CreateCategor
 import me.ferreira.graveto.moneytracker.categories.web.dto.request.CreateCategoryRequestDTO;
 import me.ferreira.graveto.moneytracker.categories.web.dto.response.CategoryResponseDTO;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -27,7 +28,7 @@ public class CategoryController {
 
     @GetMapping(produces = "application/json")
     public ResponseEntity<List<CategoryResponseDTO>> fetchAllCategories(
-            @RequestHeader("X-User-Sid") final UUID userSid) {
+            @AuthenticationPrincipal final UUID userSid) {
 
         final List<Category> categories = categoryService.fetchAllCategories(userSid);
 
@@ -47,7 +48,7 @@ public class CategoryController {
     @PostMapping(produces = "application/json")
     public ResponseEntity<CategoryResponseDTO> createCategory(
             @Valid @RequestBody final CreateCategoryRequestDTO requestDTO,
-            @RequestHeader("X-User-Sid") final UUID userSid) {
+            @AuthenticationPrincipal final UUID userSid) {
 
         final CreateCategoryCommand command = new CreateCategoryCommand(
             userSid,

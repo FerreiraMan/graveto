@@ -60,7 +60,7 @@ public class FetchTransferIT extends MoneyTrackerBaseIntegrationTest {
 
         // Act & Assert
         given().
-                header("X-User-Sid", userSid).
+                header("Authorization", "Bearer " + userSid).
                 pathParam("correlationId", correlationId).
                 contentType(ContentType.JSON).
         when().

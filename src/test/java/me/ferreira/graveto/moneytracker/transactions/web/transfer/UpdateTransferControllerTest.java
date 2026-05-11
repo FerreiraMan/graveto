@@ -8,6 +8,8 @@ import me.ferreira.graveto.moneytracker.transactions.service.transfer.payload.Tr
 import me.ferreira.graveto.moneytracker.transactions.web.TransferController;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.transfer.UpdateTransferRequestDTO;
 import me.ferreira.graveto.moneytracker.utils.AccountUtils;
+import me.ferreira.graveto.moneytracker.utils.common.AuthUtils;
+import me.ferreira.graveto.moneytracker.utils.common.TestSecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -17,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -31,6 +34,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 
 @WebMvcTest(
     controllers = TransferController.class,
@@ -38,6 +42,7 @@ import static org.mockito.Mockito.when;
             type = FilterType.REGEX,
             pattern = "me.ferreira.graveto.identity.*"
 ))
+@Import(TestSecurityConfig.class)
 public class UpdateTransferControllerTest {
 
     @Autowired
@@ -75,11 +80,11 @@ public class UpdateTransferControllerTest {
 
         // Act
         final MvcTestResult testResult = mvc.patch()
-                .uri("/transfers/{correlationId}", correlationId)
-                .header("X-User-Sid", userSid)
-                .content(objectMapper.writeValueAsString(requestDTO))
-                .contentType(MediaType.APPLICATION_JSON)
-                .exchange();
+            .uri("/transfers/{correlationId}", correlationId)
+            .with(authentication(AuthUtils.mockAuth(userSid)))
+            .content(objectMapper.writeValueAsString(requestDTO))
+            .contentType(MediaType.APPLICATION_JSON)
+            .exchange();
 
         // Assert
         assertThat(testResult).hasStatus(HttpStatus.OK);
@@ -100,11 +105,11 @@ public class UpdateTransferControllerTest {
     void shouldReturnBadRequestForInvalidRequestOnTransferUpdate(final String correlationId, final UpdateTransferRequestDTO requestDTO) {
 
         final MvcTestResult testResult = mvc.patch()
-                .uri("/transfers/{correlationId}", correlationId)
-                .header("X-User-Sid", UUID.randomUUID())
-                .content(objectMapper.writeValueAsString(requestDTO))
-                .contentType(MediaType.APPLICATION_JSON)
-                .exchange();
+            .uri("/transfers/{correlationId}", correlationId)
+            .with(authentication(AuthUtils.mockAuth(UUID.randomUUID())))
+            .content(objectMapper.writeValueAsString(requestDTO))
+            .contentType(MediaType.APPLICATION_JSON)
+            .exchange();
 
         assertThat(testResult).hasStatus(HttpStatus.BAD_REQUEST);
     }

@@ -47,7 +47,7 @@ public class CreateCategoryIT extends MoneyTrackerBaseIntegrationTest {
         // Act
         final String categorySid =
                 given().
-                        header("X-User-Sid", userSid).
+                        header("Authorization", "Bearer " + userSid).
                         contentType(ContentType.JSON).
                         body(requestDTO).
                 when().

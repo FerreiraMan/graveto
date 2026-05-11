@@ -7,12 +7,15 @@ import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction_;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.FindAllTransactionsCommand;
+import me.ferreira.graveto.moneytracker.utils.common.AuthUtils;
+import me.ferreira.graveto.moneytracker.utils.common.TestSecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Sort;
@@ -32,6 +35,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 
 @WebMvcTest(
     controllers = TransactionController.class,
@@ -39,6 +43,7 @@ import static org.mockito.Mockito.when;
             type = FilterType.REGEX,
             pattern = "me.ferreira.graveto.identity.*"
 ))
+@Import(TestSecurityConfig.class)
 public class FindAllTransactionsControllerTest {
 
     @Autowired
@@ -79,18 +84,18 @@ public class FindAllTransactionsControllerTest {
 
         // Act
         final MvcTestResult testResult = mvc.get()
-                .uri("/transactions")
-                .param("accountSid", String.valueOf(accountSid))
-                .param("categorySid", String.valueOf(categorySid))
-                .param("startDate", startDate.toString())
-                .param("endDate", endDate.toString())
-                .param("type", TransactionType.EXPENSE.name())
-                .param("page", String.valueOf(1))
-                .param("size", String.valueOf(10))
-                .param("sort", "amount,asc")
-                .header("X-User-Sid", userSid)
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange();
+            .uri("/transactions")
+            .param("accountSid", String.valueOf(accountSid))
+            .param("categorySid", String.valueOf(categorySid))
+            .param("startDate", startDate.toString())
+            .param("endDate", endDate.toString())
+            .param("type", TransactionType.EXPENSE.name())
+            .param("page", String.valueOf(1))
+            .param("size", String.valueOf(10))
+            .param("sort", "amount,asc")
+            .with(authentication(AuthUtils.mockAuth(userSid)))
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange();
 
         // Assert
         assertThat(testResult).hasStatus(HttpStatus.OK);
@@ -131,11 +136,11 @@ public class FindAllTransactionsControllerTest {
 
         // Act
         final MvcTestResult testResult = mvc.get()
-                .uri("/transactions")
-                .param("accountSid", String.valueOf(accountSid))
-                .header("X-User-Sid", userSid)
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange();
+            .uri("/transactions")
+            .param("accountSid", String.valueOf(accountSid))
+            .with(authentication(AuthUtils.mockAuth(userSid)))
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange();
 
         // Assert
         assertThat(testResult).hasStatus(HttpStatus.OK);
@@ -152,16 +157,16 @@ public class FindAllTransactionsControllerTest {
     void shouldReturnBadRequestWhenAccountSidIsMissing() {
         // Act
         final MvcTestResult testResult = mvc.get()
-                .uri("/transactions")
-                .header("X-User-Sid", UUID.randomUUID())
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange();
+            .uri("/transactions")
+            .with(authentication(AuthUtils.mockAuth(UUID.randomUUID())))
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange();
 
         // Assert
         assertThat(testResult)
-                .hasStatus(HttpStatus.BAD_REQUEST)
-                .bodyJson()
-                .hasPath("$.invalid_params.accountSid");
+            .hasStatus(HttpStatus.BAD_REQUEST)
+            .bodyJson()
+            .hasPath("$.invalid_params.accountSid");
     }
 
 }
