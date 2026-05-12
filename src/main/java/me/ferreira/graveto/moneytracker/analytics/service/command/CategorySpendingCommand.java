@@ -6,4 +6,5 @@ public record CategorySpendingCommand(
     UUID userSid,
     UUID accountSid,
     int year
-) {}
+) {
+}

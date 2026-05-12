@@ -1,5 +1,15 @@
 package me.ferreira.graveto.moneytracker.transactions.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.math.BigDecimal;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Stream;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsException;
 import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
@@ -23,167 +33,157 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Stream;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 @ExtendWith(MockitoExtension.class)
 public class DeleteTransactionServiceImplTest {
 
-    @InjectMocks
-    private TransactionServiceImpl service;
-    @Mock
-    private CategoryService categoryService;
-    @Mock
-    private AccountService accountService;
-    @Mock
-    private TransactionRepository transactionRepository;
+  @InjectMocks
+  private TransactionServiceImpl service;
+  @Mock
+  private CategoryService categoryService;
+  @Mock
+  private AccountService accountService;
+  @Mock
+  private TransactionRepository transactionRepository;
 
-    @Test
-    void shouldThrowIfTransactionIsNotFoundDuringTransactionDeletion() {
-        // Arrange
-        final UUID transactionSid = UUID.randomUUID();
+  private static Stream<Arguments> resultingBalanceAccordingToType() {
+    return Stream.of(
+        Arguments.of(TransactionType.EXPENSE, BigDecimal.valueOf(11)),
+        Arguments.of(TransactionType.INCOME, BigDecimal.valueOf(9))
+    );
+  }
 
-        when(transactionRepository.findBySid(any())).thenThrow(new TransactionNotFoundException(transactionSid));
+  @Test
+  void shouldThrowIfTransactionIsNotFoundDuringTransactionDeletion() {
+    // Arrange
+    final UUID transactionSid = UUID.randomUUID();
 
-        // Act & Assert
-        assertThatThrownBy(() -> {
-            service.deleteTransaction(Mockito.mock(DeleteTransactionCommand.class));
-        }).isInstanceOf(TransactionNotFoundException.class)
-                .hasMessage("Transaction with SID ["+ transactionSid + "] was not found.");
-    }
+    when(transactionRepository.findBySid(any())).thenThrow(new TransactionNotFoundException(transactionSid));
 
-    @Test
-    void shouldThrowIfTransactionHasCorrelationIdDuringTransactionDeletion() {
-        // Arrange
-        final UUID transactionSid = UUID.randomUUID();
-        final Transaction transaction = new Transaction();
-        transaction.setSid(transactionSid);
-        transaction.setCorrelationId(UUID.randomUUID());
+    // Act & Assert
+    assertThatThrownBy(() -> {
+      service.deleteTransaction(Mockito.mock(DeleteTransactionCommand.class));
+    }).isInstanceOf(TransactionNotFoundException.class)
+        .hasMessage("Transaction with SID [" + transactionSid + "] was not found.");
+  }
 
-        when(transactionRepository.findBySid(any())).thenReturn(Optional.of(transaction));
+  @Test
+  void shouldThrowIfTransactionHasCorrelationIdDuringTransactionDeletion() {
+    // Arrange
+    final UUID transactionSid = UUID.randomUUID();
+    final Transaction transaction = new Transaction();
+    transaction.setSid(transactionSid);
+    transaction.setCorrelationId(UUID.randomUUID());
 
-        // Act & Assert
-        assertThatThrownBy(() -> {
-            service.deleteTransaction(Mockito.mock(DeleteTransactionCommand.class));
-        }).isInstanceOf(IllegalStateException.class)
-                .hasMessage("This transaction is part of a transfer and must be deleted via the Transfer API.");
-    }
+    when(transactionRepository.findBySid(any())).thenReturn(Optional.of(transaction));
 
-    @Test
-    void shouldThrowIfTransactionIsOfTypeTransferDuringTransactionDeletion() {
-        // Arrange
-        final UUID transactionSid = UUID.randomUUID();
-        final Transaction transaction = new Transaction();
-        transaction.setSid(transactionSid);
-        transaction.setType(TransactionType.TRANSFER_IN);
+    // Act & Assert
+    assertThatThrownBy(() -> {
+      service.deleteTransaction(Mockito.mock(DeleteTransactionCommand.class));
+    }).isInstanceOf(IllegalStateException.class)
+        .hasMessage("This transaction is part of a transfer and must be deleted via the Transfer API.");
+  }
 
-        when(transactionRepository.findBySid(any())).thenReturn(Optional.of(transaction));
+  @Test
+  void shouldThrowIfTransactionIsOfTypeTransferDuringTransactionDeletion() {
+    // Arrange
+    final UUID transactionSid = UUID.randomUUID();
+    final Transaction transaction = new Transaction();
+    transaction.setSid(transactionSid);
+    transaction.setType(TransactionType.TRANSFER_IN);
 
-        // Act & Assert
-        assertThatThrownBy(() -> {
-            service.deleteTransaction(Mockito.mock(DeleteTransactionCommand.class));
-        }).isInstanceOf(IllegalStateException.class)
-                .hasMessage("This transaction is part of a transfer and must be deleted via the Transfer API.");
-    }
+    when(transactionRepository.findBySid(any())).thenReturn(Optional.of(transaction));
 
-    @Test
-    void shouldThrowIfUserIsNotAuthorizedToDeleteTransaction() {
-        // Arrange
-        final UUID userSid = UUID.randomUUID();
-        final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, null);
-        final DeleteTransactionCommand command = mock(DeleteTransactionCommand.class);
-        final Transaction transaction = new Transaction();
-        transaction.setAccount(account);
+    // Act & Assert
+    assertThatThrownBy(() -> {
+      service.deleteTransaction(Mockito.mock(DeleteTransactionCommand.class));
+    }).isInstanceOf(IllegalStateException.class)
+        .hasMessage("This transaction is part of a transfer and must be deleted via the Transfer API.");
+  }
 
-        when(transactionRepository.findBySid(any())).thenReturn(Optional.of(transaction));
-        when(command.userSid()).thenReturn(userSid);
+  @Test
+  void shouldThrowIfUserIsNotAuthorizedToDeleteTransaction() {
+    // Arrange
+    final UUID userSid = UUID.randomUUID();
+    final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, null);
+    final DeleteTransactionCommand command = mock(DeleteTransactionCommand.class);
+    final Transaction transaction = new Transaction();
+    transaction.setAccount(account);
 
-        // Act & Assert
-        assertThatThrownBy(() -> {
-            service.deleteTransaction(command);
-        }).isInstanceOf(InsufficientPermissionsException.class)
-                .hasMessage("User does not have the required role to delete transactions for this account.");
-    }
+    when(transactionRepository.findBySid(any())).thenReturn(Optional.of(transaction));
+    when(command.userSid()).thenReturn(userSid);
 
-    @Test
-    void shouldThrowIfTransactionIsAlreadyDeleted() {
-        // Arrange
-        final UUID userSid = UUID.randomUUID();
-        final UUID transactionSid = UUID.randomUUID();
-        final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, MembershipRole.OWNER);
-        final DeleteTransactionCommand command = new DeleteTransactionCommand(userSid, transactionSid);
-        final Transaction transaction = new Transaction();
-        transaction.setAccount(account);
-        transaction.setStatus(TransactionStatus.DELETED);
+    // Act & Assert
+    assertThatThrownBy(() -> {
+      service.deleteTransaction(command);
+    }).isInstanceOf(InsufficientPermissionsException.class)
+        .hasMessage("User does not have the required role to delete transactions for this account.");
+  }
 
-        when(transactionRepository.findBySid(transactionSid)).thenReturn(Optional.of(transaction));
+  @Test
+  void shouldThrowIfTransactionIsAlreadyDeleted() {
+    // Arrange
+    final UUID userSid = UUID.randomUUID();
+    final UUID transactionSid = UUID.randomUUID();
+    final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, MembershipRole.OWNER);
+    final DeleteTransactionCommand command = new DeleteTransactionCommand(userSid, transactionSid);
+    final Transaction transaction = new Transaction();
+    transaction.setAccount(account);
+    transaction.setStatus(TransactionStatus.DELETED);
 
-        // Act & Assert
-        assertThatThrownBy(() -> {
-            service.deleteTransaction(command);
-        }).isInstanceOf(IllegalStateException.class)
-                .hasMessage("Transaction is already deleted.");
-    }
+    when(transactionRepository.findBySid(transactionSid)).thenReturn(Optional.of(transaction));
 
-    @Test
-    void shouldMarkTransactionAsDeleted() {
-        // Arrange
-        final UUID userSid = UUID.randomUUID();
-        final UUID transactionSid = UUID.randomUUID();
-        final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, MembershipRole.OWNER);
-        final DeleteTransactionCommand command = new DeleteTransactionCommand(userSid, transactionSid);
-        final Transaction transaction = new Transaction();
-        transaction.setAccount(account);
-        transaction.setAmount(BigDecimal.TEN);
-        transaction.setStatus(TransactionStatus.ACTIVE);
-        transaction.setType(TransactionType.EXPENSE);
+    // Act & Assert
+    assertThatThrownBy(() -> {
+      service.deleteTransaction(command);
+    }).isInstanceOf(IllegalStateException.class)
+        .hasMessage("Transaction is already deleted.");
+  }
 
-        when(transactionRepository.findBySid(transactionSid)).thenReturn(Optional.of(transaction));
+  @Test
+  void shouldMarkTransactionAsDeleted() {
+    // Arrange
+    final UUID userSid = UUID.randomUUID();
+    final UUID transactionSid = UUID.randomUUID();
+    final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, MembershipRole.OWNER);
+    final DeleteTransactionCommand command = new DeleteTransactionCommand(userSid, transactionSid);
+    final Transaction transaction = new Transaction();
+    transaction.setAccount(account);
+    transaction.setAmount(BigDecimal.TEN);
+    transaction.setStatus(TransactionStatus.ACTIVE);
+    transaction.setType(TransactionType.EXPENSE);
 
-        // Act
-        final Transaction deletedTransaction = service.deleteTransaction(command);
+    when(transactionRepository.findBySid(transactionSid)).thenReturn(Optional.of(transaction));
 
-        // Assert
-        assertThat(deletedTransaction.getStatus()).isEqualTo(TransactionStatus.DELETED);
-        assertThat(deletedTransaction.getDeletedAt()).isNotNull();
-    }
+    // Act
+    final Transaction deletedTransaction = service.deleteTransaction(command);
 
-    @ParameterizedTest
-    @MethodSource("resultingBalanceAccordingToType")
-    void shouldRevertBalanceOnAccountAfterTransactionDeletion(final TransactionType type, final BigDecimal resultingBalance) {
-        // Arrange
-        final UUID userSid = UUID.randomUUID();
-        final UUID transactionSid = UUID.randomUUID();
-        final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, MembershipRole.OWNER);
-        final DeleteTransactionCommand command = new DeleteTransactionCommand(userSid, transactionSid);
-        final Transaction transaction = new Transaction();
-        transaction.setAccount(account);
-        transaction.setAmount(BigDecimal.ONE);
-        transaction.setStatus(TransactionStatus.ACTIVE);
-        transaction.setType(type);
+    // Assert
+    assertThat(deletedTransaction.getStatus()).isEqualTo(TransactionStatus.DELETED);
+    assertThat(deletedTransaction.getDeletedAt()).isNotNull();
+  }
 
-        when(transactionRepository.findBySid(transactionSid)).thenReturn(Optional.of(transaction));
+  @ParameterizedTest
+  @MethodSource("resultingBalanceAccordingToType")
+  void shouldRevertBalanceOnAccountAfterTransactionDeletion(final TransactionType type,
+                                                            final BigDecimal resultingBalance) {
+    // Arrange
+    final UUID userSid = UUID.randomUUID();
+    final UUID transactionSid = UUID.randomUUID();
+    final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, MembershipRole.OWNER);
+    final DeleteTransactionCommand command = new DeleteTransactionCommand(userSid, transactionSid);
+    final Transaction transaction = new Transaction();
+    transaction.setAccount(account);
+    transaction.setAmount(BigDecimal.ONE);
+    transaction.setStatus(TransactionStatus.ACTIVE);
+    transaction.setType(type);
 
-        // Act
-        service.deleteTransaction(command);
+    when(transactionRepository.findBySid(transactionSid)).thenReturn(Optional.of(transaction));
 
-        // Assert
-        assertThat(account.getBalance()).isEqualByComparingTo(resultingBalance);
-    }
+    // Act
+    service.deleteTransaction(command);
 
-    private static Stream<Arguments> resultingBalanceAccordingToType() {
-        return Stream.of(
-                Arguments.of(TransactionType.EXPENSE, BigDecimal.valueOf(11)),
-                Arguments.of(TransactionType.INCOME, BigDecimal.valueOf(9))
-        );
-    }
+    // Assert
+    assertThat(account.getBalance()).isEqualByComparingTo(resultingBalance);
+  }
 
 }

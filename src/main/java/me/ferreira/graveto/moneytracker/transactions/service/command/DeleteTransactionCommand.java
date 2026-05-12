@@ -5,4 +5,5 @@ import java.util.UUID;
 public record DeleteTransactionCommand(
     UUID userSid,
     UUID transactionSid
-) {}
+) {
+}

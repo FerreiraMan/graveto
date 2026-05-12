@@ -1,10 +1,9 @@
 package me.ferreira.graveto.moneytracker.transactions.service.command;
 
-import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 
 public record CreateTransactionCommand(
     UUID userSid,
@@ -14,4 +13,5 @@ public record CreateTransactionCommand(
     String description,
     TransactionType transactionType,
     LocalDateTime occurredAt
-) {}
+) {
+}

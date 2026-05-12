@@ -4,7 +4,9 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 public interface CategoryAggregateProjection {
-    int getMonth();
-    UUID getCategorySid();
-    BigDecimal getTotalAmount();
+  int getMonth();
+
+  UUID getCategorySid();
+
+  BigDecimal getTotalAmount();
 }

@@ -11,4 +11,5 @@ public record CreateTransferCommand(
     BigDecimal amount,
     String description,
     LocalDateTime occurredAt
-) {}
+) {
+}

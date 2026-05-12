@@ -6,8 +6,8 @@ import me.ferreira.graveto.identity.service.command.RegisterCommand;
 
 public interface AuthService {
 
-    String login(LoginCommand command);
+  String login(LoginCommand command);
 
-    User register(RegisterCommand command);
+  User register(RegisterCommand command);
 
 }

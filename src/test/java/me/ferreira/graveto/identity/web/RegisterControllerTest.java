@@ -1,11 +1,19 @@
 package me.ferreira.graveto.identity.web;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.UUID;
+import java.util.stream.Stream;
 import me.ferreira.graveto.common.web.exception.identity.UserAlreadyExistsException;
 import me.ferreira.graveto.identity.domain.User;
 import me.ferreira.graveto.identity.service.AuthService;
 import me.ferreira.graveto.identity.service.JwtService;
 import me.ferreira.graveto.identity.service.command.RegisterCommand;
-import me.ferreira.graveto.identity.web.request.RegisterRequestDTO;
+import me.ferreira.graveto.identity.web.request.RegisterRequestDto;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -20,133 +28,126 @@ import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 import tools.jackson.databind.ObjectMapper;
 
-import java.util.UUID;
-import java.util.stream.Stream;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 @WebMvcTest(controllers = AuthController.class)
 public class RegisterControllerTest {
 
-    @Autowired
-    private MockMvcTester mvc;
-    @Autowired
-    private ObjectMapper objectMapper;
-    @MockitoBean
-    private AuthService service;
-    @MockitoBean
-    private JwtService jwtService;
+  @Autowired
+  private MockMvcTester mvc;
+  @Autowired
+  private ObjectMapper objectMapper;
+  @MockitoBean
+  private AuthService service;
+  @MockitoBean
+  private JwtService jwtService;
 
-    @Test
-    void shouldReturnCreatedWithLocationHeaderWhenRegistrationIsSuccessful() {
-        // Arrange
-        final UUID generatedSid = UUID.randomUUID();
-        final String email = "test@graveto.com";
-        final RegisterRequestDTO request = new RegisterRequestDTO(email, "password123");
+  private static Stream<Arguments> invalidRegisterRequests() {
+    return Stream.of(
+        // Email constraints
+        Arguments.of(new RegisterRequestDto("  ", "password123"), "email"),
+        Arguments.of(new RegisterRequestDto("", "password123"), "email"),
+        Arguments.of(new RegisterRequestDto(null, "password123"), "email"),
+        Arguments.of(new RegisterRequestDto("not-an-email", "password123"), "email"),
+        Arguments.of(new RegisterRequestDto("email@email@", "password123"), "email"),
 
-        final User mockUser = mock(User.class);
-        when(mockUser.getSid()).thenReturn(generatedSid);
-        when(mockUser.getEmail()).thenReturn(email);
-        when(service.register(any(RegisterCommand.class))).thenReturn(mockUser);
+        // Password constraints
+        Arguments.of(new RegisterRequestDto("test@graveto.com", "    "), "password"),
+        Arguments.of(new RegisterRequestDto("test@graveto.com", ""), "password"),
+        Arguments.of(new RegisterRequestDto("test@graveto.com", null), "password"),
+        Arguments.of(new RegisterRequestDto("test@graveto.com", "1234"), "password")
+    );
+  }
 
-        // Act & Assert
-        final MvcTestResult testResult = mvc.post()
-                .uri("/auth/register")
-                .content(objectMapper.writeValueAsString(request))
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange();
+  @Test
+  void shouldReturnCreatedWithLocationHeaderWhenRegistrationIsSuccessful() {
+    // Arrange
+    final UUID generatedSid = UUID.randomUUID();
+    final String email = "test@graveto.com";
+    final RegisterRequestDto request = new RegisterRequestDto(email, "password123");
 
-        assertThat(testResult)
-                .hasStatus(HttpStatus.CREATED)
-                .hasHeader("Location", "http://localhost/auth/register/" + generatedSid)
-                .bodyJson()
-                .extractingPath("$.sid").asString().isEqualTo(generatedSid.toString());
-    }
+    final User mockUser = mock(User.class);
+    when(mockUser.getSid()).thenReturn(generatedSid);
+    when(mockUser.getEmail()).thenReturn(email);
+    when(service.register(any(RegisterCommand.class))).thenReturn(mockUser);
 
-    @Test
-    void shouldTrimAndLowerCaseEmailBeforePassingToRegisterService() {
-        // Arrange
-        final RegisterRequestDTO request = new RegisterRequestDTO("WeIrDCaSe@GraVeTo.com", "password123");
+    // Act & Assert
+    final MvcTestResult testResult = mvc.post()
+        .uri("/auth/register")
+        .content(objectMapper.writeValueAsString(request))
+        .contentType(MediaType.APPLICATION_JSON)
+        .accept(MediaType.APPLICATION_JSON)
+        .exchange();
 
-        final User mockUser = mock(User.class);
-        when(mockUser.getSid()).thenReturn(UUID.randomUUID());
-        when(mockUser.getEmail()).thenReturn("weirdcase@graveto.com");
-        when(service.register(any(RegisterCommand.class))).thenReturn(mockUser);
+    assertThat(testResult)
+        .hasStatus(HttpStatus.CREATED)
+        .hasHeader("Location", "http://localhost/auth/register/" + generatedSid)
+        .bodyJson()
+        .extractingPath("$.sid").asString().isEqualTo(generatedSid.toString());
+  }
 
-        // Act
-        mvc.post()
-                .uri("/auth/register")
-                .content(objectMapper.writeValueAsString(request))
-                .contentType(MediaType.APPLICATION_JSON)
-                .exchange();
+  @Test
+  void shouldTrimAndLowerCaseEmailBeforePassingToRegisterService() {
+    // Arrange
+    final RegisterRequestDto request = new RegisterRequestDto("WeIrDCaSe@GraVeTo.com", "password123");
 
-        // Assert
-        final ArgumentCaptor<RegisterCommand> commandCaptor = ArgumentCaptor.forClass(RegisterCommand.class);
-        verify(service).register(commandCaptor.capture());
+    final User mockUser = mock(User.class);
+    when(mockUser.getSid()).thenReturn(UUID.randomUUID());
+    when(mockUser.getEmail()).thenReturn("weirdcase@graveto.com");
+    when(service.register(any(RegisterCommand.class))).thenReturn(mockUser);
 
-        final RegisterCommand capturedCommand = commandCaptor.getValue();
+    // Act
+    mvc.post()
+        .uri("/auth/register")
+        .content(objectMapper.writeValueAsString(request))
+        .contentType(MediaType.APPLICATION_JSON)
+        .exchange();
 
-        assertThat(capturedCommand.email()).isEqualTo("weirdcase@graveto.com");
-        assertThat(capturedCommand.password()).isEqualTo("password123");
-    }
+    // Assert
+    final ArgumentCaptor<RegisterCommand> commandCaptor = ArgumentCaptor.forClass(RegisterCommand.class);
+    verify(service).register(commandCaptor.capture());
 
-    @Test
-    void shouldReturnConflictWhenUserAlreadyExists() {
-        // Arrange
-        final RegisterRequestDTO request = new RegisterRequestDTO("test@graveto.com", "password123");
+    final RegisterCommand capturedCommand = commandCaptor.getValue();
 
-        // Simulate the DB rejecting the duplicate email
-        when(service.register(any(RegisterCommand.class)))
-                .thenThrow(new UserAlreadyExistsException()); // Assuming this is your custom exception
+    assertThat(capturedCommand.email()).isEqualTo("weirdcase@graveto.com");
+    assertThat(capturedCommand.password()).isEqualTo("password123");
+  }
 
-        // Act & Assert
-        final MvcTestResult testResult = mvc.post()
-                .uri("/auth/register")
-                .content(objectMapper.writeValueAsString(request))
-                .contentType(MediaType.APPLICATION_JSON)
-                .exchange();
+  @Test
+  void shouldReturnConflictWhenUserAlreadyExists() {
+    // Arrange
+    final RegisterRequestDto request = new RegisterRequestDto("test@graveto.com", "password123");
 
-        // Assuming your @RestControllerAdvice maps this specific exception to a 409
-        assertThat(testResult).hasStatus(HttpStatus.CONFLICT);
-    }
+    // Simulate the DB rejecting the duplicate email
+    when(service.register(any(RegisterCommand.class)))
+        .thenThrow(new UserAlreadyExistsException()); // Assuming this is your custom exception
 
-    @ParameterizedTest
-    @MethodSource("invalidRegisterRequests")
-    void shouldReturnBadRequestForInvalidPayloadsOnRegisterRequest(
-            final RegisterRequestDTO request,
-            final String expectedErrorField) {
+    // Act & Assert
+    final MvcTestResult testResult = mvc.post()
+        .uri("/auth/register")
+        .content(objectMapper.writeValueAsString(request))
+        .contentType(MediaType.APPLICATION_JSON)
+        .exchange();
 
-        final MvcTestResult testResult = mvc.post()
-                .uri("/auth/register")
-                .content(objectMapper.writeValueAsString(request))
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange();
+    // Assuming your @RestControllerAdvice maps this specific exception to a 409
+    assertThat(testResult).hasStatus(HttpStatus.CONFLICT);
+  }
 
-        assertThat(testResult)
-                .hasStatus(HttpStatus.BAD_REQUEST)
-                .bodyJson()
-                .hasPath("$.invalid_params." + expectedErrorField);
-    }
+  @ParameterizedTest
+  @MethodSource("invalidRegisterRequests")
+  void shouldReturnBadRequestForInvalidPayloadsOnRegisterRequest(
+      final RegisterRequestDto request,
+      final String expectedErrorField) {
 
-    private static Stream<Arguments> invalidRegisterRequests() {
-        return Stream.of(
-                // Email constraints
-                Arguments.of(new RegisterRequestDTO("  ", "password123"), "email"),
-                Arguments.of(new RegisterRequestDTO("", "password123"), "email"),
-                Arguments.of(new RegisterRequestDTO(null, "password123"), "email"),
-                Arguments.of(new RegisterRequestDTO("not-an-email", "password123"), "email"),
-                Arguments.of(new RegisterRequestDTO("email@email@", "password123"), "email"),
+    final MvcTestResult testResult = mvc.post()
+        .uri("/auth/register")
+        .content(objectMapper.writeValueAsString(request))
+        .contentType(MediaType.APPLICATION_JSON)
+        .accept(MediaType.APPLICATION_JSON)
+        .exchange();
 
-                // Password constraints
-                Arguments.of(new RegisterRequestDTO("test@graveto.com", "    "), "password"),
-                Arguments.of(new RegisterRequestDTO("test@graveto.com", ""), "password"),
-                Arguments.of(new RegisterRequestDTO("test@graveto.com", null), "password"),
-                Arguments.of(new RegisterRequestDTO("test@graveto.com", "1234"), "password")
-        );
-    }
+    assertThat(testResult)
+        .hasStatus(HttpStatus.BAD_REQUEST)
+        .bodyJson()
+        .hasPath("$.invalid_params." + expectedErrorField);
+  }
 
 }

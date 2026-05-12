@@ -13,17 +13,17 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class MoneyTrackerTestSecurityConfig {
 
-    @Bean
-    public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
-        http
-            .csrf(AbstractHttpConfigurer::disable)
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .addFilterBefore(new MockSecurityFilter(), UsernamePasswordAuthenticationFilter.class)
-            .authorizeHttpRequests(auth -> auth
-                    .anyRequest().authenticated()
-            );
+  @Bean
+  public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
+    http
+        .csrf(AbstractHttpConfigurer::disable)
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .addFilterBefore(new MockSecurityFilter(), UsernamePasswordAuthenticationFilter.class)
+        .authorizeHttpRequests(auth -> auth
+            .anyRequest().authenticated()
+        );
 
-        return http.build();
-    }
+    return http.build();
+  }
 
 }

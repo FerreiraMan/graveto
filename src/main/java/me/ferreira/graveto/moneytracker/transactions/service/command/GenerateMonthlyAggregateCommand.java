@@ -5,4 +5,5 @@ import java.util.UUID;
 public record GenerateMonthlyAggregateCommand(
     int year,
     UUID accountSid
-) {}
+) {
+}

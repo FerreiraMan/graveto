@@ -5,11 +5,11 @@ import org.springframework.modulith.core.ApplicationModules;
 
 public class GravetoArchitectureTest {
 
-    @Test
-    void verifyModularStructure() {
+  @Test
+  void verifyModularStructure() {
 
-        final ApplicationModules applicationModules = ApplicationModules.of(GravetoApplication.class);
-        applicationModules.verify();
-    }
+    final ApplicationModules applicationModules = ApplicationModules.of(GravetoApplication.class);
+    applicationModules.verify();
+  }
 
 }

@@ -10,4 +10,5 @@ public record UpdateTransferCommand(
     BigDecimal amount,
     String description,
     LocalDateTime occurredAt
-) {}
+) {
+}

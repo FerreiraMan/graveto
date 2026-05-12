@@ -20,34 +20,35 @@ import org.springframework.transaction.annotation.Transactional;
 @AllArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-    private final AuthenticationManager authenticationManager;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
-    private final UserRepository userRepository;
+  private final AuthenticationManager authenticationManager;
+  private final PasswordEncoder passwordEncoder;
+  private final JwtService jwtService;
+  private final UserRepository userRepository;
 
-    @Override
-    @Transactional
-    public String login(final LoginCommand command) {
+  @Override
+  @Transactional
+  public String login(final LoginCommand command) {
 
-        final Authentication authenticationRequest = UsernamePasswordAuthenticationToken.unauthenticated(command.email(), command.password());
-        final Authentication authenticationResponse = authenticationManager.authenticate(authenticationRequest);
+    final Authentication authenticationRequest =
+        UsernamePasswordAuthenticationToken.unauthenticated(command.email(), command.password());
+    final Authentication authenticationResponse = authenticationManager.authenticate(authenticationRequest);
 
-        final AuthUser authUser = (AuthUser) authenticationResponse.getPrincipal();
-        return jwtService.createJwtToken(authUser);
-    }
+    final AuthUser authUser = (AuthUser) authenticationResponse.getPrincipal();
+    return jwtService.createJwtToken(authUser);
+  }
 
-    @Override
-    @Transactional
-    public User register(final RegisterCommand command) {
+  @Override
+  @Transactional
+  public User register(final RegisterCommand command) {
 
-        userRepository.fetchUserCredentials(command.email()).ifPresent(user -> {
-            throw new UserAlreadyExistsException();
-        });
+    userRepository.fetchUserCredentials(command.email()).ifPresent(user -> {
+      throw new UserAlreadyExistsException();
+    });
 
-        final String passwordHash = passwordEncoder.encode(command.password());
-        final User user = User.create(command.email(), passwordHash);
+    final String passwordHash = passwordEncoder.encode(command.password());
+    final User user = User.create(command.email(), passwordHash);
 
-        return userRepository.save(user);
-    }
+    return userRepository.save(user);
+  }
 
 }

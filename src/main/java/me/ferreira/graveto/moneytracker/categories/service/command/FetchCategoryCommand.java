@@ -5,4 +5,5 @@ import java.util.UUID;
 public record FetchCategoryCommand(
     UUID userSid,
     UUID categorySid
-) {}
+) {
+}

@@ -26,6 +26,7 @@ jobs:
           level: error
           fail_level: any
           filter_mode: nofilter
+          checkstyle_config: config/checkstyle/checkstyle.xml
 
   actions-lint:
     name: runner / github-actions-lint

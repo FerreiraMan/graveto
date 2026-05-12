@@ -15,13 +15,13 @@ import org.springframework.modulith.test.ApplicationModuleTest;
 @Import(IdentityIntegrationTestConfiguration.class)
 public abstract class IdentityBaseIntegrationTest {
 
-    @LocalServerPort
-    private int port;
+  @LocalServerPort
+  private int port;
 
-    @BeforeEach
-    void setupRestAssured() {
-        RestAssured.port = this.port;
-        RestAssured.basePath = "/api";
-    }
+  @BeforeEach
+  void setupRestAssured() {
+    RestAssured.port = this.port;
+    RestAssured.basePath = "/api";
+  }
 
 }

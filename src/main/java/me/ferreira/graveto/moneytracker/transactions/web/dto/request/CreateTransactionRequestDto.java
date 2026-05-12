@@ -3,13 +3,12 @@ package me.ferreira.graveto.moneytracker.transactions.web.dto.request;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Positive;
-import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 
-public record CreateTransactionRequestDTO(
+public record CreateTransactionRequestDto(
     @NotNull(message = "Account identification is required.")
     UUID accountSid,
 
@@ -27,4 +26,5 @@ public record CreateTransactionRequestDTO(
 
     @PastOrPresent(message = "Only past or present transactions allowed.")
     LocalDateTime occurredAt
-) {}
+) {
+}

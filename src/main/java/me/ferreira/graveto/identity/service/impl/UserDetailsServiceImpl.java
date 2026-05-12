@@ -14,21 +14,21 @@ import org.springframework.transaction.annotation.Transactional;
 @AllArgsConstructor
 public class UserDetailsServiceImpl implements UserDetailsService {
 
-    private final UserRepository userRepository;
+  private final UserRepository userRepository;
 
-    @Override
-    @Transactional(readOnly = true)
-    public UserDetails loadUserByUsername(final String email) throws UsernameNotFoundException {
+  @Override
+  @Transactional(readOnly = true)
+  public UserDetails loadUserByUsername(final String email) throws UsernameNotFoundException {
 
-        final User user = userRepository.fetchUserCredentials(email)
-                .orElseThrow(() -> new UsernameNotFoundException(email + " not found."));
+    final User user = userRepository.fetchUserCredentials(email)
+        .orElseThrow(() -> new UsernameNotFoundException(email + " not found."));
 
-        return new AuthUser(
-                user.getSid(),
-                user.getEmail(),
-                user.getPassword(),
-                user.getRole()
-        );
-    }
+    return new AuthUser(
+        user.getSid(),
+        user.getEmail(),
+        user.getPassword(),
+        user.getRole()
+    );
+  }
 
 }

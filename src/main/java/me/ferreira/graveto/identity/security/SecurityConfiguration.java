@@ -17,37 +17,38 @@ import org.springframework.security.web.authentication.logout.LogoutFilter;
 @EnableWebSecurity
 public class SecurityConfiguration {
 
-    private final JwtAuthenticationFilter jwtAuthFilter;
-    private final ExceptionHandlerFilter exceptionHandlerFilter;
+  private final JwtAuthenticationFilter jwtAuthFilter;
+  private final ExceptionHandlerFilter exceptionHandlerFilter;
 
-    public SecurityConfiguration(final JwtAuthenticationFilter filter, final ExceptionHandlerFilter exceptionHandlerFilter) {
-        this.jwtAuthFilter = filter;
-        this.exceptionHandlerFilter = exceptionHandlerFilter;
-    }
+  public SecurityConfiguration(final JwtAuthenticationFilter filter,
+                               final ExceptionHandlerFilter exceptionHandlerFilter) {
+    this.jwtAuthFilter = filter;
+    this.exceptionHandlerFilter = exceptionHandlerFilter;
+  }
 
-    @Bean
-    public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception{
+  @Bean
+  public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
 
-        http
-            .csrf(AbstractHttpConfigurer::disable)
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .addFilterBefore(exceptionHandlerFilter, LogoutFilter.class)
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**", "/error").permitAll()
-                .anyRequest().authenticated()
+    http
+        .csrf(AbstractHttpConfigurer::disable)
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .addFilterBefore(exceptionHandlerFilter, LogoutFilter.class)
+        .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/auth/**", "/error").permitAll()
+            .anyRequest().authenticated()
         );
-        return http.build();
-    }
+    return http.build();
+  }
 
-    @Bean
-    public AuthenticationManager authenticationManager(final AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
-    }
+  @Bean
+  public AuthenticationManager authenticationManager(final AuthenticationConfiguration config) throws Exception {
+    return config.getAuthenticationManager();
+  }
 
-    @Bean
-    public BCryptPasswordEncoder bCryptPasswordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+  @Bean
+  public BCryptPasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder();
+  }
 
 }

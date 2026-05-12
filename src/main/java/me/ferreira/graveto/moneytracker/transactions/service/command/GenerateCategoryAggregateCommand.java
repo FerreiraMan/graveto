@@ -5,4 +5,5 @@ import java.util.UUID;
 public record GenerateCategoryAggregateCommand(
     int year,
     UUID accountSid
-) {}
+) {
+}
