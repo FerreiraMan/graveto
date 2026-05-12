@@ -25,8 +25,22 @@ jobs:
           java-version: '21'
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
       - name: Build with Gradle
-        run: ./gradlew build
+        run: ./gradlew build -x checkstyleMain -x checkstyleTest
+      - name: Test Report
+        uses: dorny/test-reporter@v3
+        if: always()
+        with:
+          name: gradle-test-reports
+          path: build/reports/tests/
+          reporter: jest-junit
+      - name: Upload Application JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: graveto-app
+          path: build/libs/graveto.jar
 
   checkstyle:
     name: runner / checkstyle
