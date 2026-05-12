@@ -22,10 +22,9 @@ jobs:
         uses: dbelyaev/action-checkstyle@v3.10.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-check
+          reporter: github-pr-check
           level: error
           fail_level: any
-          filter_mode: nofilter
           checkstyle_config: config/checkstyle/checkstyle.xml
 
   actions-lint:
@@ -38,9 +37,8 @@ jobs:
         uses: reviewdog/action-actionlint@v1.72.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-check
+          reporter: github-pr-check
           fail_level: any
-          filter_mode: nofilter
 
   dotenv-lint:
     name: runner / dotenv-linter
@@ -52,8 +50,8 @@ jobs:
         uses: dotenv-linter/action-dotenv-linter@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-check
-          filter_mode: nofilter
+          reporter: github-pr-check
+          fail_level: any
 
   dockerfile-lint:
     name: runner / hadolint
@@ -65,8 +63,8 @@ jobs:
         uses: reviewdog/action-hadolint@v1.50.5
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-check
-          filter_mode: nofilter
+          reporter: github-pr-check
+          fail_level: any
 
   yaml-lint:
     name: runner / yamllint
@@ -78,8 +76,7 @@ jobs:
         uses: reviewdog/action-yamllint@v1.21.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-check
-          filter_mode: nofilter
+          reporter: github-pr-check
           fail_level: any
           yamllint_flags: '-d "{extends: default}" .'
 
@@ -93,6 +90,6 @@ jobs:
         uses: reviewdog/action-misspell@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-check
-          filter_mode: nofilter
+          reporter: github-pr-check
+          fail_level: any
           locale: "US"
