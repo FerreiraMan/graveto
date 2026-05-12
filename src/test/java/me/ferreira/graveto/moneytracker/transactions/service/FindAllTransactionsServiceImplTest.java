@@ -1,5 +1,14 @@
 package me.ferreira.graveto.moneytracker.transactions.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDate;
+import java.util.UUID;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
@@ -20,79 +29,71 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.time.LocalDate;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 public class FindAllTransactionsServiceImplTest {
 
-    @InjectMocks
-    private TransactionServiceImpl service;
-    @Mock
-    private CategoryService categoryService;
-    @Mock
-    private AccountService accountService;
-    @Mock
-    private TransactionRepository transactionRepository;
+  @InjectMocks
+  private TransactionServiceImpl service;
+  @Mock
+  private CategoryService categoryService;
+  @Mock
+  private AccountService accountService;
+  @Mock
+  private TransactionRepository transactionRepository;
 
-    @Test
-    void shouldThrowIfAccountIsNotFoundDuringFindAllTransactions() {
-        // Arrange
-        final UUID accountSid = UUID.randomUUID();
+  @Test
+  void shouldThrowIfAccountIsNotFoundDuringFindAllTransactions() {
+    // Arrange
+    final UUID accountSid = UUID.randomUUID();
 
-        when(accountService.fetchAccount(any())).thenThrow(new AccountNotFoundException(accountSid));
+    when(accountService.fetchAccount(any())).thenThrow(new AccountNotFoundException(accountSid));
 
-        // Act & Assert
-        assertThatThrownBy(() -> {
-            service.findAll(mock(FindAllTransactionsCommand.class));
-        }).isInstanceOf(AccountNotFoundException.class)
-                .hasMessage("Account with SID ["+ accountSid + "] was not found or you do not have permission to view it.");
-    }
+    // Act & Assert
+    assertThatThrownBy(() -> {
+      service.findAll(mock(FindAllTransactionsCommand.class));
+    }).isInstanceOf(AccountNotFoundException.class)
+        .hasMessage("Account with SID [" + accountSid + "] was not found or you do not have permission to view it.");
+  }
 
-    @Test
-    void shouldReturnAllTransactionsPageable() {
-        // Arrange
-        final UUID userSid = UUID.randomUUID();
-        final UUID accountSid = UUID.randomUUID();
-        final UUID categorySid = UUID.randomUUID();
-        final LocalDate startDate = LocalDate.of(2025, 1, 1);
-        final LocalDate endDate = LocalDate.of(2025, 12, 1);
-        final Pageable pageable = Pageable.ofSize(2);
+  @Test
+  void shouldReturnAllTransactionsPageable() {
+    // Arrange
+    final UUID userSid = UUID.randomUUID();
+    final UUID accountSid = UUID.randomUUID();
+    final UUID categorySid = UUID.randomUUID();
+    final LocalDate startDate = LocalDate.of(2025, 1, 1);
+    final LocalDate endDate = LocalDate.of(2025, 12, 1);
+    final Pageable pageable = Pageable.ofSize(2);
 
-        final FindAllTransactionsCommand command = new FindAllTransactionsCommand(
-                userSid,
-                accountSid,
-                categorySid,
-                startDate,
-                endDate,
-                TransactionType.EXPENSE,
-                TransactionStatus.ACTIVE,
-                pageable
-        );
+    final FindAllTransactionsCommand command = new FindAllTransactionsCommand(
+        userSid,
+        accountSid,
+        categorySid,
+        startDate,
+        endDate,
+        TransactionType.EXPENSE,
+        TransactionStatus.ACTIVE,
+        pageable
+    );
 
-        when(accountService.fetchAccount(any(FetchAccountCommand.class))).thenReturn(mock(Account.class));
-        final Page<Transaction> expectedPage = mock(Page.class);
-        when(transactionRepository.findAll(command)).thenReturn(expectedPage);
+    when(accountService.fetchAccount(any(FetchAccountCommand.class))).thenReturn(mock(Account.class));
+    final Page<Transaction> expectedPage = mock(Page.class);
+    when(transactionRepository.findAll(command)).thenReturn(expectedPage);
 
-        // Act
-        final Page<Transaction> actualPage = service.findAll(command);
+    // Act
+    final Page<Transaction> actualPage = service.findAll(command);
 
-        // Assert
-        assertThat(actualPage).isSameAs(expectedPage);
+    // Assert
+    assertThat(actualPage).isSameAs(expectedPage);
 
-        final ArgumentCaptor<FetchAccountCommand> fetchAccountCaptor = ArgumentCaptor.forClass(FetchAccountCommand.class);
-        verify(accountService).fetchAccount(fetchAccountCaptor.capture());
+    final ArgumentCaptor<FetchAccountCommand> fetchAccountCaptor = ArgumentCaptor.forClass(FetchAccountCommand.class);
+    verify(accountService).fetchAccount(fetchAccountCaptor.capture());
 
-        final FetchAccountCommand passedFetchCommand = fetchAccountCaptor.getValue();
-        assertThat(passedFetchCommand.userSid()).isEqualTo(userSid);
-        assertThat(passedFetchCommand.accountSid()).isEqualTo(accountSid);
+    final FetchAccountCommand passedFetchCommand = fetchAccountCaptor.getValue();
+    assertThat(passedFetchCommand.userSid()).isEqualTo(userSid);
+    assertThat(passedFetchCommand.accountSid()).isEqualTo(accountSid);
 
-        verify(transactionRepository).findAll(command);
-    }
+    verify(transactionRepository).findAll(command);
+  }
 
 }

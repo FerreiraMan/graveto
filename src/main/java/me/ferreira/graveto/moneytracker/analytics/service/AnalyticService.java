@@ -7,8 +7,8 @@ import me.ferreira.graveto.moneytracker.analytics.service.payload.CategorySpendi
 
 public interface AnalyticService {
 
-    CashFlowResult generateCashFlowReport(CashFlowCommand command);
+  CashFlowResult generateCashFlowReport(CashFlowCommand command);
 
-    CategorySpendingResult generateCategorySpendingReport(CategorySpendingCommand command);
+  CategorySpendingResult generateCategorySpendingReport(CategorySpendingCommand command);
 
 }

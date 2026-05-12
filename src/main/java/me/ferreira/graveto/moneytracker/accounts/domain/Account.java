@@ -1,6 +1,21 @@
 package me.ferreira.graveto.moneytracker.accounts.domain;
 
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.function.Predicate;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,12 +26,6 @@ import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermiss
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import org.hibernate.annotations.DynamicUpdate;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.function.Predicate;
-
 @Getter
 @Setter
 @DynamicUpdate
@@ -26,85 +35,85 @@ import java.util.function.Predicate;
 @Table(name = "accounts")
 public class Account extends BaseEntity {
 
-    private static final BigDecimal DEFAULT_ACCOUNT_OPENING_BALANCE = BigDecimal.ZERO;
+  private static final BigDecimal DEFAULT_ACCOUNT_OPENING_BALANCE = BigDecimal.ZERO;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "accounts_id_seq")
-    @SequenceGenerator(name = "accounts_id_seq", sequenceName = "accounts_id_seq", allocationSize = 1)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "accounts_id_seq")
+  @SequenceGenerator(name = "accounts_id_seq", sequenceName = "accounts_id_seq", allocationSize = 1)
+  private Long id;
 
-    @Column(nullable = false, unique = true)
-    private UUID sid;
+  @Column(nullable = false, unique = true)
+  private UUID sid;
 
-    @Column(nullable = false)
-    private BigDecimal balance = DEFAULT_ACCOUNT_OPENING_BALANCE;
+  @Column(nullable = false)
+  private BigDecimal balance = DEFAULT_ACCOUNT_OPENING_BALANCE;
 
-    @Column(nullable = false, name = "base_currency")
-    @Enumerated(EnumType.STRING)
-    private Currency baseCurrency;
+  @Column(nullable = false, name = "base_currency")
+  @Enumerated(EnumType.STRING)
+  private Currency baseCurrency;
 
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private AccountStatus status;
+  @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
+  private AccountStatus status;
 
-    @Column
-    private String institution;
+  @Column
+  private String institution;
 
-    @OneToMany(mappedBy = "account", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    private List<AccountMembership> memberships = new ArrayList<>();
+  @OneToMany(mappedBy = "account", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+  private List<AccountMembership> memberships = new ArrayList<>();
 
-    public void addMembership(final AccountMembership membership) {
-        memberships.add(membership);
-        membership.setAccount(this);
+  public static Account create(
+      final BigDecimal initialBalance,
+      final Currency baseCurrency,
+      final String institution) {
+
+    final Account acc = new Account();
+
+    acc.setSid(UUID.randomUUID());
+
+    acc.setBalance(initialBalance);
+    acc.setBaseCurrency(baseCurrency);
+    acc.setInstitution(institution);
+
+    acc.setStatus(AccountStatus.ACTIVE);
+
+    return acc;
+  }
+
+  public void addMembership(final AccountMembership membership) {
+    memberships.add(membership);
+    membership.setAccount(this);
+  }
+
+  public void validateUserPermission(final UUID userSid,
+                                     final Predicate<MembershipRole> permissionCheck,
+                                     final String actionName) {
+
+    final boolean isAuthorized = this.memberships.stream()
+        .filter(m -> userSid.equals(m.getUserSid()))
+        .findFirst()
+        .map(AccountMembership::getRole)
+        .filter(permissionCheck)
+        .isPresent();
+
+    if (!isAuthorized) {
+      throw new InsufficientPermissionsException(actionName);
     }
+  }
 
-    public static Account create(
-            final BigDecimal initialBalance,
-            final Currency baseCurrency,
-            final String institution) {
+  public void updateBalance(
+      final BigDecimal amount,
+      final TransactionType transactionType) {
 
-        final Account acc = new Account();
+    this.balance = this.balance.add(
+        amount.multiply(BigDecimal.valueOf(transactionType.getBalanceMultiplier()))
+    );
+  }
 
-        acc.setSid(UUID.randomUUID());
+  public void reverseBalanceImpact(final BigDecimal amount, final TransactionType transactionType) {
 
-        acc.setBalance(initialBalance);
-        acc.setBaseCurrency(baseCurrency);
-        acc.setInstitution(institution);
-
-        acc.setStatus(AccountStatus.ACTIVE);
-
-        return acc;
-    }
-
-    public void validateUserPermission(final UUID userSid,
-                                       final Predicate<MembershipRole> permissionCheck,
-                                       final String actionName) {
-
-        final boolean isAuthorized = this.memberships.stream()
-                .filter(m -> userSid.equals(m.getUserSid()))
-                .findFirst()
-                .map(AccountMembership::getRole)
-                .filter(permissionCheck)
-                .isPresent();
-
-        if (!isAuthorized) {
-            throw new InsufficientPermissionsException(actionName);
-        }
-    }
-
-    public void updateBalance(
-            final BigDecimal amount,
-            final TransactionType transactionType) {
-
-        this.balance = this.balance.add(
-                amount.multiply(BigDecimal.valueOf(transactionType.getBalanceMultiplier()))
-        );
-    }
-
-    public void reverseBalanceImpact(final BigDecimal amount, final TransactionType transactionType) {
-
-        final BigDecimal reverseMultiplier = BigDecimal.valueOf(transactionType.getBalanceMultiplier()).negate();
-        this.balance = this.balance.add(amount.multiply(reverseMultiplier));
-    }
+    final BigDecimal reverseMultiplier = BigDecimal.valueOf(transactionType.getBalanceMultiplier()).negate();
+    this.balance = this.balance.add(amount.multiply(reverseMultiplier));
+  }
 
 }

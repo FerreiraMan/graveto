@@ -1,5 +1,14 @@
 package me.ferreira.graveto.moneytracker.accounts.web;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Stream;
 import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
@@ -9,7 +18,7 @@ import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
 import me.ferreira.graveto.moneytracker.accounts.service.command.CreateAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
-import me.ferreira.graveto.moneytracker.accounts.web.dto.request.CreateAccountRequestDTO;
+import me.ferreira.graveto.moneytracker.accounts.web.dto.request.CreateAccountRequestDto;
 import me.ferreira.graveto.moneytracker.utils.common.AuthUtils;
 import me.ferreira.graveto.moneytracker.utils.common.ControllerUtils;
 import me.ferreira.graveto.moneytracker.utils.common.TestSecurityConfig;
@@ -29,217 +38,207 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Stream;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
-
 @WebMvcTest(
     controllers = AccountController.class,
     excludeFilters = @ComponentScan.Filter(
-            type = FilterType.REGEX,
-            pattern = "me.ferreira.graveto.identity.*"
-))
+        type = FilterType.REGEX,
+        pattern = "me.ferreira.graveto.identity.*"
+    ))
 @Import(TestSecurityConfig.class)
 public class AccountControllerTest {
 
-    @Autowired
-    private MockMvcTester mvc;
-    @MockitoBean
-    private AccountService service;
+  @Autowired
+  private MockMvcTester mvc;
+  @MockitoBean
+  private AccountService service;
 
-    @Test
-    void shouldCreateAccountSuccessfully() {
-        // Arrange
-        final UUID userSid = UUID.randomUUID();
-        final UUID accountSid = UUID.randomUUID();
-        final BigDecimal initialBalance = BigDecimal.TEN;
+  private static Stream<Arguments> invalidAccountCreationRequests() {
+    return Stream.of(
+        Arguments.of(new CreateAccountRequestDto(BigDecimal.valueOf(-10), Currency.EUR, "Santander"), "initialBalance"),
+        Arguments.of(new CreateAccountRequestDto(BigDecimal.TEN, null, "Santander"), "currency"),
+        Arguments.of(new CreateAccountRequestDto(BigDecimal.TEN, Currency.EUR, ""), "institution"),
+        Arguments.of(new CreateAccountRequestDto(null, Currency.EUR, "Santander"), "initialBalance")
+    );
+  }
 
-        final CreateAccountRequestDTO request = new CreateAccountRequestDTO(
-                initialBalance,
-                Currency.EUR,
-                "Santander"
-        );
+  @Test
+  void shouldCreateAccountSuccessfully() {
+    // Arrange
+    final UUID userSid = UUID.randomUUID();
+    final UUID accountSid = UUID.randomUUID();
+    final BigDecimal initialBalance = BigDecimal.TEN;
 
-        final Account mockAccount = new Account();
-        mockAccount.setSid(accountSid);
-        mockAccount.setStatus(AccountStatus.ACTIVE);
+    final CreateAccountRequestDto request = new CreateAccountRequestDto(
+        initialBalance,
+        Currency.EUR,
+        "Santander"
+    );
 
-        final ArgumentCaptor<CreateAccountCommand> commandCaptor = ArgumentCaptor.forClass(CreateAccountCommand.class);
-        when(service.createAccount(commandCaptor.capture())).thenReturn(mockAccount);
+    final Account mockAccount = new Account();
+    mockAccount.setSid(accountSid);
+    mockAccount.setStatus(AccountStatus.ACTIVE);
 
-        // Act
-        final MvcTestResult testResult = mvc.post()
-            .uri("/accounts")
-            .with(authentication(AuthUtils.mockAuth(userSid)))
-            .content(ControllerUtils.asJsonString(request))
-            .contentType(MediaType.APPLICATION_JSON)
-            .exchange();
+    final ArgumentCaptor<CreateAccountCommand> commandCaptor = ArgumentCaptor.forClass(CreateAccountCommand.class);
+    when(service.createAccount(commandCaptor.capture())).thenReturn(mockAccount);
 
-        // Assert
-        assertThat(testResult).hasStatus(HttpStatus.CREATED);
-        assertThat(testResult).hasHeader("Location", "http://localhost/accounts/" + accountSid);
+    // Act
+    final MvcTestResult testResult = mvc.post()
+        .uri("/accounts")
+        .with(authentication(AuthUtils.mockAuth(userSid)))
+        .content(ControllerUtils.asJsonString(request))
+        .contentType(MediaType.APPLICATION_JSON)
+        .exchange();
 
-        final CreateAccountCommand capturedCommand = commandCaptor.getValue();
-        assertThat(capturedCommand.userSid()).isEqualTo(userSid);
-        assertThat(capturedCommand.baseCurrency()).isEqualTo(Currency.EUR);
-        assertThat(capturedCommand.initialBalance()).isEqualByComparingTo(initialBalance);
+    // Assert
+    assertThat(testResult).hasStatus(HttpStatus.CREATED);
+    assertThat(testResult).hasHeader("Location", "http://localhost/accounts/" + accountSid);
 
-        assertThat(testResult).bodyJson()
-                .extractingPath("$.sid").asString().isEqualTo(accountSid.toString());
-        assertThat(testResult).bodyJson()
-                .extractingPath("$.status").asString().isEqualTo(AccountStatus.ACTIVE.name());
-    }
+    final CreateAccountCommand capturedCommand = commandCaptor.getValue();
+    assertThat(capturedCommand.userSid()).isEqualTo(userSid);
+    assertThat(capturedCommand.baseCurrency()).isEqualTo(Currency.EUR);
+    assertThat(capturedCommand.initialBalance()).isEqualByComparingTo(initialBalance);
 
-    @ParameterizedTest
-    @MethodSource("invalidAccountCreationRequests")
-    void shouldReturnBadRequestForInvalidPayloadsOnAccountCreation(
-            final CreateAccountRequestDTO request,
-            final String expectedErrorField) {
+    assertThat(testResult).bodyJson()
+        .extractingPath("$.sid").asString().isEqualTo(accountSid.toString());
+    assertThat(testResult).bodyJson()
+        .extractingPath("$.status").asString().isEqualTo(AccountStatus.ACTIVE.name());
+  }
 
-        final MvcTestResult testResult = mvc.post()
-            .uri("/accounts")
-            .content(ControllerUtils.asJsonString(request))
-            .contentType(MediaType.APPLICATION_JSON)
-            .with(authentication(AuthUtils.mockAuth(UUID.randomUUID())))
-            .accept(MediaType.APPLICATION_JSON)
-            .exchange();
+  @ParameterizedTest
+  @MethodSource("invalidAccountCreationRequests")
+  void shouldReturnBadRequestForInvalidPayloadsOnAccountCreation(
+      final CreateAccountRequestDto request,
+      final String expectedErrorField) {
 
-        assertThat(testResult)
-            .hasStatus(HttpStatus.BAD_REQUEST)
-            .bodyJson()
-            .hasPath("$.invalid_params." + expectedErrorField);
-    }
+    final MvcTestResult testResult = mvc.post()
+        .uri("/accounts")
+        .content(ControllerUtils.asJsonString(request))
+        .contentType(MediaType.APPLICATION_JSON)
+        .with(authentication(AuthUtils.mockAuth(UUID.randomUUID())))
+        .accept(MediaType.APPLICATION_JSON)
+        .exchange();
 
-    @Test
-    void shouldFetchAccountSuccessfully() {
-        // Arrange
-        final UUID accountSid = UUID.randomUUID();
-        final UUID userSid = UUID.randomUUID();
-        final BigDecimal balance = BigDecimal.TEN;
-        final String institution = "Santander";
+    assertThat(testResult)
+        .hasStatus(HttpStatus.BAD_REQUEST)
+        .bodyJson()
+        .hasPath("$.invalid_params." + expectedErrorField);
+  }
 
-        final Account mockAccount = new Account();
-        final AccountMembership mockMembership = new AccountMembership();
-        mockAccount.setSid(accountSid);
-        mockAccount.setBalance(balance);
-        mockAccount.setBaseCurrency(Currency.EUR);
-        mockAccount.setInstitution(institution);
-        mockAccount.setStatus(AccountStatus.ACTIVE);
-        mockMembership.setUserSid(userSid);
-        mockMembership.setRole(MembershipRole.OWNER);
-        mockAccount.setMemberships(List.of(mockMembership));
+  @Test
+  void shouldFetchAccountSuccessfully() {
+    // Arrange
+    final UUID accountSid = UUID.randomUUID();
+    final UUID userSid = UUID.randomUUID();
+    final BigDecimal balance = BigDecimal.TEN;
+    final String institution = "Santander";
 
-        final ArgumentCaptor<FetchAccountCommand> commandCaptor = ArgumentCaptor.forClass(FetchAccountCommand.class);
-        when(service.fetchAccount(commandCaptor.capture())).thenReturn(mockAccount);
+    final Account mockAccount = new Account();
+    final AccountMembership mockMembership = new AccountMembership();
+    mockAccount.setSid(accountSid);
+    mockAccount.setBalance(balance);
+    mockAccount.setBaseCurrency(Currency.EUR);
+    mockAccount.setInstitution(institution);
+    mockAccount.setStatus(AccountStatus.ACTIVE);
+    mockMembership.setUserSid(userSid);
+    mockMembership.setRole(MembershipRole.OWNER);
+    mockAccount.setMemberships(List.of(mockMembership));
 
-        // Act
-        final MvcTestResult testResult = mvc.get()
-            .uri("/accounts/{accountSid}", accountSid)
-            .with(authentication(AuthUtils.mockAuth(userSid)))
-            .exchange();
+    final ArgumentCaptor<FetchAccountCommand> commandCaptor = ArgumentCaptor.forClass(FetchAccountCommand.class);
+    when(service.fetchAccount(commandCaptor.capture())).thenReturn(mockAccount);
 
-        // Assert
-        assertThat(testResult).hasStatus(HttpStatus.OK);
+    // Act
+    final MvcTestResult testResult = mvc.get()
+        .uri("/accounts/{accountSid}", accountSid)
+        .with(authentication(AuthUtils.mockAuth(userSid)))
+        .exchange();
 
-        final FetchAccountCommand capturedCommand = commandCaptor.getValue();
-        assertThat(capturedCommand.accountSid()).isEqualTo(accountSid);
-        assertThat(capturedCommand.userSid()).isEqualTo(userSid);
+    // Assert
+    assertThat(testResult).hasStatus(HttpStatus.OK);
 
-        assertThat(testResult).bodyJson()
-                .extractingPath("$.sid").asString().isEqualTo(accountSid.toString());
-        assertThat(testResult).bodyJson()
-                .extractingPath("$.status").asString().isEqualTo(AccountStatus.ACTIVE.name());
-        assertThat(testResult).bodyJson()
-                .extractingPath("$.institution").asString().isEqualTo(institution);
-        assertThat(testResult).bodyJson()
-                .extractingPath("$.baseCurrency").asString().isEqualTo(Currency.EUR.name());
-        assertThat(testResult).bodyJson()
-                .extractingPath("$.balance").asNumber().isEqualTo(balance.intValue());
-        assertThat(testResult).bodyJson()
-                .extractingPath("$.users[0].sid").asString().isEqualTo(userSid.toString());
-    }
+    final FetchAccountCommand capturedCommand = commandCaptor.getValue();
+    assertThat(capturedCommand.accountSid()).isEqualTo(accountSid);
+    assertThat(capturedCommand.userSid()).isEqualTo(userSid);
 
-    @Test
-    void shouldReturnBadRequestForInvalidRequestOnAccountFetch() {
+    assertThat(testResult).bodyJson()
+        .extractingPath("$.sid").asString().isEqualTo(accountSid.toString());
+    assertThat(testResult).bodyJson()
+        .extractingPath("$.status").asString().isEqualTo(AccountStatus.ACTIVE.name());
+    assertThat(testResult).bodyJson()
+        .extractingPath("$.institution").asString().isEqualTo(institution);
+    assertThat(testResult).bodyJson()
+        .extractingPath("$.baseCurrency").asString().isEqualTo(Currency.EUR.name());
+    assertThat(testResult).bodyJson()
+        .extractingPath("$.balance").asNumber().isEqualTo(balance.intValue());
+    assertThat(testResult).bodyJson()
+        .extractingPath("$.users[0].sid").asString().isEqualTo(userSid.toString());
+  }
 
-        final MvcTestResult testResult = mvc.get()
-            .uri("/accounts/{accountSid}", "invalid_sid")
-            .with(authentication(AuthUtils.mockAuth(UUID.randomUUID())))
-            .exchange();
+  @Test
+  void shouldReturnBadRequestForInvalidRequestOnAccountFetch() {
 
-        assertThat(testResult)
-            .hasStatus(HttpStatus.BAD_REQUEST);
-    }
+    final MvcTestResult testResult = mvc.get()
+        .uri("/accounts/{accountSid}", "invalid_sid")
+        .with(authentication(AuthUtils.mockAuth(UUID.randomUUID())))
+        .exchange();
 
-    @Test
-    void shouldThrowNotFoundOnAccountFetch() {
+    assertThat(testResult)
+        .hasStatus(HttpStatus.BAD_REQUEST);
+  }
 
-        final UUID accountSid = UUID.randomUUID();
+  @Test
+  void shouldThrowNotFoundOnAccountFetch() {
 
-        when(service.fetchAccount(any())).thenThrow(new AccountNotFoundException(accountSid));
+    final UUID accountSid = UUID.randomUUID();
 
-        final MvcTestResult testResult = mvc.get()
-            .uri("/accounts/{accountSid}", accountSid)
-            .with(authentication(AuthUtils.mockAuth(UUID.randomUUID())))
-            .exchange();
+    when(service.fetchAccount(any())).thenThrow(new AccountNotFoundException(accountSid));
 
-        assertThat(testResult)
-            .hasStatus(HttpStatus.NOT_FOUND)
-            .bodyJson()
-            .extractingPath("$.detail").asString()
-            .isEqualTo("Account with SID [%s] was not found or you do not have permission to view it.", accountSid);
-    }
+    final MvcTestResult testResult = mvc.get()
+        .uri("/accounts/{accountSid}", accountSid)
+        .with(authentication(AuthUtils.mockAuth(UUID.randomUUID())))
+        .exchange();
 
-    @Test
-    void shouldFetchAllAccountsSuccessfully() {
-        // Arrange
-        final UUID accountSid = UUID.randomUUID();
-        final UUID userSid = UUID.randomUUID();
-        final BigDecimal balance = BigDecimal.TEN;
-        final String institution = "Santander";
+    assertThat(testResult)
+        .hasStatus(HttpStatus.NOT_FOUND)
+        .bodyJson()
+        .extractingPath("$.detail").asString()
+        .isEqualTo("Account with SID [%s] was not found or you do not have permission to view it.", accountSid);
+  }
 
-        final Account mockAccount = new Account();
-        mockAccount.setSid(accountSid);
-        mockAccount.setBalance(balance);
-        mockAccount.setBaseCurrency(Currency.EUR);
-        mockAccount.setInstitution(institution);
-        mockAccount.setStatus(AccountStatus.ACTIVE);
+  @Test
+  void shouldFetchAllAccountsSuccessfully() {
+    // Arrange
+    final UUID accountSid = UUID.randomUUID();
+    final UUID userSid = UUID.randomUUID();
+    final BigDecimal balance = BigDecimal.TEN;
+    final String institution = "Santander";
 
-        when(service.fetchAllAccounts(userSid)).thenReturn(List.of(mockAccount));
+    final Account mockAccount = new Account();
+    mockAccount.setSid(accountSid);
+    mockAccount.setBalance(balance);
+    mockAccount.setBaseCurrency(Currency.EUR);
+    mockAccount.setInstitution(institution);
+    mockAccount.setStatus(AccountStatus.ACTIVE);
 
-        // Act
-        final MvcTestResult testResult = mvc.get()
-            .uri("/accounts")
-            .with(authentication(AuthUtils.mockAuth(userSid)))
-            .exchange();
+    when(service.fetchAllAccounts(userSid)).thenReturn(List.of(mockAccount));
 
-        // Assert
-        assertThat(testResult).hasStatus(HttpStatus.OK);
-        assertThat(testResult).bodyJson()
-                .extractingPath("$[0].sid").asString().isEqualTo(accountSid.toString());
-        assertThat(testResult).bodyJson()
-                .extractingPath("$[0].status").asString().isEqualTo(AccountStatus.ACTIVE.name());
-        assertThat(testResult).bodyJson()
-                .extractingPath("$[0].institution").asString().isEqualTo(institution);
-        assertThat(testResult).bodyJson()
-                .extractingPath("$[0].baseCurrency").asString().isEqualTo(Currency.EUR.name());
-        assertThat(testResult).bodyJson()
-                .extractingPath("$[0].balance").asNumber().isEqualTo(balance.intValue());
-    }
+    // Act
+    final MvcTestResult testResult = mvc.get()
+        .uri("/accounts")
+        .with(authentication(AuthUtils.mockAuth(userSid)))
+        .exchange();
 
-    private static Stream<Arguments> invalidAccountCreationRequests() {
-        return Stream.of(
-                Arguments.of(new CreateAccountRequestDTO(BigDecimal.valueOf(-10), Currency.EUR, "Santander"), "initialBalance"),
-                Arguments.of(new CreateAccountRequestDTO(BigDecimal.TEN, null, "Santander"), "currency"),
-                Arguments.of(new CreateAccountRequestDTO(BigDecimal.TEN, Currency.EUR, ""), "institution"),
-                Arguments.of(new CreateAccountRequestDTO(null, Currency.EUR, "Santander"), "initialBalance")
-        );
-    }
+    // Assert
+    assertThat(testResult).hasStatus(HttpStatus.OK);
+    assertThat(testResult).bodyJson()
+        .extractingPath("$[0].sid").asString().isEqualTo(accountSid.toString());
+    assertThat(testResult).bodyJson()
+        .extractingPath("$[0].status").asString().isEqualTo(AccountStatus.ACTIVE.name());
+    assertThat(testResult).bodyJson()
+        .extractingPath("$[0].institution").asString().isEqualTo(institution);
+    assertThat(testResult).bodyJson()
+        .extractingPath("$[0].baseCurrency").asString().isEqualTo(Currency.EUR.name());
+    assertThat(testResult).bodyJson()
+        .extractingPath("$[0].balance").asNumber().isEqualTo(balance.intValue());
+  }
 
 }

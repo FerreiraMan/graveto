@@ -14,21 +14,22 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AccountCreatedEventListener {
 
-    private final TransactionRepository transactionRepository;
-    private final CategoryService categoryService;
+  private final TransactionRepository transactionRepository;
+  private final CategoryService categoryService;
 
-    @EventListener
-    public Transaction onAccountCreation(final AccountCreatedEvent event) {
+  @EventListener
+  public Transaction onAccountCreation(final AccountCreatedEvent event) {
 
-        final Category initialBalanceCategory = categoryService.fetchInternalCategory(SystemCategory.INITIAL_BALANCE.getSid());
+    final Category initialBalanceCategory =
+        categoryService.fetchInternalCategory(SystemCategory.INITIAL_BALANCE.getSid());
 
-        final Transaction initialTransaction = Transaction.createOpeningTransaction(
-                event.account(),
-                event.amount(),
-                initialBalanceCategory
-        );
+    final Transaction initialTransaction = Transaction.createOpeningTransaction(
+        event.account(),
+        event.amount(),
+        initialBalanceCategory
+    );
 
-        return transactionRepository.save(initialTransaction);
-    }
+    return transactionRepository.save(initialTransaction);
+  }
 
 }

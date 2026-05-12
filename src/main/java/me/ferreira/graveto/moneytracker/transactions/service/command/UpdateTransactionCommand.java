@@ -1,17 +1,17 @@
 package me.ferreira.graveto.moneytracker.transactions.service.command;
 
-import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 
 public record UpdateTransactionCommand(
-   UUID userSid,
-   UUID transactionSid,
-   TransactionType transactionType,
-   UUID categorySid,
-   BigDecimal amount,
-   String description,
-   LocalDateTime occurredAt
-) {}
+    UUID userSid,
+    UUID transactionSid,
+    TransactionType transactionType,
+    UUID categorySid,
+    BigDecimal amount,
+    String description,
+    LocalDateTime occurredAt
+) {
+}

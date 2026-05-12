@@ -5,4 +5,5 @@ import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 public record TransferResult(
     Transaction expense,
     Transaction income
-) {}
+) {
+}

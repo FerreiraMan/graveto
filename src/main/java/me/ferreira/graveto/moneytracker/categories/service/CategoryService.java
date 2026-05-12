@@ -1,20 +1,19 @@
 package me.ferreira.graveto.moneytracker.categories.service;
 
+import java.util.List;
+import java.util.UUID;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.service.command.CreateCategoryCommand;
 import me.ferreira.graveto.moneytracker.categories.service.command.FetchCategoryCommand;
 
-import java.util.List;
-import java.util.UUID;
-
 public interface CategoryService {
 
-    Category fetchInternalCategory(UUID systemCategorySid);
+  Category fetchInternalCategory(UUID systemCategorySid);
 
-    Category fetchCategory(FetchCategoryCommand command);
+  Category fetchCategory(FetchCategoryCommand command);
 
-    List<Category> fetchAllCategories(UUID userSid);
+  List<Category> fetchAllCategories(UUID userSid);
 
-    Category createCategory(CreateCategoryCommand command);
+  Category createCategory(CreateCategoryCommand command);
 
 }

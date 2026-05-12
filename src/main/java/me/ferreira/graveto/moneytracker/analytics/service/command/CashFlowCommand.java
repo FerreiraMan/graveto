@@ -6,4 +6,5 @@ public record CashFlowCommand(
     UUID userSid,
     UUID accountSid,
     int year
-) {}
+) {
+}

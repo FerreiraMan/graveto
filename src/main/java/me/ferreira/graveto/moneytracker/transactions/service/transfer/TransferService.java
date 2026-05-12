@@ -8,12 +8,12 @@ import me.ferreira.graveto.moneytracker.transactions.service.transfer.payload.Tr
 
 public interface TransferService {
 
-    TransferResult fetchTransfer(FetchTransferCommand command);
+  TransferResult fetchTransfer(FetchTransferCommand command);
 
-    TransferResult createTransfer(CreateTransferCommand command);
+  TransferResult createTransfer(CreateTransferCommand command);
 
-    TransferResult deleteTransfer(DeleteTransferCommand command);
+  TransferResult deleteTransfer(DeleteTransferCommand command);
 
-    TransferResult updateTransfer(UpdateTransferCommand command);
+  TransferResult updateTransfer(UpdateTransferCommand command);
 
 }
