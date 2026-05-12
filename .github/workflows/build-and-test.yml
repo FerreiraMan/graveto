@@ -34,8 +34,8 @@ jobs:
         if: always()
         with:
           name: gradle-test-reports
-          path: build/reports/tests/
-          reporter: jest-junit
+          path: 'build/test-results/**/*.xml'
+          reporter: java-junit
       - name: Upload Application JAR
         uses: actions/upload-artifact@v4
         with:
