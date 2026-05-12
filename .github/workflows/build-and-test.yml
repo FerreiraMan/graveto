@@ -19,12 +19,12 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v6
       - name: Run checkstyle
-        uses: nikitasavinov/checkstyle-action@master
+        uses: dbelyaev/action-checkstyle@v3.10.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-check
           level: error
-          fail_on_error: true
+          fail_level: any
           filter_mode: nofilter
 
   actions-lint:
