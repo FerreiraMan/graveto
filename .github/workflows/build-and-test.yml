@@ -23,6 +23,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-check
+          fail_level: any
           filter_mode: nofilter
 
   actions-lint:
