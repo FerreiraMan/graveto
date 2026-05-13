@@ -123,7 +123,8 @@ public class Account extends BaseEntity {
     }
 
     if (this.balance.compareTo(BigDecimal.ZERO) != 0) {
-      throw new IllegalStateException("Account balance must be exactly 0.00 before it can be closed. Current balance: " + this.balance);
+      throw new IllegalStateException(
+          "Account balance must be exactly 0.00 before it can be closed. Current balance: " + this.balance);
     }
 
     this.status = AccountStatus.CLOSED;
