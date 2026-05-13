@@ -146,8 +146,8 @@ public class UpdateTransferServiceImplTest {
 
     // Act & Assert
     Assertions.assertThatThrownBy(() -> {
-          service.updateTransfer(command);
-        }).isInstanceOf(IllegalStateException.class)
+      service.updateTransfer(command);
+    }).isInstanceOf(IllegalStateException.class)
         .hasMessage("Cannot update transfer transactions. The account is currently CLOSED.");
   }
 
