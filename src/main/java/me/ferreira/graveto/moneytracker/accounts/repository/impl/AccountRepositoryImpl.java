@@ -27,7 +27,7 @@ public class AccountRepositoryImpl implements AccountRepository {
   }
 
   @Override
-  public Optional<Account> findBySid(final UUID sid) {
+  public Optional<Account>  findBySid(final UUID sid) {
     return repository.findBySid(sid);
   }
 

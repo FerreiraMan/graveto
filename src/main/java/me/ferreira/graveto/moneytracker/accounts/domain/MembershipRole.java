@@ -2,8 +2,11 @@ package me.ferreira.graveto.moneytracker.accounts.domain;
 
 public enum MembershipRole {
 
-  OWNER(true, true, true, true, true),
-  CONTRIBUTOR(true, true, true, true, true);
+  OWNER(true, true, true, true, true, true, true),
+  CONTRIBUTOR(false, false, true, true, true, true, true);
+
+  private final boolean canCloseAccount;
+  private final boolean canDeleteAccount;
 
   private final boolean canReadTransaction;
   private final boolean canCreateTransaction;
@@ -12,17 +15,29 @@ public enum MembershipRole {
 
   private final boolean canRequestReport;
 
-  MembershipRole(final boolean canReadTransaction,
+  MembershipRole(final boolean canCloseAccount,
+                 final boolean canDeleteAccount,
+                 final boolean canReadTransaction,
                  final boolean canCreateTransaction,
                  final boolean canDeleteTransaction,
                  final boolean canUpdateTransaction,
                  final boolean canRequestReport) {
 
+    this.canCloseAccount = canCloseAccount;
+    this.canDeleteAccount = canDeleteAccount;
     this.canReadTransaction = canReadTransaction;
     this.canCreateTransaction = canCreateTransaction;
     this.canDeleteTransaction = canDeleteTransaction;
     this.canUpdateTransaction = canUpdateTransaction;
     this.canRequestReport = canRequestReport;
+  }
+
+  public boolean canDeleteAccount() {
+    return this.canDeleteAccount;
+  }
+
+  public boolean canCloseAccount() {
+    return this.canCloseAccount;
   }
 
   public boolean canReadTransaction() {

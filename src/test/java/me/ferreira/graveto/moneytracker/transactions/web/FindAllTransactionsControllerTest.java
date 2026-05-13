@@ -7,6 +7,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -61,7 +62,7 @@ public class FindAllTransactionsControllerTest {
     final LocalDate startDate = LocalDate.of(2025, 1, 1);
     final LocalDate endDate = LocalDate.of(2025, 12, 31);
 
-    final LocalDateTime occurredAt = LocalDateTime.now();
+    final LocalDateTime occurredAt = LocalDateTime.now().truncatedTo(ChronoUnit.MICROS);
 
     final Category mockCategory = new Category();
     mockCategory.setDisplayName("Groceries");

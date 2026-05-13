@@ -7,6 +7,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
+import me.ferreira.graveto.moneytracker.accounts.service.command.CloseAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.service.command.CreateAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.web.dto.request.CreateAccountRequestDto;
@@ -17,6 +18,7 @@ import me.ferreira.graveto.moneytracker.accounts.web.dto.response.MembershipResp
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -29,6 +31,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @RequiredArgsConstructor
 public class AccountController {
 
+  private static final String CLOSE_PATH = "/close";
   private static final String ACCOUNT_SID_PATH = "/{sid}";
 
   private final AccountService accountService;
@@ -101,6 +104,23 @@ public class AccountController {
             acc.getStatus().name())
         )
         .toList();
+
+    return ResponseEntity.ok().body(responseDto);
+  }
+
+  @PatchMapping(path = ACCOUNT_SID_PATH + CLOSE_PATH, produces = "application/json")
+  public ResponseEntity<AccountResponseDto> closeAccount(
+      @AuthenticationPrincipal final UUID userSid,
+      @PathVariable final UUID sid) {
+
+    final CloseAccountCommand command = new CloseAccountCommand(userSid, sid);
+
+    final Account account = accountService.closeAccount(command);
+
+    final AccountResponseDto responseDto = new AccountResponseDto(
+        account.getSid(),
+        account.getStatus().name()
+    );
 
     return ResponseEntity.ok().body(responseDto);
   }

@@ -116,4 +116,17 @@ public class Account extends BaseEntity {
     this.balance = this.balance.add(amount.multiply(reverseMultiplier));
   }
 
+  public void close() {
+
+    if (AccountStatus.CLOSED.equals(this.status)) {
+      throw new IllegalStateException("This account is already closed.");
+    }
+
+    if (this.balance.compareTo(BigDecimal.ZERO) != 0) {
+      throw new IllegalStateException("Account balance must be exactly 0.00 before it can be closed. Current balance: " + this.balance);
+    }
+
+    this.status = AccountStatus.CLOSED;
+  }
+
 }

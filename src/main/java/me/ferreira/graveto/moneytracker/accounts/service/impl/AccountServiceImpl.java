@@ -7,9 +7,11 @@ import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundExce
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.AccountMembership;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
+import me.ferreira.graveto.moneytracker.accounts.domain.event.AccountClosedEvent;
 import me.ferreira.graveto.moneytracker.accounts.domain.event.AccountCreatedEvent;
 import me.ferreira.graveto.moneytracker.accounts.repository.AccountRepository;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
+import me.ferreira.graveto.moneytracker.accounts.service.command.CloseAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.service.command.CreateAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
 import org.springframework.context.ApplicationEventPublisher;
@@ -60,6 +62,20 @@ public class AccountServiceImpl implements AccountService {
   public List<Account> fetchAllAccounts(final UUID userSid) {
 
     return accountRepository.findAllByUserSid(userSid);
+  }
+
+  @Override
+  @Transactional
+  public Account closeAccount(final CloseAccountCommand command) {
+
+    final Account account = accountRepository.findBySid(command.accountSid())
+        .orElseThrow(() -> new AccountNotFoundException(command.accountSid()));
+
+    account.validateUserPermission(command.userSid(), MembershipRole::canCloseAccount, "request closure");
+    account.close();
+    eventPublisher.publishEvent(new AccountClosedEvent(account));
+
+    return account;
   }
 
 }

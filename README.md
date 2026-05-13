@@ -112,6 +112,7 @@ All endpoints are prefixed with `/api`. Protected endpoints require `Authorizati
 | POST | `/api/accounts` | ✓ | Create account |
 | GET | `/api/accounts` | ✓ | List accounts |
 | GET | `/api/accounts/{sid}` | ✓ | Get account detail |
+| PATCH | `/api/accounts/{sid}/close` | ✓ | Close account |
 | POST | `/api/transactions` | ✓ | Create transaction |
 | GET | `/api/transactions` | ✓ | List transactions (paginated) |
 | PATCH | `/api/transactions/{sid}` | ✓ | Update transaction |
