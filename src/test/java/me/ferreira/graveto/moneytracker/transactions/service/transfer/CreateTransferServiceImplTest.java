@@ -12,6 +12,7 @@ import java.util.UUID;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
+import me.ferreira.graveto.moneytracker.accounts.domain.AccountStatus;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
 import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
@@ -88,6 +89,30 @@ public class CreateTransferServiceImplTest {
   }
 
   @Test
+  void shouldThrowIfAccountIsNotActiveDuringTransferCreation() {
+    // Arrange
+    final UUID userSid = UUID.randomUUID();
+    final UUID sourceSid = UUID.randomUUID();
+    final UUID destSid = UUID.randomUUID();
+
+    final CreateTransferCommand command = new CreateTransferCommand(
+        userSid, sourceSid, destSid, BigDecimal.TEN, "Test", LocalDateTime.now()
+    );
+
+    final Account sourceAccount = AccountUtils.createAccount(sourceSid, userSid, null);
+    sourceAccount.setStatus(AccountStatus.CLOSED);
+
+    when(accountService.fetchAccount(new FetchAccountCommand(userSid, sourceSid)))
+        .thenReturn(sourceAccount);
+
+    // Act & Assert
+    assertThatThrownBy(() -> {
+      service.createTransfer(command);
+    }).isInstanceOf(IllegalStateException.class)
+        .hasMessage("Cannot create transfer transactions. The account is currently CLOSED.");
+  }
+
+  @Test
   void shouldThrowIfUserIsNotAuthorizedOnSourceAccount() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
@@ -101,6 +126,8 @@ public class CreateTransferServiceImplTest {
     final Account sourceAccount = AccountUtils.createAccount(sourceSid, userSid, null);
 
     when(accountService.fetchAccount(new FetchAccountCommand(userSid, sourceSid)))
+        .thenReturn(sourceAccount);
+    when(accountService.fetchAccount(new FetchAccountCommand(userSid, destSid)))
         .thenReturn(sourceAccount);
 
     // Act & Assert

@@ -14,6 +14,7 @@ import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundExce
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
+import me.ferreira.graveto.moneytracker.accounts.domain.AccountStatus;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
@@ -63,16 +64,33 @@ public class CreateTransactionServiceImplTest {
   @Test
   void shouldThrowIfAccountIsNotFoundDuringTransactionCreation() {
     // Arrange
-    final UUID categorySid = UUID.randomUUID();
+    final UUID accountSid = UUID.randomUUID();
 
     when(categoryService.fetchCategory(any())).thenReturn(Mockito.mock(Category.class));
-    when(accountService.fetchAccount(any())).thenThrow(new AccountNotFoundException(categorySid));
+    when(accountService.fetchAccount(any())).thenThrow(new AccountNotFoundException(accountSid));
 
     // Act & Assert
     assertThatThrownBy(() -> {
       service.createTransaction(Mockito.mock(CreateTransactionCommand.class));
     }).isInstanceOf(AccountNotFoundException.class)
-        .hasMessage("Account with SID [" + categorySid + "] was not found or you do not have permission to view it.");
+        .hasMessage("Account with SID [" + accountSid + "] was not found or you do not have permission to view it.");
+  }
+
+  @Test
+  void shouldThrowIfAccountIsNotActiveDuringTransactionCreation() {
+    // Arrange
+    final UUID userSid = UUID.randomUUID();
+    final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, null);
+    account.setStatus(AccountStatus.CLOSED);
+
+    when(categoryService.fetchCategory(any())).thenReturn(Mockito.mock(Category.class));
+    when(accountService.fetchAccount(any())).thenReturn(account);
+
+    // Act & Assert
+    assertThatThrownBy(() -> {
+      service.createTransaction(Mockito.mock(CreateTransactionCommand.class));
+    }).isInstanceOf(IllegalStateException.class)
+        .hasMessage("Cannot create transactions. The account is currently CLOSED.");
   }
 
   @Test

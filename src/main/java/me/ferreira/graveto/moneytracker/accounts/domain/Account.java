@@ -101,6 +101,14 @@ public class Account extends BaseEntity {
     }
   }
 
+  public void validateIsActive(final String actionName) {
+    if (this.status != AccountStatus.ACTIVE) {
+      throw new IllegalStateException(
+          String.format("Cannot %s. The account is currently %s.", actionName, this.status.name())
+      );
+    }
+  }
+
   public void updateBalance(
       final BigDecimal amount,
       final TransactionType transactionType) {

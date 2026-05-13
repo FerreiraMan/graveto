@@ -28,6 +28,10 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 public class TransferServiceImpl implements TransferService {
 
+  private static final String TR_CREATE_ACTION = "create transfer transactions";
+  private static final String TR_DELETE_ACTION = "delete transfer transactions";
+  private static final String TR_UPDATE_ACTION = "update transfer transactions";
+
   private final AccountService accountService;
   private final CategoryService categoryService;
   private final TransactionRepository transactionRepository;
@@ -70,9 +74,11 @@ public class TransferServiceImpl implements TransferService {
     final Account destinationAccount =
         accountService.fetchAccount(new FetchAccountCommand(userSid, command.destinationAccountSid()));
 
-    sourceAccount.validateUserPermission(userSid, MembershipRole::canCreateTransaction, "create transfer transactions");
-    destinationAccount.validateUserPermission(userSid, MembershipRole::canCreateTransaction,
-        "create transfer transactions");
+    sourceAccount.validateIsActive(TR_CREATE_ACTION);
+    destinationAccount.validateIsActive(TR_CREATE_ACTION);
+
+    sourceAccount.validateUserPermission(userSid, MembershipRole::canCreateTransaction, TR_CREATE_ACTION);
+    destinationAccount.validateUserPermission(userSid, MembershipRole::canCreateTransaction, TR_CREATE_ACTION);
 
     sourceAccount.updateBalance(amount, TransactionType.TRANSFER_OUT);
     destinationAccount.updateBalance(amount, TransactionType.TRANSFER_IN);
@@ -122,10 +128,11 @@ public class TransferServiceImpl implements TransferService {
         transferTransactions.get(0).getType() == TransactionType.TRANSFER_IN ? transferTransactions.get(0) :
             transferTransactions.get(1);
 
-    out.getAccount().validateUserPermission(command.userSid(), MembershipRole::canDeleteTransaction,
-        "delete transfer transactions");
-    in.getAccount().validateUserPermission(command.userSid(), MembershipRole::canDeleteTransaction,
-        "delete transfer transactions");
+    out.getAccount().validateIsActive(TR_DELETE_ACTION);
+    in.getAccount().validateIsActive(TR_DELETE_ACTION);
+
+    out.getAccount().validateUserPermission(command.userSid(), MembershipRole::canDeleteTransaction, TR_DELETE_ACTION);
+    in.getAccount().validateUserPermission(command.userSid(), MembershipRole::canDeleteTransaction, TR_DELETE_ACTION);
 
     out.markAsDeleted();
     out.getAccount().reverseBalanceImpact(out.getAmount(), out.getType());
@@ -152,10 +159,11 @@ public class TransferServiceImpl implements TransferService {
         transferTransactions.get(0).getType() == TransactionType.TRANSFER_IN ? transferTransactions.get(0) :
             transferTransactions.get(1);
 
-    out.getAccount().validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction,
-        "update transfer transactions");
-    in.getAccount().validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction,
-        "update transfer transactions");
+    out.getAccount().validateIsActive(TR_UPDATE_ACTION);
+    in.getAccount().validateIsActive(TR_UPDATE_ACTION);
+
+    out.getAccount().validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction, TR_UPDATE_ACTION);
+    in.getAccount().validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction, TR_UPDATE_ACTION);
 
     final BigDecimal effectiveAmount = command.amount() != null ? command.amount() : out.getAmount();
     final String effectiveDescription = command.description() != null ? command.description() : out.getDescription();

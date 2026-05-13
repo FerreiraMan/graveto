@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.UUID;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
+import me.ferreira.graveto.moneytracker.accounts.domain.AccountStatus;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
 import me.ferreira.graveto.moneytracker.categories.service.CategoryService;
@@ -67,6 +68,29 @@ public class DeleteTransferServiceImplTest {
       service.deleteTransfer(mock(DeleteTransferCommand.class));
     }).isInstanceOf(IllegalStateException.class)
         .hasMessage("Corrupted transfer does not contain exactly one IN and one OUT transaction.");
+  }
+
+  @Test
+  void shouldThrowIfAccountIsNotActiveDuringTransferDeletion() {
+    // Arrange
+    final UUID userSid = UUID.randomUUID();
+    final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, null);
+    account.setStatus(AccountStatus.CLOSED);
+    final Transaction txOut = new Transaction();
+    txOut.setType(TransactionType.TRANSFER_OUT);
+    txOut.setAccount(account);
+    final Transaction txIn = new Transaction();
+    txIn.setType(TransactionType.TRANSFER_IN);
+    txIn.setAccount(account);
+
+    when(transactionRepository.findAllByCorrelationId(any())).thenReturn(List.of(txOut, txIn));
+    final DeleteTransferCommand command = mock(DeleteTransferCommand.class);
+
+    // Act & Assert
+    assertThatThrownBy(() -> {
+      service.deleteTransfer(command);
+    }).isInstanceOf(IllegalStateException.class)
+        .hasMessage("Cannot delete transfer transactions. The account is currently CLOSED.");
   }
 
   @Test

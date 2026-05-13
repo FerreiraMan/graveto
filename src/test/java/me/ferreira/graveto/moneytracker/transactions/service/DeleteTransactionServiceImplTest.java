@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsException;
 import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
+import me.ferreira.graveto.moneytracker.accounts.domain.AccountStatus;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
 import me.ferreira.graveto.moneytracker.categories.service.CategoryService;
@@ -69,8 +70,11 @@ public class DeleteTransactionServiceImplTest {
   @Test
   void shouldThrowIfTransactionHasCorrelationIdDuringTransactionDeletion() {
     // Arrange
+    final UUID userSid = UUID.randomUUID();
+    final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, null);
     final UUID transactionSid = UUID.randomUUID();
     final Transaction transaction = new Transaction();
+    transaction.setAccount(account);
     transaction.setSid(transactionSid);
     transaction.setCorrelationId(UUID.randomUUID());
 
@@ -84,10 +88,34 @@ public class DeleteTransactionServiceImplTest {
   }
 
   @Test
-  void shouldThrowIfTransactionIsOfTypeTransferDuringTransactionDeletion() {
+  void shouldThrowIfAccountIsNotActiveDuringTransactionDeletion() {
     // Arrange
+    final UUID userSid = UUID.randomUUID();
+    final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, null);
+    account.setStatus(AccountStatus.CLOSED);
     final UUID transactionSid = UUID.randomUUID();
     final Transaction transaction = new Transaction();
+    transaction.setSid(transactionSid);
+    transaction.setCorrelationId(UUID.randomUUID());
+    transaction.setAccount(account);
+
+    when(transactionRepository.findBySid(any())).thenReturn(Optional.of(transaction));
+
+    // Act & Assert
+    assertThatThrownBy(() -> {
+      service.deleteTransaction(Mockito.mock(DeleteTransactionCommand.class));
+    }).isInstanceOf(IllegalStateException.class)
+        .hasMessage("Cannot delete transactions. The account is currently CLOSED.");
+  }
+
+  @Test
+  void shouldThrowIfTransactionIsOfTypeTransferDuringTransactionDeletion() {
+    // Arrange
+    final UUID userSid = UUID.randomUUID();
+    final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, null);
+    final UUID transactionSid = UUID.randomUUID();
+    final Transaction transaction = new Transaction();
+    transaction.setAccount(account);
     transaction.setSid(transactionSid);
     transaction.setType(TransactionType.TRANSFER_IN);
 

@@ -11,6 +11,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
+import me.ferreira.graveto.moneytracker.accounts.domain.AccountStatus;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
@@ -23,6 +24,7 @@ import me.ferreira.graveto.moneytracker.transactions.service.impl.transfer.Trans
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.payload.TransferResult;
 import me.ferreira.graveto.moneytracker.utils.AccountUtils;
 import me.ferreira.graveto.moneytracker.utils.CategoryUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -120,6 +122,33 @@ public class UpdateTransferServiceImplTest {
       service.updateTransfer(new UpdateTransferCommand(UUID.randomUUID(), correlationId, null, null, null));
     }).isInstanceOf(IllegalStateException.class)
         .hasMessage("Corrupted transfer does not contain exactly one IN and one OUT transaction.");
+  }
+
+  @Test
+  void shouldThrowIfAccountIsNotActiveDuringTransferUpdate() {
+    // Arrange
+    final UUID userSid = UUID.randomUUID();
+    final UUID correlationId = UUID.randomUUID();
+    final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, MembershipRole.OWNER);
+    account.setStatus(AccountStatus.CLOSED);
+
+    final UpdateTransferCommand command = new UpdateTransferCommand(userSid, correlationId, BigDecimal.TEN, null, null);
+
+    final Transaction txOut = new Transaction();
+    txOut.setType(TransactionType.TRANSFER_OUT);
+    txOut.setAccount(account);
+
+    final Transaction txIn = new Transaction();
+    txIn.setType(TransactionType.TRANSFER_IN);
+    txIn.setAccount(account);
+
+    when(transactionRepository.findAllByCorrelationId(correlationId)).thenReturn(List.of(txOut, txIn));
+
+    // Act & Assert
+    Assertions.assertThatThrownBy(() -> {
+          service.updateTransfer(command);
+        }).isInstanceOf(IllegalStateException.class)
+        .hasMessage("Cannot update transfer transactions. The account is currently CLOSED.");
   }
 
   @Test

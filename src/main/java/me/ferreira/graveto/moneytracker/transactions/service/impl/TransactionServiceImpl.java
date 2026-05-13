@@ -33,6 +33,10 @@ import org.springframework.transaction.annotation.Transactional;
 @AllArgsConstructor
 public class TransactionServiceImpl implements TransactionService {
 
+  private static final String TX_CREATE_ACTION = "create transactions";
+  private static final String TX_DELETE_ACTION = "delete transactions";
+  private static final String TX_UPDATE_ACTION = "update transactions";
+
   private final AccountService accountService;
   private final CategoryService categoryService;
   private final TransactionRepository transactionRepository;
@@ -49,8 +53,8 @@ public class TransactionServiceImpl implements TransactionService {
     final Account account =
         accountService.fetchAccount(new FetchAccountCommand(command.userSid(), command.accountSid()));
 
-    account.validateUserPermission(command.userSid(), MembershipRole::canCreateTransaction, "create transactions");
-
+    account.validateIsActive(TX_CREATE_ACTION);
+    account.validateUserPermission(command.userSid(), MembershipRole::canCreateTransaction, TX_CREATE_ACTION);
     account.updateBalance(command.amount(), command.transactionType());
 
     final Transaction transaction = Transaction.create(
@@ -82,6 +86,7 @@ public class TransactionServiceImpl implements TransactionService {
         .orElseThrow(() -> new TransactionNotFoundException(command.transactionSid()));
 
     final Account account = transaction.getAccount();
+    account.validateIsActive(TX_DELETE_ACTION);
 
     boolean isTransfer =
         transaction.getType() == TransactionType.TRANSFER_IN || transaction.getType() == TransactionType.TRANSFER_OUT;
@@ -91,7 +96,7 @@ public class TransactionServiceImpl implements TransactionService {
           "This transaction is part of a transfer and must be deleted via the Transfer API.");
     }
 
-    account.validateUserPermission(command.userSid(), MembershipRole::canDeleteTransaction, "delete transactions");
+    account.validateUserPermission(command.userSid(), MembershipRole::canDeleteTransaction, TX_DELETE_ACTION);
 
     transaction.markAsDeleted();
     account.reverseBalanceImpact(transaction.getAmount(), transaction.getType());
@@ -110,7 +115,8 @@ public class TransactionServiceImpl implements TransactionService {
 
     final Account account = transaction.getAccount();
 
-    account.validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction, "update transactions");
+    account.validateIsActive(TX_UPDATE_ACTION);
+    account.validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction, TX_UPDATE_ACTION);
 
     final BigDecimal effectiveAmount = command.amount() != null ? command.amount() : transaction.getAmount();
     final TransactionType effectiveType =

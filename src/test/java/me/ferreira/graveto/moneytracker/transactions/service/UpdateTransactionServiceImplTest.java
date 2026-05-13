@@ -15,6 +15,7 @@ import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundExc
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsException;
 import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
+import me.ferreira.graveto.moneytracker.accounts.domain.AccountStatus;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
@@ -115,6 +116,33 @@ public class UpdateTransactionServiceImplTest {
       service.updateTransaction(Mockito.mock(UpdateTransactionCommand.class));
     }).isInstanceOf(TransactionNotFoundException.class)
         .hasMessage("Transaction with SID [" + transactionSid + "] was not found.");
+  }
+
+  @Test
+  void shouldThrowIfAccountIsNotActiveDuringTransactionUpdate() {
+    // Arrange
+    final UUID userSid = UUID.randomUUID();
+    final UUID transactionSid = UUID.randomUUID();
+    final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, MembershipRole.OWNER);
+    account.setStatus(AccountStatus.CLOSED);
+
+    final UpdateTransactionCommand command =
+        new UpdateTransactionCommand(userSid, transactionSid, TransactionType.EXPENSE, null, null, null, null);
+
+
+    final Transaction transaction = new Transaction();
+    transaction.setAccount(account);
+    transaction.setAmount(BigDecimal.ONE);
+    transaction.setStatus(TransactionStatus.DELETED);
+    transaction.setType(TransactionType.EXPENSE);
+
+    when(transactionRepository.findBySid(transactionSid)).thenReturn(Optional.of(transaction));
+
+    // Act & Assert
+    assertThatThrownBy(() -> {
+      service.updateTransaction(command);
+    }).isInstanceOf(IllegalStateException.class)
+        .hasMessage("Cannot update transactions. The account is currently CLOSED.");
   }
 
   @Test
