@@ -5,6 +5,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import me.ferreira.graveto.common.web.exception.identity.TokenAuthenticationException;
 import me.ferreira.graveto.common.web.exception.identity.UserAlreadyExistsException;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -73,12 +75,6 @@ public class GlobalExceptionHandler {
     return createBaseProblemDetail(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
   }
 
-  @ExceptionHandler(IllegalStateException.class)
-  public ProblemDetail handleIllegalStateException(final IllegalStateException ex, final HttpServletRequest request) {
-
-    return createBaseProblemDetail(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage(), request);
-  }
-
   @ExceptionHandler(IllegalArgumentException.class)
   public ProblemDetail handleIllegalArgumentException(final IllegalArgumentException ex,
                                                       final HttpServletRequest request) {
@@ -90,6 +86,7 @@ public class GlobalExceptionHandler {
   public ProblemDetail handleAccountNotFoundException(final AccountNotFoundException ex,
                                                       final HttpServletRequest request) {
 
+    log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
     return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
   }
 
@@ -97,6 +94,7 @@ public class GlobalExceptionHandler {
   public ProblemDetail handleCategoryAlreadyExistsException(final CategoryAlreadyExistsException ex,
                                                             final HttpServletRequest request) {
 
+    log.warn("Business rule violation: Category already exists. Message: {}", ex.getMessage());
     return createBaseProblemDetail(HttpStatus.CONFLICT, ex.getMessage(), request);
   }
 
@@ -104,6 +102,7 @@ public class GlobalExceptionHandler {
   public ProblemDetail handleCategoryNotFoundException(final CategoryNotFoundException ex,
                                                        final HttpServletRequest request) {
 
+    log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
     return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
   }
 
@@ -111,6 +110,7 @@ public class GlobalExceptionHandler {
   public ProblemDetail handleIllegalCategoryHierarchyException(final IllegalCategoryHierarchyException ex,
                                                                final HttpServletRequest request) {
 
+    log.warn("Business rule violation: Parent category does not belong to user. Message: {}", ex.getMessage());
     return createBaseProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request);
   }
 
@@ -118,6 +118,7 @@ public class GlobalExceptionHandler {
   public ProblemDetail handleInsufficientPermissionsException(final InsufficientPermissionsException ex,
                                                               final HttpServletRequest request) {
 
+    log.warn("Business rule violation: User does not have required permission. Message: {}", ex.getMessage());
     return createBaseProblemDetail(HttpStatus.FORBIDDEN, ex.getMessage(), request);
   }
 
@@ -125,6 +126,7 @@ public class GlobalExceptionHandler {
   public ProblemDetail handleUserAlreadyExistsExceptionException(final UserAlreadyExistsException ex,
                                                                  final HttpServletRequest request) {
 
+    log.warn("Business rule violation: User already exists. Message: {}", ex.getMessage());
     return createBaseProblemDetail(HttpStatus.CONFLICT, ex.getMessage(), request);
   }
 
@@ -132,7 +134,19 @@ public class GlobalExceptionHandler {
   public ProblemDetail handleTokenAuthenticationExceptionException(final TokenAuthenticationException ex,
                                                                    final HttpServletRequest request) {
 
+    log.error("Error with Jwt verification.", ex);
     return createBaseProblemDetail(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+  }
+
+  @ExceptionHandler(Exception.class)
+  public ProblemDetail handleAllUncaughtExceptions(final Exception ex, final HttpServletRequest request) {
+
+    log.error("CRITICAL: Unhandled system exception occurred while accessing {}", request.getRequestURI(), ex);
+    return createBaseProblemDetail(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred. Please contact support.",
+        request
+    );
   }
 
   private ProblemDetail createBaseProblemDetail(final HttpStatus status, final String detailMessage,

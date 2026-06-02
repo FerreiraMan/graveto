@@ -19,8 +19,15 @@ server:
   servlet:
     context-path: /api
 logging:
+  structured:
+    format:
+      console: ecs
+    json:
+      stacktrace:
+        root: first
+        max-length: 1024
   level:
-    org.springframework.web: DEBUG
+    org.springframework.web: INFO
 
 jwt:
   signing-secret: jwt_graveto_secret

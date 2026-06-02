@@ -1,15 +1,14 @@
 package me.ferreira.graveto.moneytracker.transactions.service.impl.transfer;
 
-import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
-import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.domain.SystemCategory;
 import me.ferreira.graveto.moneytracker.categories.service.CategoryService;
@@ -23,7 +22,9 @@ import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.Up
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.TransferService;
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.payload.TransferResult;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class TransferServiceImpl implements TransferService {
@@ -37,7 +38,7 @@ public class TransferServiceImpl implements TransferService {
   private final TransactionRepository transactionRepository;
 
   @Override
-  @Transactional
+  @Transactional(readOnly = true)
   public TransferResult fetchTransfer(final FetchTransferCommand command) {
 
     final List<Transaction> transferTransactions =
@@ -107,6 +108,8 @@ public class TransferServiceImpl implements TransferService {
 
     transactionRepository.saveAll(List.of(out, in));
 
+    log.info("Transfer created successfully. CorrelationId: {}", correlationId);
+
     return new TransferResult(out, in);
   }
 
@@ -137,6 +140,8 @@ public class TransferServiceImpl implements TransferService {
 
     in.markAsDeleted();
     in.getAccount().reverseBalanceImpact(in.getAmount(), in.getType());
+
+    log.info("Transfer deleted successfully. CorrelationId: {}", command.correlationId());
 
     return new TransferResult(out, in);
   }
@@ -181,6 +186,8 @@ public class TransferServiceImpl implements TransferService {
       out.getAccount().updateBalance(out.getAmount(), out.getType());
       in.getAccount().updateBalance(in.getAmount(), in.getType());
     }
+
+    log.info("Transfer updated successfully. CorrelationId: {}", command.correlationId());
 
     return new TransferResult(out, in);
   }

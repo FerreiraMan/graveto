@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
 import me.ferreira.graveto.identity.api.UserApi;
 import me.ferreira.graveto.identity.api.UserResponseDto;
@@ -24,6 +25,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class AccountServiceImpl implements AccountService {
@@ -51,6 +53,7 @@ public class AccountServiceImpl implements AccountService {
 
     final Account createdAccount = accountRepository.save(account);
 
+    log.info("Account created successfully. AccountSid: {}", createdAccount.getSid());
     eventPublisher.publishEvent(new AccountCreatedEvent(createdAccount, createdAccount.getBalance()));
 
     return createdAccount;
@@ -110,6 +113,8 @@ public class AccountServiceImpl implements AccountService {
 
     account.validateUserPermission(command.userSid(), MembershipRole::canCloseAccount, "request closure");
     account.close();
+
+    log.info("Account closed successfully. AccountSid: {}", account.getSid());
     eventPublisher.publishEvent(new AccountClosedEvent(account));
 
     return account;

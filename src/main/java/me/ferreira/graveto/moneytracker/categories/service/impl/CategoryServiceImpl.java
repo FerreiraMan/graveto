@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryAlreadyExistsException;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.IllegalCategoryHierarchyException;
@@ -17,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class CategoryServiceImpl implements CategoryService {
@@ -90,6 +92,8 @@ public class CategoryServiceImpl implements CategoryService {
 
     final Category category =
         Category.create(sanitizedName, command.name(), command.userSid(), parentCategory, command.transactionType());
+
+    log.info("Category created successfully. CategorySid: {}", category.getSid());
 
     return categoryRepository.save(category);
   }

@@ -4,11 +4,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
-import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.service.CategoryService;
 import me.ferreira.graveto.moneytracker.categories.service.command.FetchCategoryCommand;
@@ -29,6 +29,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class TransactionServiceImpl implements TransactionService {
@@ -65,11 +66,14 @@ public class TransactionServiceImpl implements TransactionService {
         command.occurredAt()
     );
 
+    log.info("Transaction created successfully. TransactionSid: {} with amount {} on accountSid {}",
+        transaction.getSid(), transaction.getAmount(), transaction.getAccount().getSid());
+
     return transactionRepository.save(transaction);
   }
 
   @Override
-  @Transactional
+  @Transactional(readOnly = true)
   public Page<Transaction> findAll(final FindAllTransactionsCommand command) {
 
     accountService.fetchAccountEntity(command.accountSid());
@@ -99,6 +103,9 @@ public class TransactionServiceImpl implements TransactionService {
 
     transaction.markAsDeleted();
     account.reverseBalanceImpact(transaction.getAmount(), transaction.getType());
+
+    log.info("Transaction deleted successfully. TransactionSid: {} with amount {} on accountSid {}",
+        transaction.getSid(), transaction.getAmount(), transaction.getAccount().getSid());
 
     return transaction;
   }
@@ -153,6 +160,11 @@ public class TransactionServiceImpl implements TransactionService {
     if (requiresBalanceCalculation) {
       account.updateBalance(transaction.getAmount(), transaction.getType());
     }
+
+    log.info(
+        "Transaction updated successfully. New state: amount - {}, category - {}, description - {}, type - {}.",
+        transaction.getAmount(), transaction.getCategory().getDisplayName(), transaction.getDescription(),
+        transaction.getType().name());
 
     return transaction;
   }

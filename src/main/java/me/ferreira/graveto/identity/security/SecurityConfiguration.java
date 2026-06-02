@@ -1,5 +1,6 @@
 package me.ferreira.graveto.identity.security;
 
+import me.ferreira.graveto.common.logging.MdcLoggingFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -34,6 +35,7 @@ public class SecurityConfiguration {
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .addFilterBefore(exceptionHandlerFilter, LogoutFilter.class)
         .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+        .addFilterAfter(new MdcLoggingFilter(), JwtAuthenticationFilter.class)
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/auth/**", "/error").permitAll()
             .anyRequest().authenticated()
