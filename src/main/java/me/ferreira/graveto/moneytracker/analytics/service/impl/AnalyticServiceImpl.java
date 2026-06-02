@@ -39,7 +39,7 @@ public class AnalyticServiceImpl implements AnalyticService {
   public CashFlowResult generateCashFlowReport(final CashFlowCommand command) {
 
     accountService
-        .fetchAccount(new FetchAccountCommand(command.userSid(), command.accountSid()))
+        .fetchAccountEntity(command.accountSid())
         .validateUserPermission(command.userSid(), MembershipRole::canRequestReport, "request cash flow report");
 
     final GenerateMonthlyAggregateCommand aggregateCommand = new GenerateMonthlyAggregateCommand(
@@ -57,7 +57,7 @@ public class AnalyticServiceImpl implements AnalyticService {
   public CategorySpendingResult generateCategorySpendingReport(CategorySpendingCommand command) {
 
     accountService
-        .fetchAccount(new FetchAccountCommand(command.userSid(), command.accountSid()))
+        .fetchAccountEntity(command.accountSid())
         .validateUserPermission(command.userSid(), MembershipRole::canRequestReport,
             "request category spending report");
 

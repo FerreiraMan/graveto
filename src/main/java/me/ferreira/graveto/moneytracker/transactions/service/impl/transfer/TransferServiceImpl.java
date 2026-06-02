@@ -69,10 +69,8 @@ public class TransferServiceImpl implements TransferService {
     final UUID userSid = command.userSid();
     final BigDecimal amount = command.amount();
 
-    final Account sourceAccount =
-        accountService.fetchAccount(new FetchAccountCommand(userSid, command.sourceAccountSid()));
-    final Account destinationAccount =
-        accountService.fetchAccount(new FetchAccountCommand(userSid, command.destinationAccountSid()));
+    final Account sourceAccount = accountService.fetchAccountEntity(command.sourceAccountSid());
+    final Account destinationAccount = accountService.fetchAccountEntity(command.destinationAccountSid());
 
     sourceAccount.validateIsActive(TR_CREATE_ACTION);
     destinationAccount.validateIsActive(TR_CREATE_ACTION);

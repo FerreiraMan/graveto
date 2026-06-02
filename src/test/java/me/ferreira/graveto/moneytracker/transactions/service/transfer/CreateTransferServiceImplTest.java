@@ -15,7 +15,6 @@ import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.AccountStatus;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
-import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.domain.SystemCategory;
 import me.ferreira.graveto.moneytracker.categories.service.CategoryService;
@@ -79,8 +78,7 @@ public class CreateTransferServiceImplTest {
         userSid, sourceSid, destSid, BigDecimal.TEN, "Test", LocalDateTime.now()
     );
 
-    when(accountService.fetchAccount(new FetchAccountCommand(userSid, sourceSid)))
-        .thenThrow(new AccountNotFoundException(sourceSid));
+    when(accountService.fetchAccountEntity(sourceSid)).thenThrow(new AccountNotFoundException(sourceSid));
 
     // Act & Assert
     assertThatThrownBy(() -> service.createTransfer(command))
@@ -102,8 +100,7 @@ public class CreateTransferServiceImplTest {
     final Account sourceAccount = AccountUtils.createAccount(sourceSid, userSid, null);
     sourceAccount.setStatus(AccountStatus.CLOSED);
 
-    when(accountService.fetchAccount(new FetchAccountCommand(userSid, sourceSid)))
-        .thenReturn(sourceAccount);
+    when(accountService.fetchAccountEntity(sourceSid)).thenReturn(sourceAccount);
 
     // Act & Assert
     assertThatThrownBy(() -> {
@@ -125,10 +122,8 @@ public class CreateTransferServiceImplTest {
 
     final Account sourceAccount = AccountUtils.createAccount(sourceSid, userSid, null);
 
-    when(accountService.fetchAccount(new FetchAccountCommand(userSid, sourceSid)))
-        .thenReturn(sourceAccount);
-    when(accountService.fetchAccount(new FetchAccountCommand(userSid, destSid)))
-        .thenReturn(sourceAccount);
+    when(accountService.fetchAccountEntity(sourceSid)).thenReturn(sourceAccount);
+    when(accountService.fetchAccountEntity(destSid)).thenReturn(sourceAccount);
 
     // Act & Assert
     assertThatThrownBy(() -> service.createTransfer(command))
@@ -150,8 +145,8 @@ public class CreateTransferServiceImplTest {
     final Account sourceAccount = AccountUtils.createAccount(sourceSid, userSid, MembershipRole.OWNER);
     final Account destAccount = AccountUtils.createAccount(destSid, userSid, null);
 
-    when(accountService.fetchAccount(new FetchAccountCommand(userSid, sourceSid))).thenReturn(sourceAccount);
-    when(accountService.fetchAccount(new FetchAccountCommand(userSid, destSid))).thenReturn(destAccount);
+    when(accountService.fetchAccountEntity(sourceSid)).thenReturn(sourceAccount);
+    when(accountService.fetchAccountEntity(destSid)).thenReturn(destAccount);
 
     // Act & Assert
     assertThatThrownBy(() -> service.createTransfer(command))
@@ -182,9 +177,8 @@ public class CreateTransferServiceImplTest {
         userSid, sourceAccount.getSid(), destAccount.getSid(), transferAmount, description, occurredAt
     );
 
-    when(accountService.fetchAccount(new FetchAccountCommand(userSid, sourceAccount.getSid()))).thenReturn(
-        sourceAccount);
-    when(accountService.fetchAccount(new FetchAccountCommand(userSid, destAccount.getSid()))).thenReturn(destAccount);
+    when(accountService.fetchAccountEntity(sourceAccount.getSid())).thenReturn(sourceAccount);
+    when(accountService.fetchAccountEntity(destAccount.getSid())).thenReturn(destAccount);
 
     when(categoryService.fetchInternalCategory(SystemCategory.TRANSFER_OUT.getSid())).thenReturn(outCategory);
     when(categoryService.fetchInternalCategory(SystemCategory.TRANSFER_IN.getSid())).thenReturn(inCategory);

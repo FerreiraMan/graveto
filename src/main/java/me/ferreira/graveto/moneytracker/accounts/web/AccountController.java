@@ -10,6 +10,7 @@ import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
 import me.ferreira.graveto.moneytracker.accounts.service.command.CloseAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.service.command.CreateAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
+import me.ferreira.graveto.moneytracker.accounts.service.payload.AccountDetails;
 import me.ferreira.graveto.moneytracker.accounts.web.dto.request.CreateAccountRequestDto;
 import me.ferreira.graveto.moneytracker.accounts.web.dto.response.AccountResponseDto;
 import me.ferreira.graveto.moneytracker.accounts.web.dto.response.AccountSummaryResponseDto;
@@ -71,18 +72,22 @@ public class AccountController {
 
     final FetchAccountCommand command = new FetchAccountCommand(userSid, sid);
 
-    final Account account = accountService.fetchAccount(command);
+    final AccountDetails accountDetails = accountService.fetchAccount(command);
 
-    final List<MembershipResponseDto> membershipResponseDto = account.getMemberships().stream()
-        .map(m -> new MembershipResponseDto(m.getUserSid(), m.getRole().name()))
+    final List<MembershipResponseDto> membershipResponseDto = accountDetails.users().stream()
+        .map(at -> new MembershipResponseDto(
+            at.sid(),
+            at.email(),
+            at.role()
+        ))
         .toList();
 
     final FullAccountResponseDto responseDto = new FullAccountResponseDto(
-        account.getSid(),
-        account.getBalance(),
-        account.getBaseCurrency().name(),
-        account.getStatus().name(),
-        account.getInstitution(),
+        accountDetails.sid(),
+        accountDetails.balance(),
+        accountDetails.currency().name(),
+        accountDetails.status().name(),
+        accountDetails.institution(),
         membershipResponseDto
     );
 

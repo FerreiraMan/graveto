@@ -67,7 +67,7 @@ public class CreateTransactionServiceImplTest {
     final UUID accountSid = UUID.randomUUID();
 
     when(categoryService.fetchCategory(any())).thenReturn(Mockito.mock(Category.class));
-    when(accountService.fetchAccount(any())).thenThrow(new AccountNotFoundException(accountSid));
+    when(accountService.fetchAccountEntity(any())).thenThrow(new AccountNotFoundException(accountSid));
 
     // Act & Assert
     assertThatThrownBy(() -> {
@@ -84,7 +84,7 @@ public class CreateTransactionServiceImplTest {
     account.setStatus(AccountStatus.CLOSED);
 
     when(categoryService.fetchCategory(any())).thenReturn(Mockito.mock(Category.class));
-    when(accountService.fetchAccount(any())).thenReturn(account);
+    when(accountService.fetchAccountEntity(any())).thenReturn(account);
 
     // Act & Assert
     assertThatThrownBy(() -> {
@@ -101,7 +101,7 @@ public class CreateTransactionServiceImplTest {
     final CreateTransactionCommand command = mock(CreateTransactionCommand.class);
 
     when(categoryService.fetchCategory(any())).thenReturn(Mockito.mock(Category.class));
-    when(accountService.fetchAccount(any())).thenReturn(account);
+    when(accountService.fetchAccountEntity(any())).thenReturn(account);
     when(command.userSid()).thenReturn(userSid);
 
     // Act & Assert
@@ -179,7 +179,7 @@ public class CreateTransactionServiceImplTest {
     );
 
     when(categoryService.fetchCategory(any())).thenReturn(category);
-    when(accountService.fetchAccount(any())).thenReturn(account);
+    when(accountService.fetchAccountEntity(any())).thenReturn(account);
     when(transactionRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
 
     // Act

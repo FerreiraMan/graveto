@@ -44,7 +44,7 @@ public class GenerateCashFlowReportServiceImplTest {
     // Arrange
     final UUID accountSid = UUID.randomUUID();
 
-    when(accountService.fetchAccount(any())).thenThrow(new AccountNotFoundException(accountSid));
+    when(accountService.fetchAccountEntity(any())).thenThrow(new AccountNotFoundException(accountSid));
 
     // Act & Assert
     assertThatThrownBy(() -> {
@@ -60,7 +60,7 @@ public class GenerateCashFlowReportServiceImplTest {
     final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, null);
     final CashFlowCommand command = mock(CashFlowCommand.class);
 
-    when(accountService.fetchAccount(any())).thenReturn(account);
+    when(accountService.fetchAccountEntity(any())).thenReturn(account);
     when(command.userSid()).thenReturn(userSid);
 
     // Act & Assert
@@ -92,7 +92,7 @@ public class GenerateCashFlowReportServiceImplTest {
         new MockProjection(3, TransactionType.EXPENSE, new BigDecimal("500.00"))
     );
 
-    when(accountService.fetchAccount(any())).thenReturn(account);
+    when(accountService.fetchAccountEntity(any())).thenReturn(account);
     when(transactionService.generateMonthlyAggregates(monthlyAggregateCommand)).thenReturn(projections);
 
     // Act
@@ -141,7 +141,7 @@ public class GenerateCashFlowReportServiceImplTest {
         new MockProjection(3, TransactionType.TRANSFER_OUT, new BigDecimal("50.00"))
     );
 
-    when(accountService.fetchAccount(any())).thenReturn(account);
+    when(accountService.fetchAccountEntity(any())).thenReturn(account);
     when(transactionService.generateMonthlyAggregates(monthlyAggregateCommand)).thenReturn(projections);
 
     // Act

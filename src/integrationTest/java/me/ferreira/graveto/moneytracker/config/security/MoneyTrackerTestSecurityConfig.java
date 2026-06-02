@@ -13,7 +13,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class MoneyTrackerTestSecurityConfig {
 
-  @Bean
+  @Bean(name = "testFilterChain")
   public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
     http
         .csrf(AbstractHttpConfigurer::disable)

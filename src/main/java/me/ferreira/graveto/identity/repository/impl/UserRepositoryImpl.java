@@ -1,6 +1,9 @@
 package me.ferreira.graveto.identity.repository.impl;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import me.ferreira.graveto.identity.domain.User;
 import me.ferreira.graveto.identity.repository.UserJpaRepository;
@@ -19,8 +22,18 @@ public class UserRepositoryImpl implements UserRepository {
   }
 
   @Override
+  public List<User> saveAll(List<User> users) {
+    return repository.saveAll(users);
+  }
+
+  @Override
   public Optional<User> fetchUserCredentials(final String email) {
     return repository.findByEmail(email);
+  }
+
+  @Override
+  public List<User> fetchListOfUsers(final Set<UUID> uuidList) {
+    return repository.findBySidIn(uuidList);
   }
 
 }

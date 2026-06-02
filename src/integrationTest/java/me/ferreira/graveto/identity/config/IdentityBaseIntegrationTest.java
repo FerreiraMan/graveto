@@ -9,7 +9,7 @@ import org.springframework.modulith.test.ApplicationModuleTest;
 
 @ApplicationModuleTest(
     module = "identity",
-    mode = ApplicationModuleTest.BootstrapMode.DIRECT_DEPENDENCIES,
+    mode = ApplicationModuleTest.BootstrapMode.STANDALONE,
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 @Import(IdentityIntegrationTestConfiguration.class)

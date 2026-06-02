@@ -50,8 +50,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     validateSameTypeOnCategory(category.getTransactionType(), command.transactionType());
 
-    final Account account =
-        accountService.fetchAccount(new FetchAccountCommand(command.userSid(), command.accountSid()));
+    final Account account = accountService.fetchAccountEntity(command.accountSid());
 
     account.validateIsActive(TX_CREATE_ACTION);
     account.validateUserPermission(command.userSid(), MembershipRole::canCreateTransaction, TX_CREATE_ACTION);
@@ -73,7 +72,7 @@ public class TransactionServiceImpl implements TransactionService {
   @Transactional
   public Page<Transaction> findAll(final FindAllTransactionsCommand command) {
 
-    accountService.fetchAccount(new FetchAccountCommand(command.userSid(), command.accountSid()));
+    accountService.fetchAccountEntity(command.accountSid());
 
     return transactionRepository.findAll(command);
   }

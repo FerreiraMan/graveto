@@ -17,7 +17,6 @@ import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
 import me.ferreira.graveto.moneytracker.accounts.repository.AccountRepository;
 import me.ferreira.graveto.moneytracker.accounts.service.command.CreateAccountCommand;
-import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.service.impl.AccountServiceImpl;
 import me.ferreira.graveto.moneytracker.utils.AccountUtils;
 import org.junit.jupiter.api.Test;
@@ -78,12 +77,11 @@ public class AccountServiceImplTest {
     final UUID accountSid = UUID.randomUUID();
     final UUID userSid = UUID.randomUUID();
     final Account expectedAccount = AccountUtils.createAccount(accountSid, userSid, MembershipRole.OWNER);
-    final FetchAccountCommand command = new FetchAccountCommand(accountSid, userSid);
 
-    when(accountRepository.findBySidAndUserSid(userSid, accountSid)).thenReturn(Optional.of(expectedAccount));
+    when(accountRepository.findBySid(accountSid)).thenReturn(Optional.of(expectedAccount));
 
     // Act
-    final Account fetchedAccount = service.fetchAccount(command);
+    final Account fetchedAccount = service.fetchAccountEntity(accountSid);
 
     // Assert
     assertThat(fetchedAccount.getSid()).isEqualTo(expectedAccount.getSid());
@@ -94,15 +92,11 @@ public class AccountServiceImplTest {
   @Test
   void shouldThrowWhenAccountDoesNotExistOrIsNotAssociatedWithAccount() {
     // Arrange
-    final FetchAccountCommand command = new FetchAccountCommand(
-        UUID.randomUUID(),
-        UUID.randomUUID()
-    );
-    when(accountRepository.findBySidAndUserSid(any(), any())).thenReturn(Optional.empty());
+    when(accountRepository.findBySid(any())).thenReturn(Optional.empty());
 
     // Act & Assert
     assertThatThrownBy(() -> {
-      service.fetchAccount(command);
+      service.fetchAccountEntity(UUID.randomUUID());
     }).isInstanceOf(AccountNotFoundException.class);
   }
 

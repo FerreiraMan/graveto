@@ -12,7 +12,6 @@ import java.util.UUID;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
-import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
 import me.ferreira.graveto.moneytracker.categories.service.CategoryService;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
@@ -46,7 +45,7 @@ public class FindAllTransactionsServiceImplTest {
     // Arrange
     final UUID accountSid = UUID.randomUUID();
 
-    when(accountService.fetchAccount(any())).thenThrow(new AccountNotFoundException(accountSid));
+    when(accountService.fetchAccountEntity(any())).thenThrow(new AccountNotFoundException(accountSid));
 
     // Act & Assert
     assertThatThrownBy(() -> {
@@ -76,7 +75,7 @@ public class FindAllTransactionsServiceImplTest {
         pageable
     );
 
-    when(accountService.fetchAccount(any(FetchAccountCommand.class))).thenReturn(mock(Account.class));
+    when(accountService.fetchAccountEntity(any())).thenReturn(mock(Account.class));
     final Page<Transaction> expectedPage = mock(Page.class);
     when(transactionRepository.findAll(command)).thenReturn(expectedPage);
 
@@ -86,12 +85,11 @@ public class FindAllTransactionsServiceImplTest {
     // Assert
     assertThat(actualPage).isSameAs(expectedPage);
 
-    final ArgumentCaptor<FetchAccountCommand> fetchAccountCaptor = ArgumentCaptor.forClass(FetchAccountCommand.class);
-    verify(accountService).fetchAccount(fetchAccountCaptor.capture());
+    final ArgumentCaptor<UUID> fetchAccountCaptor = ArgumentCaptor.forClass(UUID.class);
+    verify(accountService).fetchAccountEntity(fetchAccountCaptor.capture());
 
-    final FetchAccountCommand passedFetchCommand = fetchAccountCaptor.getValue();
-    assertThat(passedFetchCommand.userSid()).isEqualTo(userSid);
-    assertThat(passedFetchCommand.accountSid()).isEqualTo(accountSid);
+    final UUID passedFetchArgument = fetchAccountCaptor.getValue();
+    assertThat(passedFetchArgument).isEqualTo(accountSid);
 
     verify(transactionRepository).findAll(command);
   }

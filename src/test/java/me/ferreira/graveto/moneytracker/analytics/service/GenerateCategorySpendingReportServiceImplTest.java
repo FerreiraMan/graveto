@@ -46,7 +46,7 @@ public class GenerateCategorySpendingReportServiceImplTest {
     // Arrange
     final UUID accountSid = UUID.randomUUID();
 
-    when(accountService.fetchAccount(any())).thenThrow(new AccountNotFoundException(accountSid));
+    when(accountService.fetchAccountEntity(any())).thenThrow(new AccountNotFoundException(accountSid));
 
     // Act & Assert
     assertThatThrownBy(() -> {
@@ -62,7 +62,7 @@ public class GenerateCategorySpendingReportServiceImplTest {
     final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, null);
     final CategorySpendingCommand command = mock(CategorySpendingCommand.class);
 
-    when(accountService.fetchAccount(any())).thenReturn(account);
+    when(accountService.fetchAccountEntity(any())).thenReturn(account);
     when(command.userSid()).thenReturn(userSid);
 
     // Act & Assert
@@ -113,7 +113,7 @@ public class GenerateCategorySpendingReportServiceImplTest {
         new MockCategoryProjection(2, housing.getSid(), new BigDecimal("1000.00"))
     );
 
-    when(accountService.fetchAccount(any())).thenReturn(account);
+    when(accountService.fetchAccountEntity(any())).thenReturn(account);
     when(categoryService.fetchAllCategories(userSid)).thenReturn(userCategories);
     when(transactionService.generateCategoryAggregates(aggregateCommand)).thenReturn(projections);
 

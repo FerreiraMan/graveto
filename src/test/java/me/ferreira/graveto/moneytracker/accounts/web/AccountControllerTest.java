@@ -1,6 +1,7 @@
 package me.ferreira.graveto.moneytracker.accounts.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.in;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
@@ -18,6 +19,7 @@ import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
 import me.ferreira.graveto.moneytracker.accounts.service.command.CreateAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
+import me.ferreira.graveto.moneytracker.accounts.service.payload.AccountDetails;
 import me.ferreira.graveto.moneytracker.accounts.web.dto.request.CreateAccountRequestDto;
 import me.ferreira.graveto.moneytracker.utils.common.AuthUtils;
 import me.ferreira.graveto.moneytracker.utils.common.ControllerUtils;
@@ -132,19 +134,21 @@ public class AccountControllerTest {
     final BigDecimal balance = BigDecimal.TEN;
     final String institution = "Santander";
 
-    final Account mockAccount = new Account();
-    final AccountMembership mockMembership = new AccountMembership();
-    mockAccount.setSid(accountSid);
-    mockAccount.setBalance(balance);
-    mockAccount.setBaseCurrency(Currency.EUR);
-    mockAccount.setInstitution(institution);
-    mockAccount.setStatus(AccountStatus.ACTIVE);
-    mockMembership.setUserSid(userSid);
-    mockMembership.setRole(MembershipRole.OWNER);
-    mockAccount.setMemberships(List.of(mockMembership));
+    final AccountDetails.MembershipDetails membershipDetails = new AccountDetails.MembershipDetails(
+        userSid, "", MembershipRole.OWNER.name()
+    );
+
+    final AccountDetails accountDetails = new AccountDetails(
+        accountSid,
+        balance,
+        Currency.EUR,
+        AccountStatus.ACTIVE,
+        institution,
+        List.of(membershipDetails)
+    );
 
     final ArgumentCaptor<FetchAccountCommand> commandCaptor = ArgumentCaptor.forClass(FetchAccountCommand.class);
-    when(service.fetchAccount(commandCaptor.capture())).thenReturn(mockAccount);
+    when(service.fetchAccount(commandCaptor.capture())).thenReturn(accountDetails);
 
     // Act
     final MvcTestResult testResult = mvc.get()
