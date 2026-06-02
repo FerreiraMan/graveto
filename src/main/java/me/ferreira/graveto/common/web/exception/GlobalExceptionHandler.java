@@ -22,6 +22,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @Slf4j
 @RestControllerAdvice
@@ -59,6 +60,13 @@ public class GlobalExceptionHandler {
     pd.setProperty("invalid_params", invalidParams);
 
     return pd;
+  }
+
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ProblemDetail handleMethodArgumentTypeMismatchException(final MethodArgumentTypeMismatchException ex,
+                                                                    final HttpServletRequest request) {
+
+    return createBaseProblemDetail(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
   }
 
   @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
