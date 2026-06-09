@@ -72,7 +72,7 @@ public class CloseAccountControllerTest {
   }
 
   @Test
-  void shouldReturnBadRequestForInvalidRequestOnAccountFetch() {
+  void shouldReturnBadRequestForInvalidRequestOnAccountClosure() {
 
     final MvcTestResult testResult = mvc.patch()
         .uri("/accounts/{accountSid}/close", "invalid_sid")

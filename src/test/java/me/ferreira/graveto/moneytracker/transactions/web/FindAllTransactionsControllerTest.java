@@ -62,7 +62,7 @@ public class FindAllTransactionsControllerTest {
     final LocalDate startDate = LocalDate.of(2025, 1, 1);
     final LocalDate endDate = LocalDate.of(2025, 12, 31);
 
-    final LocalDateTime occurredAt = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS);
+    final LocalDateTime occurredAt = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
 
     final Category mockCategory = new Category();
     mockCategory.setDisplayName("Groceries");

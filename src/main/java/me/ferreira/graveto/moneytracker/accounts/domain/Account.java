@@ -23,6 +23,7 @@ import lombok.Setter;
 import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.common.jpa.BaseEntity;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsException;
+import me.ferreira.graveto.common.web.exception.moneytracker.UserAlreadyMemberException;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import org.hibernate.annotations.DynamicUpdate;
 
@@ -81,6 +82,14 @@ public class Account extends BaseEntity {
   }
 
   public void addMembership(final AccountMembership membership) {
+
+    final boolean alreadyExists = this.memberships.stream()
+        .anyMatch(m -> m.getUserSid().equals(membership.getUserSid()));
+
+    if (alreadyExists) {
+      throw new UserAlreadyMemberException(membership.getUserSid());
+    }
+
     memberships.add(membership);
     membership.setAccount(this);
   }

@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
+import me.ferreira.graveto.common.web.exception.moneytracker.MemberNotRegisteredException;
 import me.ferreira.graveto.identity.api.UserApi;
 import me.ferreira.graveto.identity.api.UserResponseDto;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
@@ -17,6 +18,7 @@ import me.ferreira.graveto.moneytracker.accounts.domain.event.AccountClosedEvent
 import me.ferreira.graveto.moneytracker.accounts.domain.event.AccountCreatedEvent;
 import me.ferreira.graveto.moneytracker.accounts.repository.AccountRepository;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
+import me.ferreira.graveto.moneytracker.accounts.service.command.AddMemberToAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.service.command.CloseAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.service.command.CreateAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
@@ -74,18 +76,7 @@ public class AccountServiceImpl implements AccountService {
     final Account account = accountRepository.findBySidAndUserSid(command.accountSid(), command.userSid())
         .orElseThrow(() -> new AccountNotFoundException(command.accountSid()));
 
-    final Set<UUID> userList = account.getMemberships().stream()
-        .map(AccountMembership::getUserSid)
-        .collect(Collectors.toSet());
-
-    final Map<UUID, UserResponseDto> accountUsersInfo = userApi.fetchUserDetailsByUserSids(userList);
-
-    final List<AccountDetails.MembershipDetails> userDetailsList = account.getMemberships().stream()
-        .map(m -> new AccountDetails.MembershipDetails(
-            m.getUserSid(),
-            accountUsersInfo.getOrDefault(m.getUserSid(), new UserResponseDto("")).email(),
-            m.getRole().name()))
-        .toList();
+    final List<AccountDetails.MembershipDetails> userDetailsList = buildAccountUsersInformation(account);
 
     return new AccountDetails(
         account.getSid(),
@@ -118,6 +109,53 @@ public class AccountServiceImpl implements AccountService {
     eventPublisher.publishEvent(new AccountClosedEvent(account));
 
     return account;
+  }
+
+  @Override
+  @Transactional
+  public AccountDetails addMember(final AddMemberToAccountCommand command) {
+
+    final Account account = accountRepository.findBySid(command.accountSid())
+        .orElseThrow(() -> new AccountNotFoundException(command.accountSid()));
+
+    account.validateUserPermission(command.userSid(), MembershipRole::canAddMemberToAccount, "add members");
+
+    final UserResponseDto newMemberUser = userApi.fetchUserByEmail(command.email())
+        .orElseThrow(() -> new MemberNotRegisteredException(command.email()));
+
+    final AccountMembership accountNewMembership = AccountMembership.create(
+        newMemberUser.sid(),
+        command.role()
+    );
+
+    account.addMembership(accountNewMembership);
+
+    final List<AccountDetails.MembershipDetails> userDetailsList = buildAccountUsersInformation(account);
+
+    return new AccountDetails(
+        account.getSid(),
+        account.getBalance(),
+        account.getBaseCurrency(),
+        account.getStatus(),
+        account.getInstitution(),
+        userDetailsList
+    );
+  }
+
+  private List<AccountDetails.MembershipDetails> buildAccountUsersInformation(final Account account) {
+
+    final Set<UUID> userList = account.getMemberships().stream()
+        .map(AccountMembership::getUserSid)
+        .collect(Collectors.toSet());
+
+    final Map<UUID, UserResponseDto> accountUsersInfo = userApi.fetchUserDetailsByUserSids(userList);
+
+    return account.getMemberships().stream()
+        .map(m -> new AccountDetails.MembershipDetails(
+            m.getUserSid(),
+            accountUsersInfo.getOrDefault(m.getUserSid(), new UserResponseDto(m.getUserSid(), "")).email(),
+            m.getRole().name()))
+        .toList();
   }
 
 }

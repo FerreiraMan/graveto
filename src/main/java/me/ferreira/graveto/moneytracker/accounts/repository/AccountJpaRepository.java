@@ -5,11 +5,14 @@ import java.util.Optional;
 import java.util.UUID;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.AccountStatus;
+import me.ferreira.graveto.moneytracker.accounts.domain.Account_;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 public interface AccountJpaRepository extends JpaRepository<Account, Long> {
 
+  @EntityGraph(attributePaths = {Account_.MEMBERSHIPS})
   Optional<Account> findBySid(final UUID sid);
 
   List<Account> findAllByStatus(final AccountStatus status);

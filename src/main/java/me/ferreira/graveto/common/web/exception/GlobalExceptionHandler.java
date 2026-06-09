@@ -13,9 +13,12 @@ import me.ferreira.graveto.common.web.exception.moneytracker.CategoryAlreadyExis
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.IllegalCategoryHierarchyException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsException;
+import me.ferreira.graveto.common.web.exception.moneytracker.MemberNotRegisteredException;
+import me.ferreira.graveto.common.web.exception.moneytracker.UserAlreadyMemberException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -64,7 +67,7 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(MethodArgumentTypeMismatchException.class)
   public ProblemDetail handleMethodArgumentTypeMismatchException(final MethodArgumentTypeMismatchException ex,
-                                                                    final HttpServletRequest request) {
+                                                                 final HttpServletRequest request) {
 
     return createBaseProblemDetail(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
   }
@@ -130,12 +133,36 @@ public class GlobalExceptionHandler {
     return createBaseProblemDetail(HttpStatus.FORBIDDEN, ex.getMessage(), request);
   }
 
+  @ExceptionHandler(MemberNotRegisteredException.class)
+  public ProblemDetail handleMemberNotRegisteredException(final MemberNotRegisteredException ex,
+                                                          final HttpServletRequest request) {
+
+    log.warn("Business rule violation: Invitation on user that is not registered yet. Message: {}", ex.getMessage());
+    return createBaseProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request);
+  }
+
+  @ExceptionHandler(UserAlreadyMemberException.class)
+  public ProblemDetail handleUserAlreadyMemberException(final UserAlreadyMemberException ex,
+                                                        final HttpServletRequest request) {
+
+    log.warn("Business rule violation: User is already member of account. Message: {}", ex.getMessage());
+    return createBaseProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request);
+  }
+
   @ExceptionHandler(UserAlreadyExistsException.class)
-  public ProblemDetail handleUserAlreadyExistsExceptionException(final UserAlreadyExistsException ex,
-                                                                 final HttpServletRequest request) {
+  public ProblemDetail handleUserAlreadyExistsException(final UserAlreadyExistsException ex,
+                                                        final HttpServletRequest request) {
 
     log.warn("Business rule violation: User already exists. Message: {}", ex.getMessage());
     return createBaseProblemDetail(HttpStatus.CONFLICT, ex.getMessage(), request);
+  }
+
+  @ExceptionHandler(UsernameNotFoundException.class)
+  public ProblemDetail handleUsernameNotFoundException(final UsernameNotFoundException ex,
+                                                       final HttpServletRequest request) {
+
+    log.warn("Business rule violation: Username was not found. Message: {}", ex.getMessage());
+    return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
   }
 
   @ExceptionHandler(TokenAuthenticationException.class)
@@ -150,11 +177,8 @@ public class GlobalExceptionHandler {
   public ProblemDetail handleAllUncaughtExceptions(final Exception ex, final HttpServletRequest request) {
 
     log.error("CRITICAL: Unhandled system exception occurred while accessing {}", request.getRequestURI(), ex);
-    return createBaseProblemDetail(
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        "An unexpected error occurred. Please contact support.",
-        request
-    );
+    return createBaseProblemDetail(HttpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred. Please contact support.", request);
   }
 
   private ProblemDetail createBaseProblemDetail(final HttpStatus status, final String detailMessage,

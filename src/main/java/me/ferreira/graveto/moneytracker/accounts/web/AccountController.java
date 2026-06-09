@@ -7,10 +7,12 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
+import me.ferreira.graveto.moneytracker.accounts.service.command.AddMemberToAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.service.command.CloseAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.service.command.CreateAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.service.payload.AccountDetails;
+import me.ferreira.graveto.moneytracker.accounts.web.dto.request.AddMemberToAccountRequestDto;
 import me.ferreira.graveto.moneytracker.accounts.web.dto.request.CreateAccountRequestDto;
 import me.ferreira.graveto.moneytracker.accounts.web.dto.response.AccountResponseDto;
 import me.ferreira.graveto.moneytracker.accounts.web.dto.response.AccountSummaryResponseDto;
@@ -34,6 +36,7 @@ public class AccountController {
 
   private static final String CLOSE_PATH = "/close";
   private static final String ACCOUNT_SID_PATH = "/{sid}";
+  private static final String MEMBERSHIP_PATH = "/memberships";
 
   private final AccountService accountService;
 
@@ -125,6 +128,41 @@ public class AccountController {
     final AccountResponseDto responseDto = new AccountResponseDto(
         account.getSid(),
         account.getStatus().name()
+    );
+
+    return ResponseEntity.ok().body(responseDto);
+  }
+
+  @PostMapping(path = ACCOUNT_SID_PATH + MEMBERSHIP_PATH, produces = "application/json")
+  public ResponseEntity<FullAccountResponseDto> addMemberToAccount(
+      @AuthenticationPrincipal final UUID userSid,
+      @PathVariable final UUID sid,
+      @Valid @RequestBody final AddMemberToAccountRequestDto requestDto) {
+
+    final AddMemberToAccountCommand command = new AddMemberToAccountCommand(
+        userSid,
+        sid,
+        requestDto.email().trim().toLowerCase(),
+        requestDto.role()
+    );
+
+    final AccountDetails accountDetails = accountService.addMember(command);
+
+    final List<MembershipResponseDto> membershipResponseDto = accountDetails.users().stream()
+        .map(at -> new MembershipResponseDto(
+            at.sid(),
+            at.email(),
+            at.role()
+        ))
+        .toList();
+
+    final FullAccountResponseDto responseDto = new FullAccountResponseDto(
+        accountDetails.sid(),
+        accountDetails.balance(),
+        accountDetails.currency().name(),
+        accountDetails.status().name(),
+        accountDetails.institution(),
+        membershipResponseDto
     );
 
     return ResponseEntity.ok().body(responseDto);
