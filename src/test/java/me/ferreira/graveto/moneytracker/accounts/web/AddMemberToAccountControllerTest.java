@@ -79,7 +79,8 @@ public class AddMemberToAccountControllerTest {
         List.of(originalUser, secondUser)
     );
 
-    final ArgumentCaptor<AddMemberToAccountCommand> commandCaptor = ArgumentCaptor.forClass(AddMemberToAccountCommand.class);
+    final ArgumentCaptor<AddMemberToAccountCommand> commandCaptor =
+        ArgumentCaptor.forClass(AddMemberToAccountCommand.class);
     when(service.addMember(commandCaptor.capture())).thenReturn(accountDetails);
 
     // Act
