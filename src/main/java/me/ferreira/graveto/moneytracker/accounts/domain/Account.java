@@ -24,6 +24,7 @@ import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.common.jpa.BaseEntity;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserAlreadyMemberException;
+import me.ferreira.graveto.common.web.exception.moneytracker.UserNotMemberOfAccountException;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import org.hibernate.annotations.DynamicUpdate;
 
@@ -92,6 +93,16 @@ public class Account extends BaseEntity {
 
     memberships.add(membership);
     membership.setAccount(this);
+  }
+
+  public void validateMembership(final UUID userSid) {
+
+    final boolean isMember = this.memberships.stream()
+        .anyMatch(m -> userSid.equals(m.getUserSid()));
+
+    if (!isMember) {
+      throw new UserNotMemberOfAccountException();
+    }
   }
 
   public void validateUserPermission(final UUID userSid,

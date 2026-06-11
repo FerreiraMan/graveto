@@ -15,9 +15,11 @@ import me.ferreira.graveto.common.web.exception.moneytracker.IllegalCategoryHier
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsException;
 import me.ferreira.graveto.common.web.exception.moneytracker.MemberNotRegisteredException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserAlreadyMemberException;
+import me.ferreira.graveto.common.web.exception.moneytracker.UserNotMemberOfAccountException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -141,6 +143,14 @@ public class GlobalExceptionHandler {
     return createBaseProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request);
   }
 
+  @ExceptionHandler(UserNotMemberOfAccountException.class)
+  public ProblemDetail handleUserIsNotMemberOfAccountException(final UserNotMemberOfAccountException ex,
+                                                               final HttpServletRequest request) {
+
+    log.warn("Business rule violation: User is not a member of the account. Message: {}", ex.getMessage());
+    return createBaseProblemDetail(HttpStatus.FORBIDDEN, ex.getMessage(), request);
+  }
+
   @ExceptionHandler(UserAlreadyMemberException.class)
   public ProblemDetail handleUserAlreadyMemberException(final UserAlreadyMemberException ex,
                                                         final HttpServletRequest request) {
@@ -163,6 +173,12 @@ public class GlobalExceptionHandler {
 
     log.warn("Business rule violation: Username was not found. Message: {}", ex.getMessage());
     return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+  }
+
+  @ExceptionHandler(BadCredentialsException.class)
+  public ProblemDetail handleBadCredentialsExceptionException(final HttpServletRequest request) {
+
+    return createBaseProblemDetail(HttpStatus.UNAUTHORIZED, "Invalid email or password", request);
   }
 
   @ExceptionHandler(TokenAuthenticationException.class)

@@ -47,8 +47,8 @@ public class Category extends BaseEntity {
   @Column(name = "display_name")
   private String displayName;
 
-  @Column(name = "user_sid")
-  private UUID userSid;
+  @Column(name = "account_sid")
+  private UUID accountSid;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "parent_id")
@@ -67,7 +67,7 @@ public class Category extends BaseEntity {
   public static Category create(
       final String name,
       final String displayName,
-      final UUID userSid,
+      final UUID accountSid,
       final Category parent,
       final TransactionType transactionType) {
 
@@ -78,7 +78,7 @@ public class Category extends BaseEntity {
     cat.setName(name);
     cat.setDisplayName(displayName);
     cat.setParent(parent);
-    cat.setUserSid(userSid);
+    cat.setAccountSid(accountSid);
     cat.setTransactionType(transactionType);
 
     return cat;

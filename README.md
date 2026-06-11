@@ -42,6 +42,7 @@ graveto/
 - Create accounts with currency, initial balance, and institution
 - Fetch single account (with membership roles)
 - List all accounts for authenticated user
+- Add members to an account with a specific role (owner, viewer, etc.)
 
 ### Transactions
 - Create income/expense transactions against an account and category
@@ -113,6 +114,7 @@ All endpoints are prefixed with `/api`. Protected endpoints require `Authorizati
 | GET | `/api/accounts` | ✓ | List accounts |
 | GET | `/api/accounts/{sid}` | ✓ | Get account detail |
 | PATCH | `/api/accounts/{sid}/close` | ✓ | Close account |
+| POST | `/api/accounts/{sid}/memberships` | ✓ | Add member to account |
 | POST | `/api/transactions` | ✓ | Create transaction |
 | GET | `/api/transactions` | ✓ | List transactions (paginated) |
 | PATCH | `/api/transactions/{sid}` | ✓ | Update transaction |

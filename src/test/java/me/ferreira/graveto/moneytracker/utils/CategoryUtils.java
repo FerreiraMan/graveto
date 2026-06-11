@@ -15,13 +15,13 @@ public class CategoryUtils {
     return category;
   }
 
-  public static Category createCategory(final String name, final UUID userSid, final Category parent,
+  public static Category createCategory(final String name, final UUID accountSid, final Category parent,
                                         final boolean isInternal, final TransactionType type) {
 
     final Category category = new Category();
     category.setDisplayName(name);
     category.setParent(parent);
-    category.setUserSid(userSid);
+    category.setAccountSid(accountSid);
     category.setSid(UUID.randomUUID());
     category.setName(name);
     category.setInternal(isInternal);

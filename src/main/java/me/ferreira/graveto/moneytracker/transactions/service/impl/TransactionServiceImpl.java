@@ -47,7 +47,7 @@ public class TransactionServiceImpl implements TransactionService {
   public Transaction createTransaction(final CreateTransactionCommand command) {
 
     final Category category =
-        categoryService.fetchCategory(new FetchCategoryCommand(command.userSid(), command.categorySid()));
+        categoryService.fetchCategory(new FetchCategoryCommand(command.accountSid(), command.categorySid()));
 
     validateSameTypeOnCategory(category.getTransactionType(), command.transactionType());
 
@@ -136,7 +136,7 @@ public class TransactionServiceImpl implements TransactionService {
     if (command.categorySid() != null && !command.categorySid().equals(transaction.getCategory().getSid())) {
 
       effectiveCategory = categoryService.fetchCategory(
-          new FetchCategoryCommand(command.userSid(), command.categorySid())
+          new FetchCategoryCommand(account.getSid(), command.categorySid())
       );
     }
 

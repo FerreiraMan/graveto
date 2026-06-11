@@ -58,7 +58,7 @@ public class FindAllTransactionsIT extends MoneyTrackerBaseIntegrationTest {
   void setupData() {
     accountRepository.saveAll(List.of(ACCOUNT_1, ACCOUNT_2));
 
-    final List<Category> categoryList = categoryRepository.findByUserSidIsNull();
+    final List<Category> categoryList = categoryRepository.findByAccountSidIsNull();
     firstCategory = categoryList.stream().filter(c -> !c.isInternal()).findAny().orElseThrow();
     secondCategory =
         categoryList.stream().filter(c -> !c.isInternal() && !c.getSid().equals(firstCategory.getSid())).findFirst()

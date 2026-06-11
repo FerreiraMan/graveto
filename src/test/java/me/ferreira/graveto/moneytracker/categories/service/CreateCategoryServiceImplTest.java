@@ -10,19 +10,23 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryAlreadyExistsException;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.IllegalCategoryHierarchyException;
+import me.ferreira.graveto.common.web.exception.moneytracker.UserNotMemberOfAccountException;
+import me.ferreira.graveto.moneytracker.accounts.domain.Account;
+import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
+import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.domain.SystemCategory;
 import me.ferreira.graveto.moneytracker.categories.repository.CategoryRepository;
 import me.ferreira.graveto.moneytracker.categories.service.command.CreateCategoryCommand;
 import me.ferreira.graveto.moneytracker.categories.service.impl.CategoryServiceImpl;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
+import me.ferreira.graveto.moneytracker.utils.AccountUtils;
 import me.ferreira.graveto.moneytracker.utils.CategoryUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,12 +39,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class CategoryServiceImplTest {
+public class CreateCategoryServiceImplTest {
 
   @InjectMocks
   private CategoryServiceImpl service;
   @Mock
   private CategoryRepository categoryRepository;
+  @Mock
+  private AccountService accountService;
 
   private static Stream<Arguments> validCategoryNameRequest() {
     return Stream.of(
@@ -107,58 +113,27 @@ public class CategoryServiceImplTest {
   }
 
   @Test
-  void shouldReturnAllCategories() {
-    // Arrange
-    final UUID userSid = UUID.randomUUID();
-    final Category expectedCategory = CategoryUtils.createCategory("Gas", null, null, false, TransactionType.EXPENSE);
-    when(categoryRepository.findAllByUserSid(userSid)).thenReturn(List.of(expectedCategory));
-
-    // Act
-    final List<Category> categoryList = service.fetchAllCategories(userSid);
-
-    // Assert
-    assertThat(categoryList)
-        .isNotNull()
-        .first()
-        .usingRecursiveComparison()
-        .isEqualTo(expectedCategory);
-
-    verify(categoryRepository, times(1)).findAllByUserSid(userSid);
-  }
-
-  @Test
-  void shouldThrowIfNoDefaultCategoriesAreReturned() {
-    // Arrange
-    final UUID userSid = UUID.randomUUID();
-    final Category expectedCategory =
-        CategoryUtils.createCategory("Gas", userSid, null, false, TransactionType.EXPENSE);
-    when(categoryRepository.findAllByUserSid(userSid)).thenReturn(List.of(expectedCategory));
-
-    // Act & Assert
-    assertThatThrownBy(() -> {
-      service.fetchAllCategories(userSid);
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessage("CRITICAL: Default Categories are missing from the database.");
-  }
-
-  @Test
   void shouldCreateNewCategory() {
     // Arrange
     final String expectedCategoryName = "Video games";
     final String sanitizedName = "VIDEO_GAMES";
     final UUID userSid = UUID.randomUUID();
+    final UUID accountSid = UUID.randomUUID();
     final UUID parentSid = UUID.randomUUID();
+    final Account account = AccountUtils.createAccount(accountSid, userSid, MembershipRole.OWNER);
     final CreateCategoryCommand command = new CreateCategoryCommand(
         userSid,
         expectedCategoryName,
+        accountSid,
         parentSid,
         TransactionType.EXPENSE
     );
     final Category parentCategory =
-        CategoryUtils.createCategory("Leisure", userSid, null, false, TransactionType.EXPENSE);
+        CategoryUtils.createCategory("Leisure", accountSid, null, false, TransactionType.EXPENSE);
 
-    when(categoryRepository.existsByNameForUserOrSystem(any(), any())).thenReturn(false);
+    when(categoryRepository.existsByNameForAccountOrSystem(any(), any())).thenReturn(false);
     when(categoryRepository.findBySid(parentSid)).thenReturn(Optional.of(parentCategory));
+    when(accountService.fetchAccountEntity(accountSid)).thenReturn(account);
     when(categoryRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
 
     // Act
@@ -171,6 +146,7 @@ public class CategoryServiceImplTest {
     final Category savedCategory = captor.getValue();
 
     assertThat(createdCategory.getName()).isEqualTo(sanitizedName);
+    assertThat(createdCategory.getAccountSid()).isEqualTo(accountSid);
     assertThat(createdCategory.getDisplayName()).isEqualTo(expectedCategoryName);
     assertThat(createdCategory.getParent()).isEqualTo(parentCategory);
     assertThat(createdCategory.getSid()).isEqualTo(savedCategory.getSid());
@@ -182,14 +158,18 @@ public class CategoryServiceImplTest {
     final String expectedCategoryName = "Video games";
     final String sanitizedName = "VIDEO_GAMES";
     final UUID userSid = UUID.randomUUID();
+    final UUID accountSid = UUID.randomUUID();
+    final Account account = AccountUtils.createAccount(accountSid, userSid, MembershipRole.OWNER);
     final CreateCategoryCommand command = new CreateCategoryCommand(
         userSid,
         expectedCategoryName,
+        accountSid,
         null,
         TransactionType.EXPENSE
     );
 
-    when(categoryRepository.existsByNameForUserOrSystem(any(), any())).thenReturn(false);
+    when(categoryRepository.existsByNameForAccountOrSystem(any(), any())).thenReturn(false);
+    when(accountService.fetchAccountEntity(accountSid)).thenReturn(account);
     when(categoryRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
 
     // Act
@@ -202,6 +182,7 @@ public class CategoryServiceImplTest {
     final Category savedCategory = captor.getValue();
 
     assertThat(createdCategory.getName()).isEqualTo(sanitizedName);
+    assertThat(createdCategory.getAccountSid()).isEqualTo(accountSid);
     assertThat(createdCategory.getDisplayName()).isEqualTo(expectedCategoryName);
     assertThat(createdCategory.getParent()).isNull();
     assertThat(createdCategory.getSid()).isEqualTo(savedCategory.getSid());
@@ -212,16 +193,20 @@ public class CategoryServiceImplTest {
   void shouldSanitizeValidCategoryNames(final String receivedName, final String expectedSanitizedName) {
     // Arrange
     final UUID userSid = UUID.randomUUID();
+    final UUID accountSid = UUID.randomUUID();
+    final Account account = AccountUtils.createAccount(accountSid, userSid, MembershipRole.OWNER);
     final CreateCategoryCommand command =
-        new CreateCategoryCommand(userSid, receivedName, null, TransactionType.EXPENSE);
+        new CreateCategoryCommand(userSid, receivedName, accountSid, null, TransactionType.EXPENSE);
 
     // Act & Assert
-    when(categoryRepository.existsByNameForUserOrSystem(anyString(), eq(userSid))).thenReturn(false);
+    when(categoryRepository.existsByNameForAccountOrSystem(anyString(), eq(accountSid))).thenReturn(false);
+    when(accountService.fetchAccountEntity(accountSid)).thenReturn(account);
+
 
     service.createCategory(command);
 
     final ArgumentCaptor<String> sanitizedNameCaptor = ArgumentCaptor.forClass(String.class);
-    verify(categoryRepository).existsByNameForUserOrSystem(sanitizedNameCaptor.capture(), eq(userSid));
+    verify(categoryRepository).existsByNameForAccountOrSystem(sanitizedNameCaptor.capture(), eq(accountSid));
     assertEquals(expectedSanitizedName, sanitizedNameCaptor.getValue());
   }
 
@@ -230,8 +215,11 @@ public class CategoryServiceImplTest {
   void shouldThrowOnBlankCategoryNames(final String receivedName, final String expectedSanitizedName) {
     // Arrange
     final UUID userSid = UUID.randomUUID();
+    final UUID accountSid = UUID.randomUUID();
+    final Account account = AccountUtils.createAccount(accountSid, userSid, MembershipRole.OWNER);
     final CreateCategoryCommand command =
-        new CreateCategoryCommand(userSid, receivedName, null, TransactionType.EXPENSE);
+        new CreateCategoryCommand(userSid, receivedName, accountSid, null, TransactionType.EXPENSE);
+    when(accountService.fetchAccountEntity(accountSid)).thenReturn(account);
 
     // Act & Assert
     assertThatThrownBy(() -> {
@@ -244,10 +232,15 @@ public class CategoryServiceImplTest {
   void shouldThrowIfCategoryAlreadyExists() {
     // Arrange
     final String name = "Videogames";
+    final UUID userSid = UUID.randomUUID();
+    final UUID accountSid = UUID.randomUUID();
+    final Account account = AccountUtils.createAccount(accountSid, userSid, MembershipRole.OWNER);
     final CreateCategoryCommand command =
-        new CreateCategoryCommand(UUID.randomUUID(), name, UUID.randomUUID(), TransactionType.EXPENSE);
+        new CreateCategoryCommand(userSid, name, accountSid, UUID.randomUUID(),
+            TransactionType.EXPENSE);
 
-    when(categoryRepository.existsByNameForUserOrSystem(any(), any())).thenReturn(true);
+    when(categoryRepository.existsByNameForAccountOrSystem(any(), any())).thenReturn(true);
+    when(accountService.fetchAccountEntity(accountSid)).thenReturn(account);
 
     // Act & Assert
     assertThatThrownBy(() -> {
@@ -261,38 +254,65 @@ public class CategoryServiceImplTest {
     // Arrange
     final String name = "Videogames";
     final UUID parentSid = UUID.randomUUID();
+    final UUID userSid = UUID.randomUUID();
+    final UUID accountSid = UUID.randomUUID();
+    final Account account = AccountUtils.createAccount(accountSid, userSid, MembershipRole.OWNER);
     final CreateCategoryCommand command =
-        new CreateCategoryCommand(UUID.randomUUID(), name, parentSid, TransactionType.EXPENSE);
+        new CreateCategoryCommand(userSid, name, accountSid, parentSid, TransactionType.EXPENSE);
 
-    when(categoryRepository.existsByNameForUserOrSystem(any(), any())).thenReturn(false);
+    when(categoryRepository.existsByNameForAccountOrSystem(any(), any())).thenReturn(false);
     when(categoryRepository.findBySid(parentSid)).thenReturn(Optional.empty());
+    when(accountService.fetchAccountEntity(accountSid)).thenReturn(account);
+
 
     // Act & Assert
     assertThatThrownBy(() -> {
       service.createCategory(command);
     }).isInstanceOf(CategoryNotFoundException.class)
-        .hasMessage("Category with SID [" + parentSid + "] was not found or does not belong to the user.");
+        .hasMessage("Category with SID [" + parentSid + "] was not found or does not belong to the account.");
   }
 
   @Test
-  void shouldThrowIfParentCategoryIsOwnedByOtherUser() {
+  void shouldThrowIfParentCategoryIsOwnedByOtherAccount() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
     final UUID externalUser = UUID.randomUUID();
     final String name = "Videogames";
     final UUID parentSid = UUID.randomUUID();
+    final UUID accountSid = UUID.randomUUID();
+    final Account account = AccountUtils.createAccount(accountSid, userSid, MembershipRole.OWNER);
     final Category parentCategory =
         CategoryUtils.createCategory("Leisure", externalUser, null, false, TransactionType.EXPENSE);
-    final CreateCategoryCommand command = new CreateCategoryCommand(userSid, name, parentSid, TransactionType.EXPENSE);
+    final CreateCategoryCommand command =
+        new CreateCategoryCommand(userSid, name, accountSid, parentSid, TransactionType.EXPENSE);
 
-    when(categoryRepository.existsByNameForUserOrSystem(any(), any())).thenReturn(false);
+    when(categoryRepository.existsByNameForAccountOrSystem(any(), any())).thenReturn(false);
     when(categoryRepository.findBySid(parentSid)).thenReturn(Optional.of(parentCategory));
+    when(accountService.fetchAccountEntity(accountSid)).thenReturn(account);
+
 
     // Act & Assert
     assertThatThrownBy(() -> {
       service.createCategory(command);
     }).isInstanceOf(IllegalCategoryHierarchyException.class)
-        .hasMessage("Cannot use another user's category as a parent.");
+        .hasMessage("Cannot use another account's category as a parent.");
+  }
+
+  @Test
+  void shouldThrowIfUserIsNotMemberOfAccount() {
+    // Arrange
+    final UUID userSid = UUID.randomUUID();
+    final UUID accountSid = UUID.randomUUID();
+    final Account account = AccountUtils.createAccount(accountSid, UUID.randomUUID(), MembershipRole.OWNER);
+    final CreateCategoryCommand command =
+        new CreateCategoryCommand(userSid, "Leisure", accountSid, null, TransactionType.EXPENSE);
+    when(accountService.fetchAccountEntity(accountSid)).thenReturn(account);
+
+    // Act & Assert
+    assertThatThrownBy(() -> {
+      service.createCategory(command);
+    }).isInstanceOf(UserNotMemberOfAccountException.class)
+        .hasMessage("The user is not a member of this account.");
   }
 
 }

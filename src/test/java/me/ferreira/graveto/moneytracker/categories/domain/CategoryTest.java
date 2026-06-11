@@ -21,7 +21,7 @@ public class CategoryTest {
     final Category category = Category.create(name, name, userSid, parent, TransactionType.EXPENSE);
 
     // Assert
-    assertThat(category.getUserSid()).isEqualTo(userSid);
+    assertThat(category.getAccountSid()).isEqualTo(userSid);
     assertThat(category.getName()).isEqualTo(name);
     assertThat(category.getParent().getSid()).isEqualTo(parent.getSid());
     assertThat(category.getTransactionType()).isEqualTo(TransactionType.EXPENSE);

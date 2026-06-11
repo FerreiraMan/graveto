@@ -38,7 +38,7 @@ public class FetchTransferIT extends MoneyTrackerBaseIntegrationTest {
     // Arrange
     final UUID userSid = UUID.randomUUID();
 
-    final Category category = categoryRepository.findByUserSidIsNull().getFirst();
+    final Category category = categoryRepository.findByAccountSidIsNull().getFirst();
 
     final Account outAccount = AccountTestFactory.createAccountWithOwner(userSid, "Checking", BigDecimal.valueOf(500));
     final Account inAccount = AccountTestFactory.createAccountWithOwner(userSid, "Savings", BigDecimal.valueOf(100));
