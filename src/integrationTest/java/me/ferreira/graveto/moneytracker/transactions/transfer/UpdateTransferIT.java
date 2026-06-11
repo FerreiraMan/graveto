@@ -41,7 +41,7 @@ public class UpdateTransferIT extends MoneyTrackerBaseIntegrationTest {
   void shouldUpdateTransferTransactionsAndAccountBalances() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
-    final Category category = categoryRepository.findByUserSidIsNull().getFirst();
+    final Category category = categoryRepository.findByAccountSidIsNull().getFirst();
 
     final BigDecimal persistedTransferAmount = BigDecimal.valueOf(50);
     final BigDecimal currentSourceBalance = BigDecimal.valueOf(150);

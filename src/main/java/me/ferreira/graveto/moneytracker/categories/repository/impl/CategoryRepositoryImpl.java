@@ -36,13 +36,13 @@ public class CategoryRepositoryImpl implements CategoryRepository {
   }
 
   @Override
-  public List<Category> findByUserSidIsNull() {
-    return repository.findAllByUserSidIsNull();
+  public List<Category> findByAccountSidIsNull() {
+    return repository.findAllByAccountSidIsNull();
   }
 
   @Override
-  public List<Category> findAllByUserSid(final UUID userSid) {
-    return repository.findAllByUserSid(userSid);
+  public List<Category> findAllByAccountSid(final UUID accountSid) {
+    return repository.findAllByAccountSid(accountSid);
   }
 
   @Override

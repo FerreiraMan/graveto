@@ -42,10 +42,10 @@ public class FetchCashFlowReportIT extends MoneyTrackerBaseIntegrationTest {
         AccountTestFactory.createAccountWithOwner(userSid, "Main Checking", BigDecimal.valueOf(5000));
     accountRepository.save(account);
 
-    final Category incomeCategory = categoryRepository.findByUserSidIsNull().stream()
+    final Category incomeCategory = categoryRepository.findByAccountSidIsNull().stream()
         .filter(c -> c.getTransactionType() == TransactionType.INCOME)
         .findFirst().get();
-    final Category expenseCategory = categoryRepository.findByUserSidIsNull().stream()
+    final Category expenseCategory = categoryRepository.findByAccountSidIsNull().stream()
         .filter(c -> c.getTransactionType() == TransactionType.EXPENSE)
         .findFirst().get();
 

@@ -14,7 +14,7 @@ public class CategoryTestFactory {
 
     final Category category = new Category();
     category.setSid(UUID.randomUUID());
-    category.setUserSid(userSid);
+    category.setAccountSid(userSid);
     category.setInternal(isInternal);
     category.setParent(parent);
     category.setName(name);

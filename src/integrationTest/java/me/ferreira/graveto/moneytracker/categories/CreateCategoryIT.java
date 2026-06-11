@@ -63,7 +63,7 @@ public class CreateCategoryIT extends MoneyTrackerBaseIntegrationTest {
     final Category savedCategory = categoryOptional.get();
     assertThat(savedCategory.getName()).isEqualTo(expectedSanitizedName);
     assertThat(savedCategory.getDisplayName()).isEqualTo(expectedCategoryName);
-    assertThat(savedCategory.getUserSid()).isEqualTo(userSid);
+    assertThat(savedCategory.getAccountSid()).isEqualTo(userSid);
     assertThat(savedCategory.getParent().getSid()).isEqualTo(this.parentCategory.getSid());
     assertThat(savedCategory.getTransactionType()).isEqualTo(TransactionType.EXPENSE);
   }

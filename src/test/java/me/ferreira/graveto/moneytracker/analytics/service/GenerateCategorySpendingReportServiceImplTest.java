@@ -19,6 +19,7 @@ import me.ferreira.graveto.moneytracker.analytics.service.impl.AnalyticServiceIm
 import me.ferreira.graveto.moneytracker.analytics.service.payload.CategorySpendingResult;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.service.CategoryService;
+import me.ferreira.graveto.moneytracker.categories.service.command.FetchAllCategoriesCommand;
 import me.ferreira.graveto.moneytracker.transactions.domain.projection.CategoryAggregateProjection;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.GenerateCategoryAggregateCommand;
@@ -114,7 +115,8 @@ public class GenerateCategorySpendingReportServiceImplTest {
     );
 
     when(accountService.fetchAccountEntity(any())).thenReturn(account);
-    when(categoryService.fetchAllCategories(userSid)).thenReturn(userCategories);
+    when(categoryService.fetchAllCategories(new FetchAllCategoriesCommand(userSid, account.getSid()))).thenReturn(
+        userCategories);
     when(transactionService.generateCategoryAggregates(aggregateCommand)).thenReturn(projections);
 
     // Act

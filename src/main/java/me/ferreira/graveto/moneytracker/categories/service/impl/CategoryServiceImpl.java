@@ -8,11 +8,14 @@ import lombok.extern.slf4j.Slf4j;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryAlreadyExistsException;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.IllegalCategoryHierarchyException;
+import me.ferreira.graveto.moneytracker.accounts.domain.Account;
+import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.domain.SystemCategory;
 import me.ferreira.graveto.moneytracker.categories.repository.CategoryRepository;
 import me.ferreira.graveto.moneytracker.categories.service.CategoryService;
 import me.ferreira.graveto.moneytracker.categories.service.command.CreateCategoryCommand;
+import me.ferreira.graveto.moneytracker.categories.service.command.FetchAllCategoriesCommand;
 import me.ferreira.graveto.moneytracker.categories.service.command.FetchCategoryCommand;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -29,6 +32,7 @@ public class CategoryServiceImpl implements CategoryService {
   private static final String DEFAULT_CATEGORIES_NOT_FOUND =
       "CRITICAL: Default Categories are missing from the database.";
 
+  private final AccountService accountService;
   private final CategoryRepository categoryRepository;
 
   @Override
@@ -53,12 +57,19 @@ public class CategoryServiceImpl implements CategoryService {
 
   @Override
   @Transactional(readOnly = true)
-  public List<Category> fetchAllCategories(final UUID userSid) {
+  public List<Category> fetchAllCategories(final FetchAllCategoriesCommand command) {
 
-    final List<Category> categories = categoryRepository.findAllByUserSid(userSid);
+    if (command.accountSid() != null) {
+
+      final Account account = accountService.fetchAccountEntity(command.accountSid());
+      account.validateMembership(command.userSid());
+    }
+
+    final List<Category> categories = command.accountSid() == null ? categoryRepository.findByAccountSidIsNull() :
+        categoryRepository.findAllByAccountSid(command.accountSid());
 
     final boolean hasSystemCategories = categories.stream()
-        .anyMatch(c -> Objects.isNull(c.getUserSid()));
+        .anyMatch(c -> Objects.isNull(c.getAccountSid()));
 
     if (!hasSystemCategories) {
       throw new IllegalStateException(DEFAULT_CATEGORIES_NOT_FOUND);
@@ -84,7 +95,7 @@ public class CategoryServiceImpl implements CategoryService {
       parentCategory = categoryRepository.findBySid(command.parentSid())
           .orElseThrow(() -> new CategoryNotFoundException(command.parentSid()));
 
-      if (Objects.nonNull(parentCategory.getUserSid()) && !parentCategory.getUserSid().equals(command.userSid())) {
+      if (Objects.nonNull(parentCategory.getAccountSid()) && !parentCategory.getAccountSid().equals(command.userSid())) {
         throw new IllegalCategoryHierarchyException();
       }
 

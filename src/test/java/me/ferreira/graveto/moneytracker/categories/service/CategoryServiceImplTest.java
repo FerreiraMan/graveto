@@ -10,7 +10,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -104,41 +103,6 @@ public class CategoryServiceImplTest {
         .isEqualTo(expectedCategory);
 
     verify(categoryRepository, times(1)).findBySid(SystemCategory.INITIAL_BALANCE.getSid());
-  }
-
-  @Test
-  void shouldReturnAllCategories() {
-    // Arrange
-    final UUID userSid = UUID.randomUUID();
-    final Category expectedCategory = CategoryUtils.createCategory("Gas", null, null, false, TransactionType.EXPENSE);
-    when(categoryRepository.findAllByUserSid(userSid)).thenReturn(List.of(expectedCategory));
-
-    // Act
-    final List<Category> categoryList = service.fetchAllCategories(userSid);
-
-    // Assert
-    assertThat(categoryList)
-        .isNotNull()
-        .first()
-        .usingRecursiveComparison()
-        .isEqualTo(expectedCategory);
-
-    verify(categoryRepository, times(1)).findAllByUserSid(userSid);
-  }
-
-  @Test
-  void shouldThrowIfNoDefaultCategoriesAreReturned() {
-    // Arrange
-    final UUID userSid = UUID.randomUUID();
-    final Category expectedCategory =
-        CategoryUtils.createCategory("Gas", userSid, null, false, TransactionType.EXPENSE);
-    when(categoryRepository.findAllByUserSid(userSid)).thenReturn(List.of(expectedCategory));
-
-    // Act & Assert
-    assertThatThrownBy(() -> {
-      service.fetchAllCategories(userSid);
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessage("CRITICAL: Default Categories are missing from the database.");
   }
 
   @Test

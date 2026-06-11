@@ -42,11 +42,11 @@ public class FetchCategorySpendingReportIT extends MoneyTrackerBaseIntegrationTe
         AccountTestFactory.createAccountWithOwner(userSid, "Main Checking", BigDecimal.valueOf(5000));
     accountRepository.save(account);
 
-    final Category housing = categoryRepository.findByUserSidIsNull().stream()
+    final Category housing = categoryRepository.findByAccountSidIsNull().stream()
         .filter(c -> c.getName().equals("HOUSING")).findFirst().orElseThrow();
-    final Category utilities = categoryRepository.findByUserSidIsNull().stream()
+    final Category utilities = categoryRepository.findByAccountSidIsNull().stream()
         .filter(c -> c.getName().equals("UTILITIES")).findFirst().orElseThrow();
-    final Category electricity = categoryRepository.findByUserSidIsNull().stream()
+    final Category electricity = categoryRepository.findByAccountSidIsNull().stream()
         .filter(c -> c.getName().equals("ELECTRICITY")).findFirst().orElseThrow();
 
     final int targetYear = 2026;

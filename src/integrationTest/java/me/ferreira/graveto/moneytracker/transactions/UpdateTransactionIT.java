@@ -41,7 +41,7 @@ public class UpdateTransactionIT extends MoneyTrackerBaseIntegrationTest {
   void shouldUpdateTransaction() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
-    final List<Category> categoryList = categoryRepository.findAllByUserSid(userSid);
+    final List<Category> categoryList = categoryRepository.findAllByAccountSid(userSid);
     final Category initialCategory = categoryList.getFirst();
     final Category newCategory = categoryList.getLast();
     final BigDecimal initialBalance = BigDecimal.valueOf(100);

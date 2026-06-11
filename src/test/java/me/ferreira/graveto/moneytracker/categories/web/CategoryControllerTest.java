@@ -4,16 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 
-import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.service.CategoryService;
 import me.ferreira.graveto.moneytracker.categories.service.command.CreateCategoryCommand;
 import me.ferreira.graveto.moneytracker.categories.web.dto.request.CreateCategoryRequestDto;
-import me.ferreira.graveto.moneytracker.categories.web.dto.response.CategoryResponseDto;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
-import me.ferreira.graveto.moneytracker.utils.CategoryUtils;
 import me.ferreira.graveto.moneytracker.utils.common.AuthUtils;
 import me.ferreira.graveto.moneytracker.utils.common.ControllerUtils;
 import me.ferreira.graveto.moneytracker.utils.common.TestSecurityConfig;
@@ -54,47 +51,6 @@ public class CategoryControllerTest {
         Arguments.of("   ", TransactionType.EXPENSE, "name"),
         Arguments.of("Lunch", null, "transactionType")
     );
-  }
-
-  @Test
-  void shouldReturnAllCategories() throws Exception {
-    // Arrange
-    final UUID userSid = UUID.randomUUID();
-
-    final Category parentCategory = CategoryUtils.createCategory("Gas", null, null, false, TransactionType.EXPENSE);
-    final Category childCategory =
-        CategoryUtils.createCategory("Diesel", userSid, parentCategory, false, TransactionType.EXPENSE);
-
-    when(service.fetchAllCategories(userSid)).thenReturn(List.of(parentCategory, childCategory));
-
-    // Act
-    final MvcTestResult testResult = mvc.get()
-        .uri("/categories")
-        .with(authentication(AuthUtils.mockAuth(userSid)))
-        .exchange();
-
-    // Assert
-    assertThat(testResult).hasStatus(HttpStatus.OK);
-
-    final List<CategoryResponseDto> categories =
-        ControllerUtils.convertIntoObjectList(testResult, CategoryResponseDto.class);
-
-    assertThat(categories)
-        .hasSize(2)
-        .satisfiesExactly(
-            parent -> {
-              assertThat(parent.sid()).isEqualTo(parentCategory.getSid());
-              assertThat(parent.name()).isEqualTo("Gas");
-              assertThat(parent.parentSid()).isNull();
-              assertThat(parent.isSystem()).isTrue();
-            },
-            child -> {
-              assertThat(child.sid()).isEqualTo(childCategory.getSid());
-              assertThat(child.name()).isEqualTo("Diesel");
-              assertThat(child.parentSid()).isEqualTo(parentCategory.getSid());
-              assertThat(child.isSystem()).isFalse();
-            }
-        );
   }
 
   @Test

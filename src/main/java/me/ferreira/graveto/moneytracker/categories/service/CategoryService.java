@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.service.command.CreateCategoryCommand;
+import me.ferreira.graveto.moneytracker.categories.service.command.FetchAllCategoriesCommand;
 import me.ferreira.graveto.moneytracker.categories.service.command.FetchCategoryCommand;
 
 public interface CategoryService {
@@ -12,7 +13,7 @@ public interface CategoryService {
 
   Category fetchCategory(FetchCategoryCommand command);
 
-  List<Category> fetchAllCategories(UUID userSid);
+  List<Category> fetchAllCategories(FetchAllCategoriesCommand command);
 
   Category createCategory(CreateCategoryCommand command);
 

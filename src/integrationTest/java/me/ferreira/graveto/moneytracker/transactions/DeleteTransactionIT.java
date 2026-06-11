@@ -37,7 +37,7 @@ public class DeleteTransactionIT extends MoneyTrackerBaseIntegrationTest {
   void shouldDeleteTransaction() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
-    final Category category = categoryRepository.findAllByUserSid(userSid).getFirst();
+    final Category category = categoryRepository.findAllByAccountSid(userSid).getFirst();
     final BigDecimal initialBalance = BigDecimal.TEN;
 
     final Account account = AccountTestFactory.createAccountWithOwner(userSid, "Santander", initialBalance);

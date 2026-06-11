@@ -9,7 +9,6 @@ import java.util.UUID;
 import lombok.AllArgsConstructor;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
-import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
 import me.ferreira.graveto.moneytracker.analytics.service.AnalyticService;
 import me.ferreira.graveto.moneytracker.analytics.service.command.CashFlowCommand;
 import me.ferreira.graveto.moneytracker.analytics.service.command.CategorySpendingCommand;
@@ -17,6 +16,7 @@ import me.ferreira.graveto.moneytracker.analytics.service.payload.CashFlowResult
 import me.ferreira.graveto.moneytracker.analytics.service.payload.CategorySpendingResult;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.service.CategoryService;
+import me.ferreira.graveto.moneytracker.categories.service.command.FetchAllCategoriesCommand;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.domain.projection.CategoryAggregateProjection;
 import me.ferreira.graveto.moneytracker.transactions.domain.projection.MonthlyAggregateProjection;
@@ -54,7 +54,7 @@ public class AnalyticServiceImpl implements AnalyticService {
 
   @Override
   @Transactional(readOnly = true)
-  public CategorySpendingResult generateCategorySpendingReport(CategorySpendingCommand command) {
+  public CategorySpendingResult generateCategorySpendingReport(final CategorySpendingCommand command) {
 
     accountService
         .fetchAccountEntity(command.accountSid())
@@ -69,9 +69,10 @@ public class AnalyticServiceImpl implements AnalyticService {
     final List<CategoryAggregateProjection> projections =
         transactionService.generateCategoryAggregates(aggregateCommand);
 
-    final List<Category> userAvailableCategories = categoryService.fetchAllCategories(command.userSid());
+    final List<Category> accountAvailableCategories =
+        categoryService.fetchAllCategories(new FetchAllCategoriesCommand(command.userSid(), command.accountSid()));
 
-    return mapToCategorySpendingResult(command.year(), projections, userAvailableCategories);
+    return mapToCategorySpendingResult(command.year(), projections, accountAvailableCategories);
   }
 
   private CashFlowResult mapToCashFlowResult(final int year, final List<MonthlyAggregateProjection> projections) {

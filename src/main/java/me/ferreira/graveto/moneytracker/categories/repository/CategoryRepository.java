@@ -15,9 +15,9 @@ public interface CategoryRepository {
 
   Optional<Category> findBySidOrUserSid(UUID categorySid, UUID userSid);
 
-  List<Category> findByUserSidIsNull();
+  List<Category> findByAccountSidIsNull();
 
-  List<Category> findAllByUserSid(UUID userSid);
+  List<Category> findAllByAccountSid(UUID accountSid);
 
   boolean existsByNameForUserOrSystem(String name, UUID userSid);
 

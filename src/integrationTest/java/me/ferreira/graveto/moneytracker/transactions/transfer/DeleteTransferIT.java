@@ -38,7 +38,7 @@ public class DeleteTransferIT extends MoneyTrackerBaseIntegrationTest {
   void shouldDeleteTransferTransactions() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
-    final Category category = categoryRepository.findAllByUserSid(userSid).getFirst();
+    final Category category = categoryRepository.findAllByAccountSid(userSid).getFirst();
     final BigDecimal firstAccountInitialBalance = BigDecimal.valueOf(100);
     final BigDecimal secondAccountInitialBalance = BigDecimal.valueOf(200);
 
