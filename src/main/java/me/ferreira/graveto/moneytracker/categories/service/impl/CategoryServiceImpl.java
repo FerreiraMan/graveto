@@ -8,7 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryAlreadyExistsException;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.IllegalCategoryHierarchyException;
-import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.domain.SystemCategory;
@@ -61,8 +60,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     if (command.accountSid() != null) {
 
-      final Account account = accountService.fetchAccountEntity(command.accountSid());
-      account.validateMembership(command.userSid());
+      accountService.fetchAccountEntity(command.accountSid()).validateMembership(command.userSid());
     }
 
     final List<Category> categories = command.accountSid() == null ? categoryRepository.findByAccountSidIsNull() :
@@ -82,8 +80,7 @@ public class CategoryServiceImpl implements CategoryService {
   @Transactional
   public Category createCategory(final CreateCategoryCommand command) {
 
-    final Account account = accountService.fetchAccountEntity(command.accountSid());
-    account.validateMembership(command.userSid());
+    accountService.fetchAccountEntity(command.accountSid()).validateMembership(command.userSid());
 
     final String sanitizedName = validateAndSanitizeName(command.name());
 

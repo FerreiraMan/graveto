@@ -14,6 +14,7 @@ import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundExc
 import me.ferreira.graveto.common.web.exception.moneytracker.IllegalCategoryHierarchyException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsException;
 import me.ferreira.graveto.common.web.exception.moneytracker.MemberNotRegisteredException;
+import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserAlreadyMemberException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserNotMemberOfAccountException;
 import org.springframework.http.HttpStatus;
@@ -98,6 +99,14 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(AccountNotFoundException.class)
   public ProblemDetail handleAccountNotFoundException(final AccountNotFoundException ex,
                                                       final HttpServletRequest request) {
+
+    log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
+    return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+  }
+
+  @ExceptionHandler(TransactionNotFoundException.class)
+  public ProblemDetail handleTransactionNotFoundException(final TransactionNotFoundException ex,
+                                                          final HttpServletRequest request) {
 
     log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
     return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);

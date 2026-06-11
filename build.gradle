@@ -1,5 +1,6 @@
 plugins {
 	id 'java'
+	id 'jacoco'
 	id 'jvm-test-suite'
 	id 'org.springframework.boot' version '4.0.2'
 	id 'io.spring.dependency-management' version '1.1.7'
@@ -50,6 +51,31 @@ tasks.register('finalizeBuild', Exec) {
 	description = 'Stop and remove containers'
 	workingDir "$projectDir"
 	commandLine 'docker', 'compose', '-f', 'infrastructure/docker/docker-compose.yml', 'down', '--remove-orphans'
+}
+
+jacocoTestReport {
+	dependsOn test
+}
+
+jacocoTestCoverageVerification {
+	dependsOn jacocoTestReport
+
+	violationRules {
+		rule {
+			element = 'BUNDLE'
+
+			limit {
+				counter = 'INSTRUCTION'
+				value = 'COVEREDRATIO'
+				minimum = 0.80
+			}
+			limit {
+				counter = 'BRANCH'
+				value = 'COVEREDRATIO'
+				minimum = 0.80
+			}
+		}
+	}
 }
 
 dependencies {
@@ -120,4 +146,5 @@ testing {
 
 tasks.named('check') {
 	dependsOn testing.suites.integrationTest
+	dependsOn jacocoTestCoverageVerification
 }

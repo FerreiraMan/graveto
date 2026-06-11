@@ -9,19 +9,19 @@ import org.junit.jupiter.api.Test;
 public class CategoryTest {
 
   @Test
-  void shouldCreateUserSpecificCategoryWithGeneratedSid() {
+  void shouldCreateAccountSpecificCategoryWithGeneratedSid() {
     // Arrange
-    final UUID userSid = UUID.randomUUID();
+    final UUID accountSid = UUID.randomUUID();
     final UUID parentCategorySid = UUID.randomUUID();
     final String name = "Videogames";
     final Category parent = new Category();
     parent.setSid(parentCategorySid);
 
     // Act
-    final Category category = Category.create(name, name, userSid, parent, TransactionType.EXPENSE);
+    final Category category = Category.create(name, name, accountSid, parent, TransactionType.EXPENSE);
 
     // Assert
-    assertThat(category.getAccountSid()).isEqualTo(userSid);
+    assertThat(category.getAccountSid()).isEqualTo(accountSid);
     assertThat(category.getName()).isEqualTo(name);
     assertThat(category.getParent().getSid()).isEqualTo(parent.getSid());
     assertThat(category.getTransactionType()).isEqualTo(TransactionType.EXPENSE);
