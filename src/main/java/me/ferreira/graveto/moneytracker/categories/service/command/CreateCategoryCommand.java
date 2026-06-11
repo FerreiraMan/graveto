@@ -6,6 +6,7 @@ import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 public record CreateCategoryCommand(
     UUID userSid,
     String name,
+    UUID accountSid,
     UUID parentSid,
     TransactionType transactionType
 ) {

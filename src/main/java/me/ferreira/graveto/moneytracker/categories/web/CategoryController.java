@@ -45,6 +45,7 @@ public class CategoryController {
             c -> new CategoryResponseDto(
                 c.getSid(),
                 c.getDisplayName(),
+                Objects.nonNull(c.getAccountSid()) ? c.getAccountSid() : null,
                 Objects.nonNull(c.getParent()) ? c.getParent().getSid() : null,
                 Objects.isNull(c.getAccountSid())
             ))
@@ -55,12 +56,13 @@ public class CategoryController {
 
   @PostMapping(produces = "application/json")
   public ResponseEntity<CategoryResponseDto> createCategory(
-      @Valid @RequestBody final CreateCategoryRequestDto requestDto,
-      @AuthenticationPrincipal final UUID userSid) {
+      @AuthenticationPrincipal final UUID userSid,
+      @Valid @RequestBody final CreateCategoryRequestDto requestDto) {
 
     final CreateCategoryCommand command = new CreateCategoryCommand(
         userSid,
         requestDto.name().trim(),
+        requestDto.accountSid(),
         requestDto.parentSid(),
         requestDto.transactionType()
     );
@@ -70,6 +72,7 @@ public class CategoryController {
     final CategoryResponseDto response = new CategoryResponseDto(
         createdCategory.getSid(),
         createdCategory.getDisplayName(),
+        createdCategory.getAccountSid(),
         Objects.isNull(createdCategory.getParent()) ? null : createdCategory.getParent().getSid(),
         false
     );

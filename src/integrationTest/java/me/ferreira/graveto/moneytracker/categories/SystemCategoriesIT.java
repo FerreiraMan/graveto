@@ -22,7 +22,7 @@ public class SystemCategoriesIT extends MoneyTrackerBaseIntegrationTest {
     final List<UUID> definedSystemCategoriesSids = SystemCategory.allSids();
 
     // Act
-    final List<Category> categoryList = categoryRepository.findByAccountSidIsNull();
+    final List<Category> categoryList = categoryRepository.findAll();
 
     // Assert
     final List<UUID> existingSystemCategoriesSids = categoryList.stream()

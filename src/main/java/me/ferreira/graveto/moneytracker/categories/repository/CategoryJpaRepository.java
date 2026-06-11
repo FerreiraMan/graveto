@@ -16,7 +16,7 @@ public interface CategoryJpaRepository extends JpaRepository<Category, Long> {
       "WHERE c.sid = ?1 " +
       "AND c.isInternal IS FALSE " +
       "AND (c.accountSid IS NULL OR c.accountSid = ?2)")
-  Optional<Category> findBySidOrUserSid(final UUID sid, final UUID userSid);
+  Optional<Category> findBySidOrAccountSid(final UUID sid, final UUID accountSid);
 
   @Query(value = "SELECT c FROM Category c LEFT JOIN FETCH c.parent " +
       "WHERE c.isInternal IS FALSE " +
@@ -30,6 +30,6 @@ public interface CategoryJpaRepository extends JpaRepository<Category, Long> {
 
   @Query(value = "SELECT COUNT(c) > 0 FROM Category c " +
       "WHERE c.name = ?1 AND (c.accountSid = ?2 OR c.accountSid is NULL)")
-  boolean existsByNameForUserOrSystem(final String name, final UUID userSid);
+  boolean existsByNameForAccountOrSystem(final String name, final UUID accountSid);
 
 }

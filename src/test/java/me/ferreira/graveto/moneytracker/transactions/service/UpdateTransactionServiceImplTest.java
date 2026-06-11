@@ -234,7 +234,7 @@ public class UpdateTransactionServiceImplTest {
     assertThatThrownBy(() -> {
       service.updateTransaction(command);
     }).isInstanceOf(CategoryNotFoundException.class)
-        .hasMessage("Category with SID [" + categorySid + "] was not found or does not belong to the user.");
+        .hasMessage("Category with SID [" + categorySid + "] was not found or does not belong to the account.");
   }
 
   @Test

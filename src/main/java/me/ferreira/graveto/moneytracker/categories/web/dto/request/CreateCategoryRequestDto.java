@@ -6,8 +6,11 @@ import java.util.UUID;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 
 public record CreateCategoryRequestDto(
-    @NotBlank(message = "Category name cannot be empty")
+    @NotBlank(message = "Category name cannot be empty.")
     String name,
+
+    @NotNull(message = "Target account for the category must be specified.")
+    UUID accountSid,
 
     UUID parentSid,
 

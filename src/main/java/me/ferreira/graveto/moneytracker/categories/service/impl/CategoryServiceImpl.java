@@ -49,9 +49,9 @@ public class CategoryServiceImpl implements CategoryService {
 
   @Override
   @Transactional(readOnly = true)
-  public Category fetchCategory(FetchCategoryCommand command) {
+  public Category fetchCategory(final FetchCategoryCommand command) {
 
-    return categoryRepository.findBySidOrUserSid(command.categorySid(), command.userSid())
+    return categoryRepository.findBySidOrAccountSid(command.categorySid(), command.accountSid())
         .orElseThrow(() -> new CategoryNotFoundException(command.categorySid()));
   }
 
@@ -82,9 +82,12 @@ public class CategoryServiceImpl implements CategoryService {
   @Transactional
   public Category createCategory(final CreateCategoryCommand command) {
 
+    final Account account = accountService.fetchAccountEntity(command.accountSid());
+    account.validateMembership(command.userSid());
+
     final String sanitizedName = validateAndSanitizeName(command.name());
 
-    if (categoryRepository.existsByNameForUserOrSystem(sanitizedName, command.userSid())) {
+    if (categoryRepository.existsByNameForAccountOrSystem(sanitizedName, command.accountSid())) {
       throw new CategoryAlreadyExistsException(command.name());
     }
 
@@ -95,14 +98,14 @@ public class CategoryServiceImpl implements CategoryService {
       parentCategory = categoryRepository.findBySid(command.parentSid())
           .orElseThrow(() -> new CategoryNotFoundException(command.parentSid()));
 
-      if (Objects.nonNull(parentCategory.getAccountSid()) && !parentCategory.getAccountSid().equals(command.userSid())) {
+      if (Objects.nonNull(parentCategory.getAccountSid()) && !parentCategory.getAccountSid()
+          .equals(command.accountSid())) {
         throw new IllegalCategoryHierarchyException();
       }
-
     }
 
     final Category category =
-        Category.create(sanitizedName, command.name(), command.userSid(), parentCategory, command.transactionType());
+        Category.create(sanitizedName, command.name(), command.accountSid(), parentCategory, command.transactionType());
 
     log.info("Category created successfully. CategorySid: {}", category.getSid());
 

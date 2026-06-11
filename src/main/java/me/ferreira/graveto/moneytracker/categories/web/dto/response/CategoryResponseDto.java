@@ -7,6 +7,7 @@ import java.util.UUID;
 public record CategoryResponseDto(
     UUID sid,
     String name,
+    UUID accountSid,
     UUID parentSid,
     boolean isSystem
 ) {

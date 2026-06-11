@@ -37,7 +37,7 @@ import org.springframework.test.web.servlet.assertj.MvcTestResult;
         pattern = "me.ferreira.graveto.identity.*"
     ))
 @Import(TestSecurityConfig.class)
-public class CategoryControllerTest {
+public class CreateCategoryControllerTest {
 
   @Autowired
   private MockMvcTester mvc;
@@ -46,10 +46,11 @@ public class CategoryControllerTest {
 
   private static Stream<Arguments> invalidCategoryCreationRequest() {
     return Stream.of(
-        Arguments.of(null, TransactionType.EXPENSE, "name"),
-        Arguments.of("", TransactionType.EXPENSE, "name"),
-        Arguments.of("   ", TransactionType.EXPENSE, "name"),
-        Arguments.of("Lunch", null, "transactionType")
+        Arguments.of(null, UUID.randomUUID(), TransactionType.EXPENSE, "name"),
+        Arguments.of("", UUID.randomUUID(), TransactionType.EXPENSE, "name"),
+        Arguments.of("   ", UUID.randomUUID(), TransactionType.EXPENSE, "name"),
+        Arguments.of("Lunch", UUID.randomUUID(), null, "transactionType"),
+        Arguments.of("Lunch", null, TransactionType.EXPENSE, "accountSid")
     );
   }
 
@@ -58,17 +59,19 @@ public class CategoryControllerTest {
     // Arrange
     final UUID userSid = UUID.randomUUID();
     final UUID categorySid = UUID.randomUUID();
+    final UUID accountSid = UUID.randomUUID();
     final UUID parentSid = UUID.randomUUID();
     final String categoryName = "Videogames";
 
     final CreateCategoryRequestDto request =
-        new CreateCategoryRequestDto(categoryName, parentSid, TransactionType.EXPENSE);
+        new CreateCategoryRequestDto(categoryName, accountSid, parentSid, TransactionType.EXPENSE);
 
     final Category mockParent = new Category();
     mockParent.setSid(parentSid);
     final Category mockCategory = new Category();
     mockCategory.setSid(categorySid);
     mockCategory.setName(categoryName);
+    mockCategory.setAccountSid(accountSid);
     mockCategory.setDisplayName(categoryName);
     mockCategory.setParent(mockParent);
 
@@ -90,12 +93,15 @@ public class CategoryControllerTest {
     final CreateCategoryCommand capturedCommand = commandCaptor.getValue();
     assertThat(capturedCommand.userSid()).isEqualTo(userSid);
     assertThat(capturedCommand.name()).isEqualTo(categoryName);
+    assertThat(capturedCommand.accountSid()).isEqualTo(accountSid);
     assertThat(capturedCommand.parentSid()).isEqualTo(parentSid);
 
     assertThat(testResult).bodyJson()
         .extractingPath("$.sid").asString().isEqualTo(categorySid.toString());
     assertThat(testResult).bodyJson()
         .extractingPath("$.name").asString().isEqualTo(categoryName);
+    assertThat(testResult).bodyJson()
+        .extractingPath("$.accountSid").asString().isEqualTo(accountSid.toString());
     assertThat(testResult).bodyJson()
         .extractingPath("$.parentSid").asString().isEqualTo(parentSid.toString());
     assertThat(testResult).bodyJson()
@@ -105,10 +111,11 @@ public class CategoryControllerTest {
   @ParameterizedTest
   @MethodSource("invalidCategoryCreationRequest")
   void shouldReturnBadRequestForInvalidPayloadsOnCategoryCreation(final String name,
+                                                                  final UUID accountSid,
                                                                   final TransactionType transactionType,
                                                                   final String invalidParam) {
 
-    final CreateCategoryRequestDto request = new CreateCategoryRequestDto(name, null, transactionType);
+    final CreateCategoryRequestDto request = new CreateCategoryRequestDto(name, accountSid, null, transactionType);
 
     final MvcTestResult testResult = mvc.post()
         .uri("/categories")

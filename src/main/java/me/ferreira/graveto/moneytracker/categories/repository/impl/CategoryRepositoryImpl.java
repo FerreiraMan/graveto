@@ -31,8 +31,8 @@ public class CategoryRepositoryImpl implements CategoryRepository {
   }
 
   @Override
-  public Optional<Category> findBySidOrUserSid(UUID categorySid, UUID userSid) {
-    return repository.findBySidOrUserSid(categorySid, userSid);
+  public Optional<Category> findBySidOrAccountSid(UUID categorySid, UUID accountSid) {
+    return repository.findBySidOrAccountSid(categorySid, accountSid);
   }
 
   @Override
@@ -41,13 +41,18 @@ public class CategoryRepositoryImpl implements CategoryRepository {
   }
 
   @Override
+  public List<Category> findAll() {
+    return repository.findAll();
+  }
+
+  @Override
   public List<Category> findAllByAccountSid(final UUID accountSid) {
     return repository.findAllByAccountSid(accountSid);
   }
 
   @Override
-  public boolean existsByNameForUserOrSystem(final String name, final UUID userSid) {
-    return repository.existsByNameForUserOrSystem(name, userSid);
+  public boolean existsByNameForAccountOrSystem(final String name, final UUID accountSid) {
+    return repository.existsByNameForAccountOrSystem(name, accountSid);
   }
 
 }

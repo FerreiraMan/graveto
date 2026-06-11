@@ -13,12 +13,14 @@ public interface CategoryRepository {
 
   Optional<Category> findBySid(UUID categorySid);
 
-  Optional<Category> findBySidOrUserSid(UUID categorySid, UUID userSid);
+  Optional<Category> findBySidOrAccountSid(UUID categorySid, UUID accountSid);
 
   List<Category> findByAccountSidIsNull();
 
+  List<Category> findAll();
+
   List<Category> findAllByAccountSid(UUID accountSid);
 
-  boolean existsByNameForUserOrSystem(String name, UUID userSid);
+  boolean existsByNameForAccountOrSystem(String name, UUID accountSid);
 
 }

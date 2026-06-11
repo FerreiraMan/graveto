@@ -8,13 +8,13 @@ public class CategoryTestFactory {
 
   public static Category createCategory(
       final String name,
-      final UUID userSid,
+      final UUID accountSid,
       final Category parent,
       final boolean isInternal) {
 
     final Category category = new Category();
     category.setSid(UUID.randomUUID());
-    category.setAccountSid(userSid);
+    category.setAccountSid(accountSid);
     category.setInternal(isInternal);
     category.setParent(parent);
     category.setName(name);
