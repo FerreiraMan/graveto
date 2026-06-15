@@ -4,12 +4,12 @@ spring:
   datasource:
     driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://${GRAVETO_POSTGRES_HOST:localhost}:5432/${POSTGRES_DB:graveto_db}
-    username: ${POSTGRES_USER:graveto_user}
-    password: ${POSTGRES_PASSWORD:graveto_password}
-  sql:
-    init:
-      mode: always
+    username: ${POSTGRES_APP_USER:graveto_app_user}
+    password: ${POSTGRES_APP_PASSWORD:graveto_app_password}
   flyway:
+    url: jdbc:postgresql://${GRAVETO_POSTGRES_HOST:localhost}:5432/${POSTGRES_DB:graveto_db}
+    user: ${POSTGRES_MIGRATOR_USER:graveto_migrator_user}
+    password: ${POSTGRES_MIGRATOR_PASSWORD:graveto_migrator_password}
     locations:
       - classpath:db/migration/common
       - classpath:db/migration/moneytracker

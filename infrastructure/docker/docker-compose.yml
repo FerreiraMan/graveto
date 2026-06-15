@@ -10,19 +10,31 @@ services:
     depends_on:
       - postgres
     environment:
-      GRAVETO_POSTGRES_HOST: postgres
+      - GRAVETO_POSTGRES_HOST=postgres
+      - POSTGRES_DB=${GRAVETO_POSTGRES_DB:-graveto_db}
+      - POSTGRES_APP_USER=${GRAVETO_APP_USER:-graveto_app_user}
+      - POSTGRES_APP_PASSWORD=${GRAVETO_APP_PASSWORD:-graveto_app_password}
+      - POSTGRES_MIGRATOR_USER=${GRAVETO_MIGRATOR_USER:-graveto_migrator_user}
+      - POSTGRES_MIGRATOR_PASSWORD=${GRAVETO_MIGRATOR_PASSWORD:-graveto_migrator_password}
 
   postgres:
-    image: postgres:16-alpine
+    image: graveto-postgres
     container_name: db
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/graveto-postgres/Dockerfile
     ports:
       - "5432:5432"
     volumes:
       - graveto_postgres_data:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: graveto_db
-      POSTGRES_USER: graveto_user
-      POSTGRES_PASSWORD: graveto_password
+      - POSTGRES_DB=${GRAVETO_POSTGRES_DB:-graveto_db}
+      - POSTGRES_USER=${GRAVETO_POSTGRES_USER:-graveto_user}
+      - POSTGRES_PASSWORD=${GRAVETO_POSTGRES_PASSWORD:-graveto_password}
+      - POSTGRES_APP_USER=${GRAVETO_APP_USER:-graveto_app_user}
+      - POSTGRES_APP_PASSWORD=${GRAVETO_APP_PASSWORD:-graveto_app_password}
+      - POSTGRES_MIGRATOR_USER=${GRAVETO_MIGRATOR_USER:-graveto_migrator_user}
+      - POSTGRES_MIGRATOR_PASSWORD=${GRAVETO_MIGRATOR_PASSWORD:-graveto_migrator_password}
 
 volumes:
   graveto_postgres_data:

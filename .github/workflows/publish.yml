@@ -40,7 +40,7 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-      - name: Build and push Docker image
+      - name: Build and push Java app Docker image
         id: push
         uses: docker/build-push-action@v7
         with:
@@ -49,3 +49,17 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+      - name: Extract metadata for Psql image
+        id: meta-postgres
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-postgres
+      - name: Build and push Psql Docker image
+        id: push-postgres
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: infrastructure/docker/graveto-postgres/Dockerfile
+          push: true
+          tags: ${{ steps.meta-postgres.outputs.tags }}
+          labels: ${{ steps.meta-postgres.outputs.labels }}
