@@ -93,14 +93,35 @@ Spring Boot Docker Compose support auto-starts PostgreSQL if Docker is available
 
 ### Configuration
 
+Copy `.env.example` to `.env` and adjust values for your environment:
+
+```bash
+cp .env.example .env
+```
+
 | Variable | Default | Description |
 |---|---|---|
-| `GRAVETO_POSTGRES_HOST` | `localhost` | PostgreSQL host |
-| `POSTGRES_DB` | `graveto_db` | Database name |
-| `POSTGRES_USER` | `graveto_user` | Database user |
-| `POSTGRES_PASSWORD` | `graveto_password` | Database password |
+| `GRAVETO_POSTGRES_DB` | `graveto_db` | Database name |
+| `GRAVETO_POSTGRES_USER` | `graveto_user` | PostgreSQL admin user (container bootstrap) |
+| `GRAVETO_POSTGRES_PASSWORD` | `graveto_password` | PostgreSQL admin password |
+| `GRAVETO_APP_USER` | `graveto_app_user` | App runtime user (CRUD only) |
+| `GRAVETO_APP_PASSWORD` | `graveto_app_password` | App runtime password |
+| `GRAVETO_MIGRATOR_USER` | `graveto_migrator_user` | Flyway migrations user (DDL) |
+| `GRAVETO_MIGRATOR_PASSWORD` | `graveto_migrator_password` | Flyway migrations password |
 | `jwt.signing-secret` | `jwt_graveto_secret` | JWT signing secret — **change in production** |
 | `jwt.expiration-ms` | `3600000` | JWT expiry in milliseconds (default: 1h) |
+
+### Database Security
+
+The project follows the principle of least privilege with separate database users:
+
+| User | Purpose | Permissions |
+|---|---|---|
+| `graveto_user` | Container bootstrap / admin | Superuser (internal only) |
+| `graveto_migrator_user` | Flyway migrations (DDL) | CREATE, ALTER, DROP on schema |
+| `graveto_app_user` | Application runtime (DML) | SELECT, INSERT, UPDATE, DELETE |
+
+Users are created automatically on first container start via the init script baked into the custom PostgreSQL image. The app connects with the least-privileged user; Flyway uses the migrator user exclusively for schema changes.
 
 ## API Overview
 
