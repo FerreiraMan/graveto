@@ -78,4 +78,24 @@ public class Order extends BaseEntity {
   @Column
   private String notes;
 
+  public static Order create(final Broker broker, final Asset asset, final UUID userSid, final OrderType orderType,
+                             final BigDecimal quantity, final BigDecimal pricePerUnit, final BigDecimal fees,
+                             final Currency currency,
+                             final LocalDateTime executedAt, final String notes) {
+
+    final Order order = new Order();
+    order.setSid(UUID.randomUUID());
+    order.setBroker(broker);
+    order.setAsset(asset);
+    order.setUserSid(userSid);
+    order.setOrderType(orderType);
+    order.setQuantity(quantity);
+    order.setPricePerUnit(pricePerUnit);
+    order.setFees(fees != null ? fees : DEFAULT_FEE_AMOUNT);
+    order.setCurrency(currency);
+    order.setExecutedAt(executedAt);
+    order.setNotes(notes);
+    return order;
+  }
+
 }

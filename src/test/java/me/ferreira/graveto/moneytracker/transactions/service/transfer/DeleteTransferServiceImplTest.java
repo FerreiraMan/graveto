@@ -9,7 +9,7 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
-import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsException;
+import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.AccountStatus;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
@@ -113,7 +113,7 @@ public class DeleteTransferServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.deleteTransfer(command);
-    }).isInstanceOf(InsufficientPermissionsException.class)
+    }).isInstanceOf(InsufficientPermissionsOnAccountException.class)
         .hasMessage("User does not have the required role to delete transfer transactions for this account.");
   }
 

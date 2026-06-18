@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.common.jpa.BaseEntity;
-import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsException;
+import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserAlreadyMemberException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserNotMemberOfAccountException;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
@@ -117,7 +117,7 @@ public class Account extends BaseEntity {
         .isPresent();
 
     if (!isAuthorized) {
-      throw new InsufficientPermissionsException(actionName);
+      throw new InsufficientPermissionsOnAccountException(actionName);
     }
   }
 

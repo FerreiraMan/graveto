@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
-import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsException;
+import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.common.web.exception.moneytracker.MemberNotRegisteredException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserAlreadyMemberException;
 import me.ferreira.graveto.identity.api.UserApi;
@@ -67,7 +67,7 @@ public class AddMemberToAccountServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.addMember(command);
-    }).isInstanceOf(InsufficientPermissionsException.class)
+    }).isInstanceOf(InsufficientPermissionsOnAccountException.class)
         .hasMessage("User does not have the required role to add members for this account.");
   }
 

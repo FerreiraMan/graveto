@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
-import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsException;
+import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
@@ -69,7 +69,7 @@ public class GenerateCategorySpendingReportServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.generateCategorySpendingReport(command);
-    }).isInstanceOf(InsufficientPermissionsException.class)
+    }).isInstanceOf(InsufficientPermissionsOnAccountException.class)
         .hasMessage("User does not have the required role to request category spending report for this account.");
   }
 

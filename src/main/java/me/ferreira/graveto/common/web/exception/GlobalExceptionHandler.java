@@ -12,11 +12,12 @@ import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundExce
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryAlreadyExistsException;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.IllegalCategoryHierarchyException;
-import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsException;
+import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.common.web.exception.moneytracker.MemberNotRegisteredException;
 import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserAlreadyMemberException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserNotMemberOfAccountException;
+import me.ferreira.graveto.common.web.exception.portfolio.InsufficientPermissionsOnBrokerException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -136,9 +137,17 @@ public class GlobalExceptionHandler {
     return createBaseProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request);
   }
 
-  @ExceptionHandler(InsufficientPermissionsException.class)
-  public ProblemDetail handleInsufficientPermissionsException(final InsufficientPermissionsException ex,
+  @ExceptionHandler(InsufficientPermissionsOnAccountException.class)
+  public ProblemDetail handleInsufficientPermissionsException(final InsufficientPermissionsOnAccountException ex,
                                                               final HttpServletRequest request) {
+
+    log.warn("Business rule violation: User does not have required permission. Message: {}", ex.getMessage());
+    return createBaseProblemDetail(HttpStatus.FORBIDDEN, ex.getMessage(), request);
+  }
+
+  @ExceptionHandler(InsufficientPermissionsOnBrokerException.class)
+  public ProblemDetail handleInsufficientPermissionsOnBrokerException(final InsufficientPermissionsOnBrokerException ex,
+                                                                      final HttpServletRequest request) {
 
     log.warn("Business rule violation: User does not have required permission. Message: {}", ex.getMessage());
     return createBaseProblemDetail(HttpStatus.FORBIDDEN, ex.getMessage(), request);

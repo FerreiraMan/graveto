@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
-import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsException;
+import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.AccountStatus;
@@ -143,7 +143,7 @@ public class DeleteTransactionServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.deleteTransaction(command);
-    }).isInstanceOf(InsufficientPermissionsException.class)
+    }).isInstanceOf(InsufficientPermissionsOnAccountException.class)
         .hasMessage("User does not have the required role to delete transactions for this account.");
   }
 

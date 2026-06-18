@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundException;
-import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsException;
+import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.AccountStatus;
@@ -209,7 +209,7 @@ public class UpdateTransactionServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.updateTransaction(command);
-    }).isInstanceOf(InsufficientPermissionsException.class)
+    }).isInstanceOf(InsufficientPermissionsOnAccountException.class)
         .hasMessage("User does not have the required role to update transactions for this account.");
   }
 

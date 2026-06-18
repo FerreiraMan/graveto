@@ -1,5 +1,6 @@
 package me.ferreira.graveto.portfolio.brokers.domain;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -7,15 +8,20 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.function.Predicate;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.common.jpa.BaseEntity;
+import me.ferreira.graveto.common.web.exception.portfolio.InsufficientPermissionsOnBrokerException;
 import org.hibernate.annotations.DynamicUpdate;
 
 @Getter
@@ -48,5 +54,24 @@ public class Broker extends BaseEntity {
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
   private BrokerStatus status;
+
+  @OneToMany(mappedBy = "broker", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+  private List<BrokerMembership> memberships = new ArrayList<>();
+
+  public void validateUserPermission(final UUID userSid,
+                                     final Predicate<BrokerMembershipRole> permissionCheck,
+                                     final String actionName) {
+
+    final boolean isAuthorized = this.memberships.stream()
+        .filter(m -> userSid.equals(m.getUserSid()))
+        .findFirst()
+        .map(BrokerMembership::getRole)
+        .filter(permissionCheck)
+        .isPresent();
+
+    if (!isAuthorized) {
+      throw new InsufficientPermissionsOnBrokerException(actionName);
+    }
+  }
 
 }
