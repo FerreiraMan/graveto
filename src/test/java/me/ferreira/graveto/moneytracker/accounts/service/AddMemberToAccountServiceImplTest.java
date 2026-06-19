@@ -13,7 +13,7 @@ import java.util.UUID;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.common.web.exception.moneytracker.MemberNotRegisteredException;
-import me.ferreira.graveto.common.web.exception.moneytracker.UserAlreadyMemberException;
+import me.ferreira.graveto.common.web.exception.moneytracker.UserAlreadyAccountMemberException;
 import me.ferreira.graveto.identity.api.UserApi;
 import me.ferreira.graveto.identity.api.UserResponseDto;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
@@ -112,7 +112,7 @@ public class AddMemberToAccountServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.addMember(command);
-    }).isInstanceOf(UserAlreadyMemberException.class)
+    }).isInstanceOf(UserAlreadyAccountMemberException.class)
         .hasMessage("The user " + userSid + " is already a member of this account.");
   }
 

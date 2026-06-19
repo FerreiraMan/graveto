@@ -15,9 +15,10 @@ import me.ferreira.graveto.common.web.exception.moneytracker.IllegalCategoryHier
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.common.web.exception.moneytracker.MemberNotRegisteredException;
 import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFoundException;
-import me.ferreira.graveto.common.web.exception.moneytracker.UserAlreadyMemberException;
+import me.ferreira.graveto.common.web.exception.moneytracker.UserAlreadyAccountMemberException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserNotMemberOfAccountException;
 import me.ferreira.graveto.common.web.exception.portfolio.InsufficientPermissionsOnBrokerException;
+import me.ferreira.graveto.common.web.exception.portfolio.UserAlreadyBrokerMemberException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -169,11 +170,19 @@ public class GlobalExceptionHandler {
     return createBaseProblemDetail(HttpStatus.FORBIDDEN, ex.getMessage(), request);
   }
 
-  @ExceptionHandler(UserAlreadyMemberException.class)
-  public ProblemDetail handleUserAlreadyMemberException(final UserAlreadyMemberException ex,
+  @ExceptionHandler(UserAlreadyAccountMemberException.class)
+  public ProblemDetail handleUserAlreadyMemberException(final UserAlreadyAccountMemberException ex,
                                                         final HttpServletRequest request) {
 
     log.warn("Business rule violation: User is already member of account. Message: {}", ex.getMessage());
+    return createBaseProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request);
+  }
+
+  @ExceptionHandler(UserAlreadyBrokerMemberException.class)
+  public ProblemDetail handleUserAlreadyBrokerMemberException(final UserAlreadyBrokerMemberException ex,
+                                                              final HttpServletRequest request) {
+
+    log.warn("Business rule violation: User is already member of broker account. Message: {}", ex.getMessage());
     return createBaseProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request);
   }
 

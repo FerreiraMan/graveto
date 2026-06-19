@@ -49,7 +49,7 @@ public class AccountController {
         userSid,
         requestDto.currency(),
         requestDto.initialBalance(),
-        requestDto.institution()
+        requestDto.institution().trim()
     );
 
     final Account createdAccount = accountService.createAccount(command);

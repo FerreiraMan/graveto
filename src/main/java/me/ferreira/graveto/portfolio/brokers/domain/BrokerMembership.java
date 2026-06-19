@@ -48,4 +48,12 @@ public class BrokerMembership extends BaseEntity {
   @Enumerated(EnumType.STRING)
   private BrokerMembershipRole role;
 
+  public static BrokerMembership create(final UUID userSid, final BrokerMembershipRole role) {
+
+    final BrokerMembership membership = new BrokerMembership();
+    membership.setUserSid(userSid);
+    membership.setRole(role);
+    return membership;
+  }
+
 }
