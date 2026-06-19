@@ -18,6 +18,11 @@ public class BrokerRepositoryImpl implements BrokerRepository {
   }
 
   @Override
+  public Optional<Broker> findBySidAndUserSid(final UUID sid, final UUID userSid) {
+    return repository.findBySidAndUserSid(sid, userSid);
+  }
+
+  @Override
   public Optional<Broker> findBySid(final UUID sid) {
     return repository.findBySid(sid);
   }

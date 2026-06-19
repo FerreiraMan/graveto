@@ -1,12 +1,14 @@
 package me.ferreira.graveto.portfolio.config;
 
 import io.restassured.RestAssured;
+import me.ferreira.graveto.identity.api.UserApi;
 import me.ferreira.graveto.portfolio.config.security.PortfolioTestSecurityConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
 import org.springframework.modulith.test.ApplicationModuleTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @ApplicationModuleTest(
     module = "portfolio",
@@ -15,6 +17,9 @@ import org.springframework.modulith.test.ApplicationModuleTest;
 )
 @Import({PortfolioIntegrationTestConfiguration.class, PortfolioTestSecurityConfig.class})
 public class PortfolioBaseIntegrationTest {
+
+  @MockitoBean
+  protected UserApi userApi;
 
   @LocalServerPort
   private int port;

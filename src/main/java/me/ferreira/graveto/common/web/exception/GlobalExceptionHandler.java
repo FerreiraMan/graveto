@@ -17,6 +17,7 @@ import me.ferreira.graveto.common.web.exception.moneytracker.MemberNotRegistered
 import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserAlreadyAccountMemberException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserNotMemberOfAccountException;
+import me.ferreira.graveto.common.web.exception.portfolio.BrokerNotFoundException;
 import me.ferreira.graveto.common.web.exception.portfolio.InsufficientPermissionsOnBrokerException;
 import me.ferreira.graveto.common.web.exception.portfolio.UserAlreadyBrokerMemberException;
 import org.springframework.http.HttpStatus;
@@ -144,6 +145,14 @@ public class GlobalExceptionHandler {
 
     log.warn("Business rule violation: User does not have required permission. Message: {}", ex.getMessage());
     return createBaseProblemDetail(HttpStatus.FORBIDDEN, ex.getMessage(), request);
+  }
+
+  @ExceptionHandler(BrokerNotFoundException.class)
+  public ProblemDetail handleBrokerNotFoundException(final BrokerNotFoundException ex,
+                                                     final HttpServletRequest request) {
+
+    log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
+    return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
   }
 
   @ExceptionHandler(InsufficientPermissionsOnBrokerException.class)

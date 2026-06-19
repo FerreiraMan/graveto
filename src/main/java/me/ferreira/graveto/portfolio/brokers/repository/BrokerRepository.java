@@ -8,6 +8,8 @@ public interface BrokerRepository {
 
   Broker save(Broker broker);
 
+  Optional<Broker> findBySidAndUserSid(UUID sid, UUID userSid);
+
   Optional<Broker> findBySid(UUID sid);
 
 }

@@ -19,7 +19,6 @@ import me.ferreira.graveto.portfolio.brokers.domain.BrokerMembership;
 import me.ferreira.graveto.portfolio.brokers.domain.BrokerMembershipRole;
 import me.ferreira.graveto.portfolio.brokers.domain.BrokerStatus;
 import me.ferreira.graveto.portfolio.brokers.service.BrokerService;
-import me.ferreira.graveto.portfolio.brokers.service.command.FetchBrokerCommand;
 import me.ferreira.graveto.portfolio.orders.domain.Order;
 import me.ferreira.graveto.portfolio.orders.domain.OrderType;
 import me.ferreira.graveto.portfolio.orders.domain.event.OrderCreatedEvent;
@@ -52,7 +51,7 @@ public class OrderServiceImplTest {
   void shouldThrowIfBrokerIsNotFoundDuringOrderCreation() {
     // Arrange
     final UUID brokerSid = UUID.randomUUID();
-    when(brokerService.fetchBroker(any())).thenThrow(new RuntimeException("Broker not found"));
+    when(brokerService.fetchBrokerEntity(brokerSid)).thenThrow(new RuntimeException("Broker not found"));
 
     // Act & Assert
     assertThatThrownBy(() -> orderService.createOrder(buildCommand(brokerSid, UUID.randomUUID(), UUID.randomUUID())))
@@ -66,7 +65,7 @@ public class OrderServiceImplTest {
     final UUID userSid = UUID.randomUUID();
     final Broker broker = buildBroker(UUID.randomUUID(), UUID.randomUUID(), BrokerMembershipRole.VIEWER);
 
-    when(brokerService.fetchBroker(any())).thenReturn(broker);
+    when(brokerService.fetchBrokerEntity(broker.getSid())).thenReturn(broker);
 
     // Act & Assert
     assertThatThrownBy(() -> orderService.createOrder(buildCommand(broker.getSid(), UUID.randomUUID(), userSid)))
@@ -81,7 +80,7 @@ public class OrderServiceImplTest {
     final Broker broker = buildBroker(UUID.randomUUID(), userSid, BrokerMembershipRole.OWNER);
     final UUID assetSid = UUID.randomUUID();
 
-    when(brokerService.fetchBroker(any())).thenReturn(broker);
+    when(brokerService.fetchBrokerEntity(broker.getSid())).thenReturn(broker);
     when(assetService.fetchAsset(any())).thenThrow(new RuntimeException("Asset not found"));
 
     // Act & Assert
@@ -102,7 +101,7 @@ public class OrderServiceImplTest {
         Currency.EUR, LocalDateTime.now().minusDays(1), "first buy"
     );
 
-    when(brokerService.fetchBroker(any(FetchBrokerCommand.class))).thenReturn(broker);
+    when(brokerService.fetchBrokerEntity(broker.getSid())).thenReturn(broker);
     when(assetService.fetchAsset(any(FetchAssetCommand.class))).thenReturn(asset);
     when(orderRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
 
@@ -145,7 +144,7 @@ public class OrderServiceImplTest {
         Currency.EUR, LocalDateTime.now(), null
     );
 
-    when(brokerService.fetchBroker(any())).thenReturn(broker);
+    when(brokerService.fetchBrokerEntity(broker.getSid())).thenReturn(broker);
     when(assetService.fetchAsset(any())).thenReturn(asset);
     when(orderRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
 

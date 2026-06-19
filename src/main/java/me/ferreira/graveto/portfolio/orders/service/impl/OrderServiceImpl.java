@@ -8,7 +8,6 @@ import me.ferreira.graveto.portfolio.assets.service.command.FetchAssetCommand;
 import me.ferreira.graveto.portfolio.brokers.domain.Broker;
 import me.ferreira.graveto.portfolio.brokers.domain.BrokerMembershipRole;
 import me.ferreira.graveto.portfolio.brokers.service.BrokerService;
-import me.ferreira.graveto.portfolio.brokers.service.command.FetchBrokerCommand;
 import me.ferreira.graveto.portfolio.orders.domain.Order;
 import me.ferreira.graveto.portfolio.orders.domain.event.OrderCreatedEvent;
 import me.ferreira.graveto.portfolio.orders.repository.OrderRepository;
@@ -32,7 +31,7 @@ public class OrderServiceImpl implements OrderService {
   @Transactional
   public Order createOrder(final CreateOrderCommand command) {
 
-    final Broker broker = brokerService.fetchBroker(new FetchBrokerCommand(command.brokerSid()));
+    final Broker broker = brokerService.fetchBrokerEntity(command.brokerSid());
     broker.validateUserPermission(command.userSid(), BrokerMembershipRole::canCreateOrders, "create orders");
 
     final Asset asset = assetService.fetchAsset(new FetchAssetCommand(command.assetSid()));
