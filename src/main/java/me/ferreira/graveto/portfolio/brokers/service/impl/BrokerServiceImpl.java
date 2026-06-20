@@ -32,8 +32,6 @@ public class BrokerServiceImpl implements BrokerService {
   private final BrokerRepository brokerRepository;
   private final ApplicationEventPublisher eventPublisher;
 
-  //TODO fetch broker by user_sid also just like we do on accounts to validate user is member of broker
-
   @Override
   @Transactional
   public BrokerDetails createBroker(final CreateBrokerCommand command) {
@@ -77,7 +75,7 @@ public class BrokerServiceImpl implements BrokerService {
 
     final Map<UUID, UserResponseDto> brokerUsersInfo = userApi.fetchUserDetailsByUserSids(userList);
 
-    List<BrokerDetails.MembershipDetails> membershipDetails = broker.getMemberships().stream()
+    final List<BrokerDetails.MembershipDetails> membershipDetails = broker.getMemberships().stream()
         .map(m -> new BrokerDetails.MembershipDetails(
             m.getUserSid(),
             brokerUsersInfo.getOrDefault(m.getUserSid(), new UserResponseDto(m.getUserSid(), "")).email(),

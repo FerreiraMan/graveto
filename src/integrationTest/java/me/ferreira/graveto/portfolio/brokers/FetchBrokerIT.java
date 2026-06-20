@@ -1,12 +1,14 @@
 package me.ferreira.graveto.portfolio.brokers;
 
 import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.identity.api.UserResponseDto;
@@ -27,7 +29,7 @@ public class FetchBrokerIT extends PortfolioBaseIntegrationTest {
   private BrokerRepository brokerRepository;
 
   @Test
-  void shouldFetchBrokerAndMapToResponseDto() {
+  void shouldFetchBroker() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
     final String userEmail = "owner@example.com";
@@ -51,6 +53,19 @@ public class FetchBrokerIT extends PortfolioBaseIntegrationTest {
         .body("users[0].sid", notNullValue())
         .body("users[0].email", equalTo(userEmail))
         .body("users[0].role", equalTo(BrokerMembershipRole.OWNER.name()));
+  }
+
+  @Test
+  void shouldNotReturnBrokerThatUserIsNotPartOf() {
+    // Arrange
+    final UUID userSid = UUID.randomUUID();
+    final Broker savedBroker = brokerRepository.save(BrokerTestFactory.createBrokerWithOwner(userSid, "DEGIRO", null));
+
+    // Act
+    final Optional<Broker> broker = brokerRepository.findBySidAndUserSid(savedBroker.getSid(), UUID.randomUUID());
+
+    // Assert
+    assertThat(broker).isEmpty();
   }
 
 }
