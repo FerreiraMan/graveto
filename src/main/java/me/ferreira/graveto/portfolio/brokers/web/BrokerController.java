@@ -5,12 +5,14 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import me.ferreira.graveto.portfolio.brokers.domain.Broker;
 import me.ferreira.graveto.portfolio.brokers.service.BrokerService;
 import me.ferreira.graveto.portfolio.brokers.service.command.CreateBrokerCommand;
 import me.ferreira.graveto.portfolio.brokers.service.command.FetchBrokerCommand;
 import me.ferreira.graveto.portfolio.brokers.service.payload.BrokerDetails;
 import me.ferreira.graveto.portfolio.brokers.web.request.CreateBrokerRequestDto;
 import me.ferreira.graveto.portfolio.brokers.web.response.BrokerResponseDto;
+import me.ferreira.graveto.portfolio.brokers.web.response.BrokerSummaryResponseDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -63,6 +65,23 @@ public class BrokerController {
     final BrokerDetails brokerDetails = brokerService.fetchBroker(command);
 
     return ResponseEntity.ok(toResponse(brokerDetails));
+  }
+
+  @GetMapping(produces = "application/json")
+  public ResponseEntity<List<BrokerSummaryResponseDto>> fetchAllBrokers(@AuthenticationPrincipal final UUID userSid) {
+
+    final List<Broker> brokers = brokerService.fetchAllBrokers(userSid);
+
+    final List<BrokerSummaryResponseDto> response = brokers.stream()
+        .map(b -> new BrokerSummaryResponseDto(
+            b.getSid(),
+            b.getName(),
+            b.getCurrency().name(),
+            b.getAccountSid(),
+            b.getStatus().name()))
+        .toList();
+
+    return ResponseEntity.ok(response);
   }
 
   private BrokerResponseDto toResponse(final BrokerDetails brokerDetails) {

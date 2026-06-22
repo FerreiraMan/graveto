@@ -13,8 +13,8 @@ import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.Fe
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.TransferService;
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.payload.TransferResult;
 import me.ferreira.graveto.moneytracker.transactions.web.TransferController;
-import me.ferreira.graveto.moneytracker.utils.common.AuthUtils;
-import me.ferreira.graveto.moneytracker.utils.common.TestSecurityConfig;
+import me.ferreira.graveto.config.AuthUtils;
+import me.ferreira.graveto.config.TestSecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;

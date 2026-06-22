@@ -1,7 +1,6 @@
 package me.ferreira.graveto.moneytracker.accounts.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.in;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
@@ -13,7 +12,6 @@ import java.util.stream.Stream;
 import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
-import me.ferreira.graveto.moneytracker.accounts.domain.AccountMembership;
 import me.ferreira.graveto.moneytracker.accounts.domain.AccountStatus;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
@@ -21,9 +19,9 @@ import me.ferreira.graveto.moneytracker.accounts.service.command.CreateAccountCo
 import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.service.payload.AccountDetails;
 import me.ferreira.graveto.moneytracker.accounts.web.dto.request.CreateAccountRequestDto;
-import me.ferreira.graveto.moneytracker.utils.common.AuthUtils;
+import me.ferreira.graveto.config.AuthUtils;
 import me.ferreira.graveto.moneytracker.utils.common.ControllerUtils;
-import me.ferreira.graveto.moneytracker.utils.common.TestSecurityConfig;
+import me.ferreira.graveto.config.TestSecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;

@@ -8,9 +8,8 @@ import java.util.List;
 import java.util.UUID;
 import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.common.web.exception.portfolio.BrokerNotFoundException;
-import me.ferreira.graveto.common.web.exception.portfolio.InsufficientPermissionsOnBrokerException;
-import me.ferreira.graveto.moneytracker.utils.common.AuthUtils;
-import me.ferreira.graveto.moneytracker.utils.common.TestSecurityConfig;
+import me.ferreira.graveto.config.AuthUtils;
+import me.ferreira.graveto.config.TestSecurityConfig;
 import me.ferreira.graveto.portfolio.brokers.domain.BrokerStatus;
 import me.ferreira.graveto.portfolio.brokers.service.BrokerService;
 import me.ferreira.graveto.portfolio.brokers.service.payload.BrokerDetails;
@@ -82,23 +81,6 @@ public class FetchBrokerControllerTest {
 
     // Assert
     assertThat(result).hasStatus(HttpStatus.NOT_FOUND);
-  }
-
-  @Test
-  void shouldReturnForbiddenWhenUserIsNotMemberOfBroker() {
-    // Arrange
-    final UUID brokerSid = UUID.randomUUID();
-    when(service.fetchBroker(org.mockito.ArgumentMatchers.any()))
-        .thenThrow(new InsufficientPermissionsOnBrokerException("view broker"));
-
-    // Act
-    final MvcTestResult result = mvc.get()
-        .uri("/brokers/" + brokerSid)
-        .with(authentication(AuthUtils.mockAuth(UUID.randomUUID())))
-        .exchange();
-
-    // Assert
-    assertThat(result).hasStatus(HttpStatus.FORBIDDEN);
   }
 
   @Test

@@ -25,6 +25,6 @@ public interface AccountJpaRepository extends JpaRepository<Account, Long> {
   Optional<Account> findBySidWithMemberships(final UUID sid);
 
   @Query(value = "SELECT a FROM Account a JOIN a.memberships am WHERE am.userSid = ?1")
-  List<Account> findAllByUserSid(UUID userSid);
+  List<Account> findAllByUserSid(final UUID userSid);
 
 }

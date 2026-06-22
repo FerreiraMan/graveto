@@ -1,5 +1,6 @@
 package me.ferreira.graveto.portfolio.brokers.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
@@ -15,6 +16,16 @@ public class BrokerRepositoryImpl implements BrokerRepository {
   @Override
   public Broker save(final Broker broker) {
     return repository.save(broker);
+  }
+
+  @Override
+  public List<Broker> saveAll(final List<Broker> brokers) {
+    return repository.saveAll(brokers);
+  }
+
+  @Override
+  public List<Broker> findAllByUserSid(final UUID userSid) {
+    return repository.findAllByUserSid(userSid);
   }
 
   @Override

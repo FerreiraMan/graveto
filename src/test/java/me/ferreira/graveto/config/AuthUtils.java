@@ -1,4 +1,4 @@
-package me.ferreira.graveto.moneytracker.utils.common;
+package me.ferreira.graveto.config;
 
 import java.util.List;
 import java.util.UUID;

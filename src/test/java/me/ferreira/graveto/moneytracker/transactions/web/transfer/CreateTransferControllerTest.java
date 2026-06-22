@@ -17,8 +17,8 @@ import me.ferreira.graveto.moneytracker.transactions.service.transfer.payload.Tr
 import me.ferreira.graveto.moneytracker.transactions.web.TransferController;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.transfer.CreateTransferRequestDto;
 import me.ferreira.graveto.moneytracker.utils.AccountUtils;
-import me.ferreira.graveto.moneytracker.utils.common.AuthUtils;
-import me.ferreira.graveto.moneytracker.utils.common.TestSecurityConfig;
+import me.ferreira.graveto.config.AuthUtils;
+import me.ferreira.graveto.config.TestSecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;

@@ -51,6 +51,13 @@ public class BrokerServiceImpl implements BrokerService {
 
   @Override
   @Transactional(readOnly = true)
+  public List<Broker> fetchAllBrokers(final UUID userSid) {
+
+    return brokerRepository.findAllByUserSid(userSid);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
   public BrokerDetails fetchBroker(final FetchBrokerCommand command) {
 
     final Broker broker = brokerRepository.findBySidAndUserSid(command.sid(), command.userSid())
