@@ -104,5 +104,5 @@ CREATE TABLE IF NOT EXISTS positions
     CONSTRAINT position_broker_asset_uq UNIQUE (broker_id, asset_id)
 );
 
-CREATE INDEX orders_broker_idx ON orders (broker_id);
-CREATE INDEX orders_asset_idx ON orders (asset_id);
+CREATE INDEX IF NOT EXISTS orders_broker_idx ON orders (broker_id);
+CREATE INDEX IF NOT EXISTS orders_asset_idx ON orders (asset_id);
