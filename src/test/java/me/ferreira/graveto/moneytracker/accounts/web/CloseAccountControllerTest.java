@@ -5,12 +5,12 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 
 import java.util.UUID;
+import me.ferreira.graveto.config.AuthUtils;
+import me.ferreira.graveto.config.TestSecurityConfig;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.AccountStatus;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
 import me.ferreira.graveto.moneytracker.accounts.service.command.CloseAccountCommand;
-import me.ferreira.graveto.config.AuthUtils;
-import me.ferreira.graveto.config.TestSecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;

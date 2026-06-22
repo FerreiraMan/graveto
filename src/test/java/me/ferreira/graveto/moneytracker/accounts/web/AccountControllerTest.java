@@ -11,6 +11,8 @@ import java.util.UUID;
 import java.util.stream.Stream;
 import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
+import me.ferreira.graveto.config.AuthUtils;
+import me.ferreira.graveto.config.TestSecurityConfig;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.AccountStatus;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
@@ -19,9 +21,7 @@ import me.ferreira.graveto.moneytracker.accounts.service.command.CreateAccountCo
 import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.service.payload.AccountDetails;
 import me.ferreira.graveto.moneytracker.accounts.web.dto.request.CreateAccountRequestDto;
-import me.ferreira.graveto.config.AuthUtils;
 import me.ferreira.graveto.moneytracker.utils.common.ControllerUtils;
-import me.ferreira.graveto.config.TestSecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;

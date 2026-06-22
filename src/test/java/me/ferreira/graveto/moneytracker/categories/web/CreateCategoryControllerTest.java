@@ -6,14 +6,14 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 
 import java.util.UUID;
 import java.util.stream.Stream;
+import me.ferreira.graveto.config.AuthUtils;
+import me.ferreira.graveto.config.TestSecurityConfig;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.service.CategoryService;
 import me.ferreira.graveto.moneytracker.categories.service.command.CreateCategoryCommand;
 import me.ferreira.graveto.moneytracker.categories.web.dto.request.CreateCategoryRequestDto;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
-import me.ferreira.graveto.config.AuthUtils;
 import me.ferreira.graveto.moneytracker.utils.common.ControllerUtils;
-import me.ferreira.graveto.config.TestSecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;

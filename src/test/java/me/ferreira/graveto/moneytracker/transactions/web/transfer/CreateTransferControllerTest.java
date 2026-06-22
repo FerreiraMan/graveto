@@ -9,6 +9,8 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import java.util.stream.Stream;
+import me.ferreira.graveto.config.AuthUtils;
+import me.ferreira.graveto.config.TestSecurityConfig;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.CreateTransferCommand;
@@ -17,8 +19,6 @@ import me.ferreira.graveto.moneytracker.transactions.service.transfer.payload.Tr
 import me.ferreira.graveto.moneytracker.transactions.web.TransferController;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.transfer.CreateTransferRequestDto;
 import me.ferreira.graveto.moneytracker.utils.AccountUtils;
-import me.ferreira.graveto.config.AuthUtils;
-import me.ferreira.graveto.config.TestSecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
