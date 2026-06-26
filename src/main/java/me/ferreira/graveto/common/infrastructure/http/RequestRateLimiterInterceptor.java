@@ -35,7 +35,8 @@ public class RequestRateLimiterInterceptor implements ClientHttpRequestIntercept
 
   // Burst window approach. Example: User can only send a certain amount of requests on a given time window.
   // After the cooldown, User will be able to send same amount of requests.
-  // Current solution does not evict entries. If app is used by a large amount of users an eviction strategy should exist
+  // Current solution does not evict entries.
+  // If app is used by a large amount of users an eviction strategy should exist
   @Override
   public ClientHttpResponse intercept(final HttpRequest request, final byte[] body,
                                       final ClientHttpRequestExecution execution)
