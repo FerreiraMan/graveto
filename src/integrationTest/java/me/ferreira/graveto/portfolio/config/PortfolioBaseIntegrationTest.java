@@ -13,6 +13,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 @ApplicationModuleTest(
     module = "portfolio",
     mode = ApplicationModuleTest.BootstrapMode.STANDALONE,
+    extraIncludes = "common",
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 @Import({PortfolioIntegrationTestConfiguration.class, PortfolioTestSecurityConfig.class})

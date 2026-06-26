@@ -35,3 +35,13 @@ jwt:
   expiration-ms: 3600000
   issuer: >
     graveto-api
+
+http:
+  client:
+    connect-timeout: 10000
+    read-timeout: 10000
+    max-requests: 5
+    request-cooldown-ms: 60000
+    yahoo:
+      api-key: ${YFINANCE_API_KEY:yfinance_api_key}
+      base-url: https://yfapi.net/

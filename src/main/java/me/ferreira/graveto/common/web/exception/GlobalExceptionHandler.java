@@ -1,11 +1,14 @@
 package me.ferreira.graveto.common.web.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import me.ferreira.graveto.common.web.exception.common.ExternalApiUnavailableException;
+import me.ferreira.graveto.common.web.exception.common.TooManyRequestsException;
 import me.ferreira.graveto.common.web.exception.identity.TokenAuthenticationException;
 import me.ferreira.graveto.common.web.exception.identity.UserAlreadyExistsException;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
@@ -17,6 +20,7 @@ import me.ferreira.graveto.common.web.exception.moneytracker.MemberNotRegistered
 import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserAlreadyAccountMemberException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserNotMemberOfAccountException;
+import me.ferreira.graveto.common.web.exception.portfolio.AssetInvalidRequestException;
 import me.ferreira.graveto.common.web.exception.portfolio.BrokerNotFoundException;
 import me.ferreira.graveto.common.web.exception.portfolio.InsufficientPermissionsOnBrokerException;
 import me.ferreira.graveto.common.web.exception.portfolio.UserAlreadyBrokerMemberException;
@@ -29,8 +33,10 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @Slf4j
@@ -69,6 +75,20 @@ public class GlobalExceptionHandler {
     pd.setProperty("invalid_params", invalidParams);
 
     return pd;
+  }
+
+  @ExceptionHandler(MissingServletRequestParameterException.class)
+  public ProblemDetail handleMissingServletRequestParameterException(final MissingServletRequestParameterException ex,
+                                                                     final HttpServletRequest request) {
+
+    return createBaseProblemDetail(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+  }
+
+  @ExceptionHandler(ConstraintViolationException.class)
+  public ProblemDetail handleConstraintViolationException(final ConstraintViolationException ex,
+                                                          final HttpServletRequest request) {
+
+    return createBaseProblemDetail(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
   }
 
   @ExceptionHandler(MethodArgumentTypeMismatchException.class)
@@ -223,6 +243,39 @@ public class GlobalExceptionHandler {
 
     log.error("Error with Jwt verification.", ex);
     return createBaseProblemDetail(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+  }
+
+  @ExceptionHandler(AssetInvalidRequestException.class)
+  public ProblemDetail handleAssetInvalidRequestException(final AssetInvalidRequestException ex,
+                                                          final HttpServletRequest request) {
+
+    log.error("Error with request to external API.", ex);
+    return createBaseProblemDetail(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+  }
+
+  @ExceptionHandler(ExternalApiUnavailableException.class)
+  public ProblemDetail handleExternalApiUnavailableException(final ExternalApiUnavailableException ex,
+                                                             final HttpServletRequest request) {
+
+    log.error("Error when reaching external API.", ex);
+    return createBaseProblemDetail(HttpStatus.BAD_GATEWAY, ex.getMessage(), request);
+  }
+
+  @ExceptionHandler(TooManyRequestsException.class)
+  public ProblemDetail handleTooManyRequestsException(final TooManyRequestsException ex,
+                                                             final HttpServletRequest request) {
+
+    log.error("Too many requests.", ex);
+    return createBaseProblemDetail(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage(), request);
+  }
+
+  @ExceptionHandler(ResourceAccessException.class)
+  public ProblemDetail handleExternalApiConnectivity(final ResourceAccessException ex,
+                                                     final HttpServletRequest request) {
+
+    log.warn("External API connectivity failure while accessing {}", request.getRequestURI(), ex);
+    return createBaseProblemDetail(HttpStatus.SERVICE_UNAVAILABLE,
+        "External service is currently unavailable. Please try again later.", request);
   }
 
   @ExceptionHandler(Exception.class)
