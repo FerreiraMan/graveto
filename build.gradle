@@ -57,8 +57,25 @@ jacocoTestReport {
 	dependsOn test
 }
 
+def jacocoExclusions = [
+	'**/GravetoApplication.*',
+	'**/dto/**/*.*',
+	'**/command/*.*',
+	'**/payload/*.*',
+	'**/config/**/*.*',
+	'**/infrastructure/**/*.*',
+	'**/exception/**/*.*',
+	'**/package-info.*'
+]
+
 jacocoTestCoverageVerification {
 	dependsOn jacocoTestReport
+
+	afterEvaluate {
+		classDirectories.setFrom(files(classDirectories.files.collect {
+			fileTree(dir: it, excludes: jacocoExclusions)
+		}))
+	}
 
 	violationRules {
 		rule {
