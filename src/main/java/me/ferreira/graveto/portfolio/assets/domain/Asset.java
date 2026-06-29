@@ -64,4 +64,15 @@ public class Asset extends BaseEntity {
   @Column(name = "current_price")
   private BigDecimal currentPrice;
 
+  public static Asset create(final String ticker, final String name, final AssetType type, final Currency currency) {
+
+    final Asset asset = new Asset();
+    asset.setSid(UUID.randomUUID());
+    asset.setTicker(ticker);
+    asset.setName(name);
+    asset.setAssetType(type);
+    asset.setCurrency(currency);
+    return asset;
+  }
+
 }

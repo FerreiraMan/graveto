@@ -21,8 +21,11 @@ import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFound
 import me.ferreira.graveto.common.web.exception.moneytracker.UserAlreadyAccountMemberException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserNotMemberOfAccountException;
 import me.ferreira.graveto.common.web.exception.portfolio.AssetInvalidRequestException;
+import me.ferreira.graveto.common.web.exception.portfolio.AssetNotFoundException;
 import me.ferreira.graveto.common.web.exception.portfolio.BrokerNotFoundException;
 import me.ferreira.graveto.common.web.exception.portfolio.InsufficientPermissionsOnBrokerException;
+import me.ferreira.graveto.common.web.exception.portfolio.InvalidExchangeException;
+import me.ferreira.graveto.common.web.exception.portfolio.StockExchangeNotFoundException;
 import me.ferreira.graveto.common.web.exception.portfolio.UserAlreadyBrokerMemberException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -175,6 +178,29 @@ public class GlobalExceptionHandler {
     return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
   }
 
+  @ExceptionHandler(AssetNotFoundException.class)
+  public ProblemDetail handleAssetNotFoundException(final AssetNotFoundException ex,
+                                                    final HttpServletRequest request) {
+
+    log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
+    return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+  }
+
+  @ExceptionHandler(InvalidExchangeException.class)
+  public ProblemDetail handleInvalidExchangeException(final InvalidExchangeException ex,
+                                                      final HttpServletRequest request) {
+
+    return createBaseProblemDetail(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+  }
+
+  @ExceptionHandler(StockExchangeNotFoundException.class)
+  public ProblemDetail handleStockExchangeNotFoundException(final StockExchangeNotFoundException ex,
+                                                            final HttpServletRequest request) {
+
+    log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
+    return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+  }
+
   @ExceptionHandler(InsufficientPermissionsOnBrokerException.class)
   public ProblemDetail handleInsufficientPermissionsOnBrokerException(final InsufficientPermissionsOnBrokerException ex,
                                                                       final HttpServletRequest request) {
@@ -263,7 +289,7 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(TooManyRequestsException.class)
   public ProblemDetail handleTooManyRequestsException(final TooManyRequestsException ex,
-                                                             final HttpServletRequest request) {
+                                                      final HttpServletRequest request) {
 
     log.error("Too many requests.", ex);
     return createBaseProblemDetail(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage(), request);
