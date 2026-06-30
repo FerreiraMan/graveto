@@ -10,6 +10,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import me.ferreira.graveto.common.domain.Currency;
+import me.ferreira.graveto.common.web.exception.portfolio.AssetNotFoundException;
+import me.ferreira.graveto.common.web.exception.portfolio.BrokerNotFoundException;
 import me.ferreira.graveto.common.web.exception.portfolio.InsufficientPermissionsOnBrokerException;
 import me.ferreira.graveto.portfolio.assets.domain.Asset;
 import me.ferreira.graveto.portfolio.assets.service.AssetService;
@@ -51,12 +53,12 @@ public class OrderServiceImplTest {
   void shouldThrowIfBrokerIsNotFoundDuringOrderCreation() {
     // Arrange
     final UUID brokerSid = UUID.randomUUID();
-    when(brokerService.fetchBrokerEntity(brokerSid)).thenThrow(new RuntimeException("Broker not found"));
+    when(brokerService.fetchBrokerEntity(brokerSid)).thenThrow(new BrokerNotFoundException(brokerSid));
 
     // Act & Assert
     assertThatThrownBy(() -> orderService.createOrder(buildCommand(brokerSid, UUID.randomUUID(), UUID.randomUUID())))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessage("Broker not found");
+        .isInstanceOf(BrokerNotFoundException.class)
+        .hasMessage("Broker with SID [" + brokerSid + "] was not found or you do not have permission to view it.");
   }
 
   @Test
@@ -81,12 +83,12 @@ public class OrderServiceImplTest {
     final UUID assetSid = UUID.randomUUID();
 
     when(brokerService.fetchBrokerEntity(broker.getSid())).thenReturn(broker);
-    when(assetService.fetchAsset(any())).thenThrow(new RuntimeException("Asset not found"));
+    when(assetService.fetchAsset(any())).thenThrow(new AssetNotFoundException(assetSid));
 
     // Act & Assert
     assertThatThrownBy(() -> orderService.createOrder(buildCommand(broker.getSid(), assetSid, userSid)))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessage("Asset not found");
+        .isInstanceOf(AssetNotFoundException.class)
+        .hasMessage("Asset with SID [" + assetSid + "] was not found or you do not have permission to view it.");
   }
 
   @Test
