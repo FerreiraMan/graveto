@@ -10,7 +10,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import java.util.List;
 import java.util.UUID;
 import me.ferreira.graveto.common.web.exception.common.ExternalApiUnavailableException;
-import me.ferreira.graveto.common.web.exception.portfolio.AssetInvalidRequestException;
+import me.ferreira.graveto.common.web.exception.portfolio.client.AssetInvalidRequestException;
 import me.ferreira.graveto.portfolio.assets.client.impl.YahooFinanceClient;
 import me.ferreira.graveto.portfolio.assets.client.impl.dto.response.SearchAssetResponseDto;
 import org.junit.jupiter.api.BeforeEach;

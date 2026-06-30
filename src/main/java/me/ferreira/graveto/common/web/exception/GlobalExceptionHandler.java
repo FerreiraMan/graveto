@@ -20,13 +20,14 @@ import me.ferreira.graveto.common.web.exception.moneytracker.MemberNotRegistered
 import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserAlreadyAccountMemberException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserNotMemberOfAccountException;
-import me.ferreira.graveto.common.web.exception.portfolio.AssetInvalidRequestException;
+import me.ferreira.graveto.common.web.exception.portfolio.client.AssetInvalidRequestException;
 import me.ferreira.graveto.common.web.exception.portfolio.AssetNotFoundException;
 import me.ferreira.graveto.common.web.exception.portfolio.BrokerNotFoundException;
 import me.ferreira.graveto.common.web.exception.portfolio.InsufficientPermissionsOnBrokerException;
 import me.ferreira.graveto.common.web.exception.portfolio.InvalidExchangeException;
 import me.ferreira.graveto.common.web.exception.portfolio.StockExchangeNotFoundException;
 import me.ferreira.graveto.common.web.exception.portfolio.UserAlreadyBrokerMemberException;
+import me.ferreira.graveto.common.web.exception.portfolio.client.QuoteDataInvalidRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -274,6 +275,14 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(AssetInvalidRequestException.class)
   public ProblemDetail handleAssetInvalidRequestException(final AssetInvalidRequestException ex,
                                                           final HttpServletRequest request) {
+
+    log.error("Error with request to external API.", ex);
+    return createBaseProblemDetail(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+  }
+
+  @ExceptionHandler(QuoteDataInvalidRequestException.class)
+  public ProblemDetail handleQuoteDataInvalidRequestException(final QuoteDataInvalidRequestException ex,
+                                                              final HttpServletRequest request) {
 
     log.error("Error with request to external API.", ex);
     return createBaseProblemDetail(HttpStatus.BAD_REQUEST, ex.getMessage(), request);

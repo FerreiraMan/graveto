@@ -1,1 +1,1 @@
-TRUNCATE positions, orders, brokers RESTART IDENTITY CASCADE;
+TRUNCATE positions, orders, brokers, assets RESTART IDENTITY CASCADE;

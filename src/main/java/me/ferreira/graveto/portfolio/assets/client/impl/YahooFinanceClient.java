@@ -3,8 +3,10 @@ package me.ferreira.graveto.portfolio.assets.client.impl;
 import java.util.List;
 import java.util.UUID;
 import me.ferreira.graveto.common.web.exception.common.ExternalApiUnavailableException;
-import me.ferreira.graveto.common.web.exception.portfolio.AssetInvalidRequestException;
+import me.ferreira.graveto.common.web.exception.portfolio.client.AssetInvalidRequestException;
+import me.ferreira.graveto.common.web.exception.portfolio.client.QuoteDataInvalidRequestException;
 import me.ferreira.graveto.portfolio.assets.client.MarketDataClient;
+import me.ferreira.graveto.portfolio.assets.client.impl.dto.response.QuoteDataResponseDto;
 import me.ferreira.graveto.portfolio.assets.client.impl.dto.response.SearchAssetResponseDto;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatusCode;
@@ -45,6 +47,29 @@ public class YahooFinanceClient implements MarketDataClient {
 
 
     return response != null ? response.resultSet().result() : List.of();
+  }
+
+  @Override
+  public List<QuoteDataResponseDto.Result> fetchQuoteData(final UUID userSid, final List<String> symbols) {
+
+    final String concatenatedSymbols = String.join(",", symbols);
+
+    final QuoteDataResponseDto response = restClient.get()
+        .uri(uriBuilder -> uriBuilder
+            .path("v6/finance/quote")
+            .queryParam("symbols", concatenatedSymbols)
+            .build())
+        .attribute("userSid", userSid)
+        .retrieve()
+        .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
+          throw new QuoteDataInvalidRequestException(concatenatedSymbols, res.getStatusCode().value());
+        })
+        .onStatus(HttpStatusCode::is5xxServerError, (req, res) -> {
+          throw new ExternalApiUnavailableException(res.getStatusCode().value());
+        })
+        .body(QuoteDataResponseDto.class);
+
+    return response != null ? response.quoteResponse().result() : List.of();
   }
 
 }

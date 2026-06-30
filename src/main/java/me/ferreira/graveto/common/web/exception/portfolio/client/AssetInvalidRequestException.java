@@ -1,4 +1,4 @@
-package me.ferreira.graveto.common.web.exception.portfolio;
+package me.ferreira.graveto.common.web.exception.portfolio.client;
 
 public class AssetInvalidRequestException extends RuntimeException {
   public AssetInvalidRequestException(final String resource, final int statusCode) {

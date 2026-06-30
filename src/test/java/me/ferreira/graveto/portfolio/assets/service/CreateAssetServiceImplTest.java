@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -13,6 +14,7 @@ import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.common.web.exception.portfolio.InvalidExchangeException;
 import me.ferreira.graveto.portfolio.assets.domain.Asset;
 import me.ferreira.graveto.portfolio.assets.domain.AssetType;
+import me.ferreira.graveto.portfolio.assets.domain.event.AssetCreatedEvent;
 import me.ferreira.graveto.portfolio.assets.repository.AssetRepository;
 import me.ferreira.graveto.portfolio.assets.service.command.CreateAssetCommand;
 import me.ferreira.graveto.portfolio.assets.service.impl.AssetServiceImpl;
@@ -25,6 +27,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
 public class CreateAssetServiceImplTest {
@@ -35,12 +38,15 @@ public class CreateAssetServiceImplTest {
   private StockExchangeService stockExchangeService;
   @Mock
   private AssetRepository assetRepository;
+  @Mock
+  private ApplicationEventPublisher publisher;
 
   @Test
   void shouldCreateAssetWhenItDoesNotExist() {
     // Arrange
+    final UUID userSid = UUID.randomUUID();
     final CreateAssetCommand command = new CreateAssetCommand(
-        UUID.randomUUID(), "iwda.as", "iShares Core MSCI World", AssetType.ETF, Currency.EUR);
+        userSid, "iwda.as", "iShares Core MSCI World", AssetType.ETF, Currency.EUR);
 
     final StockExchange stockExchange = new StockExchange();
     stockExchange.setSuffix(".AS");
@@ -64,6 +70,7 @@ public class CreateAssetServiceImplTest {
     assertThat(savedAsset.getCurrency()).isEqualTo(Currency.EUR);
     assertThat(savedAsset.getStockExchange()).isEqualTo(stockExchange);
     assertThat(result).isEqualTo(savedAsset);
+    verify(publisher, times(1)).publishEvent(new AssetCreatedEvent(userSid, savedAsset, stockExchange.getSuffix()));
   }
 
   @Test
@@ -87,6 +94,7 @@ public class CreateAssetServiceImplTest {
     // Assert
     verify(assetRepository, never()).save(any());
     assertThat(result).isEqualTo(existingAsset);
+    verify(publisher, times(0)).publishEvent(any());
   }
 
   @Test

@@ -8,6 +8,7 @@ import me.ferreira.graveto.common.web.exception.portfolio.InvalidExchangeExcepti
 import me.ferreira.graveto.portfolio.assets.client.MarketDataClient;
 import me.ferreira.graveto.portfolio.assets.client.impl.dto.response.SearchAssetResponseDto;
 import me.ferreira.graveto.portfolio.assets.domain.Asset;
+import me.ferreira.graveto.portfolio.assets.domain.event.AssetCreatedEvent;
 import me.ferreira.graveto.portfolio.assets.repository.AssetRepository;
 import me.ferreira.graveto.portfolio.assets.service.AssetService;
 import me.ferreira.graveto.portfolio.assets.service.command.CreateAssetCommand;
@@ -17,6 +18,7 @@ import me.ferreira.graveto.portfolio.assets.service.payload.AssetSearchRecommend
 import me.ferreira.graveto.portfolio.stockexchange.domain.StockExchange;
 import me.ferreira.graveto.portfolio.stockexchange.service.StockExchangeService;
 import me.ferreira.graveto.portfolio.stockexchange.service.command.FetchStockExchangeCommand;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +30,7 @@ public class AssetServiceImpl implements AssetService {
   private final MarketDataClient marketDataClient;
   private final StockExchangeService stockExchangeService;
   private final AssetRepository assetRepository;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Override
   public List<AssetSearchRecommendation> searchAsset(final SearchAssetCommand command) {
@@ -62,7 +65,10 @@ public class AssetServiceImpl implements AssetService {
 
           final Asset asset = Asset.create(ticker, command.name(), command.type(), command.currency());
           asset.setStockExchange(stockExchange);
-          return assetRepository.save(asset);
+          final Asset savedAsset = assetRepository.save(asset);
+          eventPublisher.publishEvent(
+              new AssetCreatedEvent(command.userSid(), savedAsset, stockExchange.getSuffix()));
+          return savedAsset;
         });
   }
 
