@@ -23,17 +23,16 @@ import me.ferreira.graveto.portfolio.brokers.domain.BrokerStatus;
 import me.ferreira.graveto.portfolio.brokers.service.BrokerService;
 import me.ferreira.graveto.portfolio.orders.domain.Order;
 import me.ferreira.graveto.portfolio.orders.domain.OrderType;
-import me.ferreira.graveto.portfolio.orders.domain.event.OrderCreatedEvent;
 import me.ferreira.graveto.portfolio.orders.repository.OrderRepository;
 import me.ferreira.graveto.portfolio.orders.service.command.CreateOrderCommand;
 import me.ferreira.graveto.portfolio.orders.service.impl.OrderServiceImpl;
+import me.ferreira.graveto.portfolio.positions.service.PositionService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
 public class OrderServiceImplTest {
@@ -47,7 +46,7 @@ public class OrderServiceImplTest {
   @Mock
   private OrderRepository orderRepository;
   @Mock
-  private ApplicationEventPublisher eventPublisher;
+  private PositionService positionService;
 
   @Test
   void shouldThrowIfBrokerIsNotFoundDuringOrderCreation() {
@@ -129,9 +128,7 @@ public class OrderServiceImplTest {
 
     assertThat(result).isEqualTo(savedOrder);
 
-    final ArgumentCaptor<OrderCreatedEvent> eventCaptor = ArgumentCaptor.forClass(OrderCreatedEvent.class);
-    verify(eventPublisher).publishEvent(eventCaptor.capture());
-    assertThat(eventCaptor.getValue().order()).isEqualTo(savedOrder);
+    verify(positionService).applyOrderToPosition(savedOrder);
   }
 
   @Test

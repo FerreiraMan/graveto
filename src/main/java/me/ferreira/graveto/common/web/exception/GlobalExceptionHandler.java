@@ -123,6 +123,13 @@ public class GlobalExceptionHandler {
     return createBaseProblemDetail(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
   }
 
+  @ExceptionHandler(IllegalStateException.class)
+  public ProblemDetail handleIllegalStateException(final IllegalStateException ex,
+                                                   final HttpServletRequest request) {
+
+    return createBaseProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request);
+  }
+
   @ExceptionHandler(AccountNotFoundException.class)
   public ProblemDetail handleAccountNotFoundException(final AccountNotFoundException ex,
                                                       final HttpServletRequest request) {

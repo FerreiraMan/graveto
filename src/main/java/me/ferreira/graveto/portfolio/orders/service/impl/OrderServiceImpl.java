@@ -9,11 +9,10 @@ import me.ferreira.graveto.portfolio.brokers.domain.Broker;
 import me.ferreira.graveto.portfolio.brokers.domain.BrokerMembershipRole;
 import me.ferreira.graveto.portfolio.brokers.service.BrokerService;
 import me.ferreira.graveto.portfolio.orders.domain.Order;
-import me.ferreira.graveto.portfolio.orders.domain.event.OrderCreatedEvent;
 import me.ferreira.graveto.portfolio.orders.repository.OrderRepository;
 import me.ferreira.graveto.portfolio.orders.service.OrderService;
 import me.ferreira.graveto.portfolio.orders.service.command.CreateOrderCommand;
-import org.springframework.context.ApplicationEventPublisher;
+import me.ferreira.graveto.portfolio.positions.service.PositionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,8 +23,8 @@ public class OrderServiceImpl implements OrderService {
 
   private final BrokerService brokerService;
   private final AssetService assetService;
+  private final PositionService positionService;
   private final OrderRepository orderRepository;
-  private final ApplicationEventPublisher eventPublisher;
 
   @Override
   @Transactional
@@ -40,12 +39,12 @@ public class OrderServiceImpl implements OrderService {
         Order.create(broker, asset, command.userSid(), command.orderType(), command.quantity(), command.price(),
             command.fees(), command.currency(), command.executedAt(), command.notes());
 
-    orderRepository.save(createdOrder);
-
+    final Order savedOrder = orderRepository.save(createdOrder);
     log.info("Order created successfully. OrderSid: {}", createdOrder.getSid());
-    eventPublisher.publishEvent(new OrderCreatedEvent(createdOrder));
 
-    return createdOrder;
+    positionService.applyOrderToPosition(savedOrder);
+
+    return savedOrder;
   }
 
 }
