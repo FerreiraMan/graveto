@@ -125,8 +125,8 @@ public class AssetServiceImpl implements AssetService {
 
       final QuoteDataResponseDto.Result result = assetResultMap.getOrDefault(symbol.toUpperCase(), null);
 
-      if (result == null || !asset.getAssetType().name().equalsIgnoreCase(result.quoteType()) ||
-          !asset.getCurrency().name().equalsIgnoreCase(result.currency())) {
+      if (result == null || !asset.getAssetType().name().equalsIgnoreCase(result.quoteType())
+          || !asset.getCurrency().name().equalsIgnoreCase(result.currency())) {
 
         log.warn(
             "Skipping price update for asset [{}]. Type: [{} - {}], Currency [{} - {}]. No matching quote data found.",
