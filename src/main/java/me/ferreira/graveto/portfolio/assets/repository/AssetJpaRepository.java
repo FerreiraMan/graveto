@@ -1,5 +1,6 @@
 package me.ferreira.graveto.portfolio.assets.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import me.ferreira.graveto.portfolio.assets.domain.Asset;
@@ -17,5 +18,8 @@ public interface AssetJpaRepository extends JpaRepository<Asset, Long> {
   @Query("SELECT a FROM Asset a JOIN FETCH a.stockExchange se JOIN FETCH se.country " +
       "WHERE a.ticker = ?1 AND a.stockExchange = ?2")
   Optional<Asset> findByTickerAndStockExchange(final String ticker, final StockExchange stockExchange);
+
+  @EntityGraph(attributePaths = {Asset_.STOCK_EXCHANGE})
+  List<Asset> findAll();
 
 }

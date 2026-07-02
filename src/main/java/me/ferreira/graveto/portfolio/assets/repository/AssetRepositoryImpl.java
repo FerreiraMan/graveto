@@ -25,6 +25,11 @@ public class AssetRepositoryImpl implements AssetRepository {
   }
 
   @Override
+  public List<Asset> findAll() {
+    return repository.findAll();
+  }
+
+  @Override
   public Optional<Asset> findBySid(final UUID sid) {
     return repository.findBySid(sid);
   }

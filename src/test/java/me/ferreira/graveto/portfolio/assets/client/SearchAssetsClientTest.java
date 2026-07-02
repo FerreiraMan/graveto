@@ -12,6 +12,7 @@ import java.util.UUID;
 import me.ferreira.graveto.common.web.exception.common.ExternalApiUnavailableException;
 import me.ferreira.graveto.common.web.exception.portfolio.client.AssetInvalidRequestException;
 import me.ferreira.graveto.portfolio.assets.client.impl.YahooFinanceClient;
+import me.ferreira.graveto.portfolio.assets.client.impl.config.YahooFinanceProperties;
 import me.ferreira.graveto.portfolio.assets.client.impl.dto.response.SearchAssetResponseDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,12 +25,18 @@ public class SearchAssetsClientTest {
 
   private YahooFinanceClient yahooFinanceClient;
   private MockRestServiceServer mockServer;
+  private final YahooFinanceProperties properties = new YahooFinanceProperties(
+      "http://localhost",
+      "",
+      new YahooFinanceProperties.SearchProperties("v6/finance/autocomplete"),
+      new YahooFinanceProperties.QuoteProperties("v6/finance/quote", 10)
+  );
 
   @BeforeEach
   void setup() {
     final RestClient.Builder builder = RestClient.builder();
     mockServer = MockRestServiceServer.bindTo(builder).build();
-    yahooFinanceClient = new YahooFinanceClient(builder, "http://localhost", "");
+    yahooFinanceClient = new YahooFinanceClient(builder, properties);
   }
 
   @Test

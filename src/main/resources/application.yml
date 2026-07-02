@@ -45,3 +45,12 @@ http:
     yahoo:
       api-key: ${YFINANCE_API_KEY:yfinance_api_key}
       base-url: https://yfapi.net/
+      search:
+        path: v6/finance/autocomplete
+      quote:
+        path: v6/finance/quote
+        batch-limit: 10
+
+scheduled:
+  cron:
+    price: 0 0 17 * * *

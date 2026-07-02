@@ -12,6 +12,8 @@ public interface AssetRepository {
 
   List<Asset> saveAll(List<Asset> assetList);
 
+  List<Asset> findAll();
+
   Optional<Asset> findBySid(UUID sid);
 
   Optional<Asset> findByTickerAndStockExchange(String ticker, StockExchange stockExchange);

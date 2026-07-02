@@ -13,6 +13,7 @@ import java.util.UUID;
 import me.ferreira.graveto.common.web.exception.common.ExternalApiUnavailableException;
 import me.ferreira.graveto.common.web.exception.portfolio.client.QuoteDataInvalidRequestException;
 import me.ferreira.graveto.portfolio.assets.client.impl.YahooFinanceClient;
+import me.ferreira.graveto.portfolio.assets.client.impl.config.YahooFinanceProperties;
 import me.ferreira.graveto.portfolio.assets.client.impl.dto.response.QuoteDataResponseDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,12 +26,18 @@ public class FetchQuoteDataClientTest {
 
   private YahooFinanceClient yahooFinanceClient;
   private MockRestServiceServer mockServer;
+  private final YahooFinanceProperties properties = new YahooFinanceProperties(
+      "http://localhost",
+      "",
+      new YahooFinanceProperties.SearchProperties("v6/finance/autocomplete"),
+      new YahooFinanceProperties.QuoteProperties("v6/finance/quote", 3)
+  );
 
   @BeforeEach
   void setup() {
     final RestClient.Builder builder = RestClient.builder();
     mockServer = MockRestServiceServer.bindTo(builder).build();
-    yahooFinanceClient = new YahooFinanceClient(builder, "http://localhost", "");
+    yahooFinanceClient = new YahooFinanceClient(builder, properties);
   }
 
   @Test
@@ -144,6 +151,72 @@ public class FetchQuoteDataClientTest {
     yahooFinanceClient.fetchQuoteData(UUID.randomUUID(), List.of("IWDA.AS", "VWCE.DE", "SXR8.DE"));
 
     // Assert
+    mockServer.verify();
+  }
+
+  @Test
+  void shouldBatchRequestsWhenSymbolsExceedLimit() {
+    // Arrange — batch limit is 3, sending 5 symbols = 2 requests
+    final String firstBatchResponse = """
+        {"quoteResponse":{"result":[
+          {"symbol":"A.AS","longName":"A","quoteType":"ETF","regularMarketPrice":10.0,"currency":"EUR"},
+          {"symbol":"B.AS","longName":"B","quoteType":"ETF","regularMarketPrice":20.0,"currency":"EUR"},
+          {"symbol":"C.AS","longName":"C","quoteType":"ETF","regularMarketPrice":30.0,"currency":"EUR"}
+        ]}}
+        """;
+    final String secondBatchResponse = """
+        {"quoteResponse":{"result":[
+          {"symbol":"D.AS","longName":"D","quoteType":"ETF","regularMarketPrice":40.0,"currency":"EUR"},
+          {"symbol":"E.AS","longName":"E","quoteType":"ETF","regularMarketPrice":50.0,"currency":"EUR"}
+        ]}}
+        """;
+
+    mockServer.expect(requestTo("http://localhost/v6/finance/quote?symbols=A.AS,B.AS,C.AS"))
+        .andRespond(withSuccess(firstBatchResponse, MediaType.APPLICATION_JSON));
+    mockServer.expect(requestTo("http://localhost/v6/finance/quote?symbols=D.AS,E.AS"))
+        .andRespond(withSuccess(secondBatchResponse, MediaType.APPLICATION_JSON));
+
+    // Act
+    final List<QuoteDataResponseDto.Result> results = yahooFinanceClient.fetchQuoteData(
+        UUID.randomUUID(), List.of("A.AS", "B.AS", "C.AS", "D.AS", "E.AS"));
+
+    // Assert
+    assertThat(results).hasSize(5);
+    assertThat(results.get(0).symbol()).isEqualTo("A.AS");
+    assertThat(results.get(4).symbol()).isEqualTo("E.AS");
+    mockServer.verify();
+  }
+
+  @Test
+  void shouldHandleExactBatchLimitWithoutExtraRequest() {
+    // Arrange — batch limit is 3, sending exactly 3 symbols = 1 request
+    final String responseBody = """
+        {"quoteResponse":{"result":[
+          {"symbol":"A.AS","longName":"A","quoteType":"ETF","regularMarketPrice":10.0,"currency":"EUR"},
+          {"symbol":"B.AS","longName":"B","quoteType":"ETF","regularMarketPrice":20.0,"currency":"EUR"},
+          {"symbol":"C.AS","longName":"C","quoteType":"ETF","regularMarketPrice":30.0,"currency":"EUR"}
+        ]}}
+        """;
+
+    mockServer.expect(requestTo("http://localhost/v6/finance/quote?symbols=A.AS,B.AS,C.AS"))
+        .andRespond(withSuccess(responseBody, MediaType.APPLICATION_JSON));
+
+    // Act
+    final List<QuoteDataResponseDto.Result> results = yahooFinanceClient.fetchQuoteData(
+        UUID.randomUUID(), List.of("A.AS", "B.AS", "C.AS"));
+
+    // Assert
+    assertThat(results).hasSize(3);
+    mockServer.verify();
+  }
+
+  @Test
+  void shouldReturnEmptyListWhenSymbolListIsEmpty() {
+    // Act
+    final List<QuoteDataResponseDto.Result> results = yahooFinanceClient.fetchQuoteData(UUID.randomUUID(), List.of());
+
+    // Assert
+    assertThat(results).isEmpty();
     mockServer.verify();
   }
 
