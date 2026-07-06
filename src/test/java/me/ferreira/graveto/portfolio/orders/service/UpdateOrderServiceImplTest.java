@@ -86,7 +86,8 @@ public class UpdateOrderServiceImplTest {
     final BigDecimal newPrice = new BigDecimal("80.00");
     final BigDecimal newFees = new BigDecimal("3.00");
     final LocalDateTime newExecutedAt = LocalDateTime.now().minusDays(5);
-    final UpdateOrderCommand command = buildCommand(userSid, orderSid, newQuantity, newPrice, newFees, newExecutedAt, "updated");
+    final UpdateOrderCommand command =
+        buildCommand(userSid, orderSid, newQuantity, newPrice, newFees, newExecutedAt, "updated");
 
     when(orderRepository.findBySidAndUserSid(orderSid, userSid)).thenReturn(Optional.of(existingOrder));
 

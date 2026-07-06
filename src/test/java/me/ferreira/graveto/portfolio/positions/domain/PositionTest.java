@@ -240,7 +240,8 @@ public class PositionTest {
         BigDecimal.valueOf(10), BigDecimal.valueOf(72.50), BigDecimal.valueOf(2));
 
     // Act
-    position.reverseOrderImpact(OrderType.BUY, BigDecimal.valueOf(10), BigDecimal.valueOf(72.50), BigDecimal.valueOf(2));
+    position.reverseOrderImpact(OrderType.BUY, BigDecimal.valueOf(10), BigDecimal.valueOf(72.50),
+        BigDecimal.valueOf(2));
 
     // Assert
     assertThat(position.getQuantity()).isEqualByComparingTo(BigDecimal.ZERO);
