@@ -24,6 +24,7 @@ import me.ferreira.graveto.common.web.exception.portfolio.AssetNotFoundException
 import me.ferreira.graveto.common.web.exception.portfolio.BrokerNotFoundException;
 import me.ferreira.graveto.common.web.exception.portfolio.InsufficientPermissionsOnBrokerException;
 import me.ferreira.graveto.common.web.exception.portfolio.InvalidExchangeException;
+import me.ferreira.graveto.common.web.exception.portfolio.OrderNotFoundException;
 import me.ferreira.graveto.common.web.exception.portfolio.StockExchangeNotFoundException;
 import me.ferreira.graveto.common.web.exception.portfolio.UserAlreadyBrokerMemberException;
 import me.ferreira.graveto.common.web.exception.portfolio.client.AssetInvalidRequestException;
@@ -188,6 +189,14 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(AssetNotFoundException.class)
   public ProblemDetail handleAssetNotFoundException(final AssetNotFoundException ex,
+                                                    final HttpServletRequest request) {
+
+    log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
+    return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+  }
+
+  @ExceptionHandler(OrderNotFoundException.class)
+  public ProblemDetail handleOrderNotFoundException(final OrderNotFoundException ex,
                                                     final HttpServletRequest request) {
 
     log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());

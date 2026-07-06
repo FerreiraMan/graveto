@@ -98,4 +98,14 @@ public class Order extends BaseEntity {
     return order;
   }
 
+  public void updateDetails(final BigDecimal quantity, final BigDecimal price, final BigDecimal fees,
+                            final LocalDateTime executedAt, final String notes) {
+
+    this.quantity = quantity;
+    this.pricePerUnit = price;
+    this.fees = fees;
+    this.executedAt = executedAt;
+    this.notes = notes;
+  }
+
 }

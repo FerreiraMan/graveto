@@ -10,4 +10,6 @@ public interface OrderRepository {
 
   Optional<Order> findBySid(UUID sid);
 
+  Optional<Order> findBySidAndUserSid(UUID sid, UUID userSid);
+
 }

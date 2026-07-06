@@ -102,4 +102,25 @@ public class Position extends BaseEntity {
     this.totalInvested = this.totalInvested.add(orderQuantity.multiply(pricePerUnit).add(fees));
   }
 
+  public void reverseOrderImpact(final OrderType orderType, final BigDecimal quantityFromOldOrder,
+                                 final BigDecimal priceFromOldOrder, final BigDecimal feesFromOldOrder) {
+
+    if (orderType.isBuyOrder()) {
+
+      final BigDecimal currentSum = this.averageCost.multiply(this.quantity);
+      final BigDecimal reversedSum = currentSum.subtract(quantityFromOldOrder.multiply(priceFromOldOrder));
+      final BigDecimal reversedQuantity = this.quantity.subtract(quantityFromOldOrder);
+      if (reversedQuantity.compareTo(BigDecimal.ZERO) == 0) {
+        this.averageCost = BigDecimal.ZERO;
+      } else {
+        this.averageCost = reversedSum.divide(reversedQuantity, 8, RoundingMode.HALF_UP);
+      }
+      this.totalInvested =
+          this.totalInvested.subtract(quantityFromOldOrder.multiply(priceFromOldOrder).add(feesFromOldOrder));
+    }
+
+    this.quantity = this.quantity.subtract(
+        quantityFromOldOrder.multiply(BigDecimal.valueOf(orderType.getQuantityMultiplier())));
+  }
+
 }

@@ -2,6 +2,7 @@ package me.ferreira.graveto.portfolio.positions.service.impl;
 
 import java.math.BigDecimal;
 import java.util.Optional;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.ferreira.graveto.portfolio.assets.domain.Asset;
@@ -45,6 +46,38 @@ public class PositionServiceImpl implements PositionService {
     position.updateQuantity(orderType, orderQuantity);
     position.updateTotalInvested(orderType, orderQuantity, pricePerUnit, fees);
     return positionRepository.save(position);
+  }
+
+  @Override
+  @Transactional
+  public Position reapplyOrderToPosition(final BigDecimal oldQuantity,
+                                         final BigDecimal oldPrice, final BigDecimal oldFee, final Order updatedOrder) {
+
+    final UUID brokerSid = updatedOrder.getBroker().getSid();
+    final UUID assetSid = updatedOrder.getAsset().getSid();
+
+    final Position existingPosition =
+        positionRepository.findByBrokerSidAndAssetSid(brokerSid, assetSid)
+            .orElseThrow(() -> new IllegalStateException(String.format(
+                "Expected position from original order creation not found for broker [%s] and asset [%s].",
+                brokerSid.toString(), assetSid.toString())));
+
+    return processUpdatedOrder(existingPosition, oldQuantity, oldPrice, oldFee, updatedOrder);
+  }
+
+  private Position processUpdatedOrder(final Position existingPosition, final BigDecimal oldQuantity,
+                                       final BigDecimal oldPrice, final BigDecimal oldFee,
+                                       final Order updatedOrder) {
+
+    final OrderType orderType = updatedOrder.getOrderType();
+
+    existingPosition.reverseOrderImpact(orderType, oldQuantity, oldPrice, oldFee);
+    existingPosition.recalculateAverageCost(orderType, updatedOrder.getQuantity(), updatedOrder.getPricePerUnit());
+    existingPosition.updateQuantity(orderType, updatedOrder.getQuantity());
+    existingPosition.updateTotalInvested(
+        orderType, updatedOrder.getQuantity(), updatedOrder.getPricePerUnit(), updatedOrder.getFees());
+
+    return positionRepository.save(existingPosition);
   }
 
 }

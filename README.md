@@ -4,7 +4,7 @@
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0-brightgreen)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)
 
-Modular finance and portfolio management system. REST API for tracking accounts, transactions, transfers, and spending analytics — built with Spring Boot and Spring Modulith.
+Modular finance and portfolio management system. REST API for tracking accounts, transactions, transfers, spending analytics, and investment portfolios — built with Spring Boot and Spring Modulith.
 
 ## Stack
 
@@ -15,21 +15,28 @@ Modular finance and portfolio management system. REST API for tracking accounts,
 | Security | Spring Security + JWT (Auth0 java-jwt) |
 | Persistence | Spring Data JPA + PostgreSQL 16 |
 | Migrations | Flyway |
+| HTTP Client | Spring RestClient |
 | Build | Gradle 9 |
 | Containerisation | Docker + Docker Compose |
-| Testing | JUnit 5 + Testcontainers + REST Assured |
+| Testing | JUnit 5 + Testcontainers + REST Assured + MockServer |
 
 ## Modules
 
 ```
 graveto/
-├── identity/        # User registration, login, JWT issuance
+├── identity/           # User registration, login, JWT issuance
 ├── moneytracker/
-│   ├── accounts/    # Financial accounts management
-│   ├── categories/  # Transaction categories (system + user-defined)
-│   ├── transactions/# Income/expense transactions + transfers
-│   └── analytics/   # Cash flow and category spending reports
-└── common/          # Shared domain, JPA base, exception handling
+│   ├── accounts/       # Financial accounts management
+│   ├── categories/     # Transaction categories (system + user-defined)
+│   ├── transactions/   # Income/expense transactions + transfers
+│   └── analytics/      # Cash flow and category spending reports
+├── portfolio/
+│   ├── brokers/        # Investment platforms (DEGIRO, Trading 212, etc.)
+│   ├── assets/         # Tradeable instruments (ETFs, stocks) + Yahoo Finance integration
+│   ├── orders/         # Buy/sell order recording
+│   ├── positions/      # Portfolio positions (maintained aggregates from orders)
+│   └── stockexchange/  # Stock exchanges reference data (seeded)
+└── common/             # Shared domain, JPA base, HTTP infra, exception handling, scheduling
 ```
 
 ## Features
@@ -43,6 +50,7 @@ graveto/
 - Fetch single account (with membership roles)
 - List all accounts for authenticated user
 - Add members to an account with a specific role (owner, viewer, etc.)
+- Close accounts (requires zero balance)
 
 ### Transactions
 - Create income/expense transactions against an account and category
@@ -61,6 +69,31 @@ graveto/
 ### Analytics
 - **Cash flow report**: monthly income, expense, and net flow for a given year
 - **Category spending report**: yearly and monthly totals per category (with subcategory breakdown)
+
+### Brokers
+- Create investment platform accounts (e.g. DEGIRO, Trading 212)
+- Membership-based access control (OWNER, VIEWER) per broker
+- Fetch single broker with membership details
+- List all brokers for authenticated user
+- Optional back-reference to a moneytracker account (loose coupling)
+
+### Assets
+- Search tradeable instruments via Yahoo Finance API (autocomplete)
+- Create/follow assets (find-or-create pattern, avoids duplicates)
+- Automatic price enrichment on asset creation via Yahoo Finance quote API
+- Daily scheduled price update for all tracked assets
+- Rate-limited external API calls (per-user burst window)
+- Stock exchange reference data (seeded via migrations, includes Yahoo Finance suffix)
+
+### Orders
+- Record buy/sell orders against a broker and asset
+- Automatic position creation/update on order creation (weighted average cost basis)
+- Order fees tracking
+
+### Positions
+- Maintained aggregates (not derived on the fly) — quantity, average cost, total invested
+- Updated transactionally within the same transaction as order creation
+- One position per broker+asset pair
 
 ## Getting Started
 
@@ -110,6 +143,7 @@ cp .env.example .env
 | `GRAVETO_MIGRATOR_PASSWORD` | `graveto_migrator_password` | Flyway migrations password |
 | `jwt.signing-secret` | `jwt_graveto_secret` | JWT signing secret — **change in production** |
 | `jwt.expiration-ms` | `3600000` | JWT expiry in milliseconds (default: 1h) |
+| `YFINANCE_API_KEY` | `yfinance_api_key` | Yahoo Finance API key |
 
 ### Database Security
 
@@ -127,10 +161,17 @@ Users are created automatically on first container start via the init script bak
 
 All endpoints are prefixed with `/api`. Protected endpoints require `Authorization: Bearer <token>`.
 
+### Identity
+
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | POST | `/api/auth/register` | ✗ | Register user |
 | POST | `/api/auth/login` | ✗ | Login, returns JWT |
+
+### Money Tracker
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
 | POST | `/api/accounts` | ✓ | Create account |
 | GET | `/api/accounts` | ✓ | List accounts |
 | GET | `/api/accounts/{sid}` | ✓ | Get account detail |
@@ -148,6 +189,17 @@ All endpoints are prefixed with `/api`. Protected endpoints require `Authorizati
 | POST | `/api/categories` | ✓ | Create category |
 | GET | `/api/analytics/{accountSid}/cash-flow` | ✓ | Cash flow report |
 | GET | `/api/analytics/{accountSid}/category-spending` | ✓ | Category spending report |
+
+### Portfolio
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | `/api/brokers` | ✓ | Create broker |
+| GET | `/api/brokers` | ✓ | List brokers |
+| GET | `/api/brokers/{sid}` | ✓ | Get broker detail |
+| GET | `/api/assets/search` | ✓ | Search assets (Yahoo Finance) |
+| POST | `/api/assets` | ✓ | Create/follow asset |
+| POST | `/api/orders` | ✓ | Create order (+ position update) |
 
 ### Authentication flow
 
@@ -167,10 +219,22 @@ curl http://localhost:8080/api/accounts \
   -H "Authorization: Bearer <token>"
 ```
 
+## Scheduled Tasks
+
+| Task | Schedule | Description |
+|---|---|---|
+| Asset price update | Daily at 17:00 | Fetches current market prices from Yahoo Finance for all tracked assets |
+
 ## Testing
 
 ```bash
 ./gradlew test              # unit tests
 ./gradlew integrationTest   # integration tests (requires Docker)
-./gradlew check             # both
+./gradlew check             # both + coverage verification
 ```
+
+Integration tests use Testcontainers (PostgreSQL) and MockServer (Yahoo Finance API stub).
+
+### Coverage
+
+JaCoCo enforces 80% instruction and branch coverage. Excluded from coverage: domain entities, DTOs, commands, payloads, configuration, exceptions, and package-info files.

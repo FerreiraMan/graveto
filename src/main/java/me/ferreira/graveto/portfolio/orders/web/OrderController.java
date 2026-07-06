@@ -9,11 +9,14 @@ import lombok.RequiredArgsConstructor;
 import me.ferreira.graveto.portfolio.orders.domain.Order;
 import me.ferreira.graveto.portfolio.orders.service.OrderService;
 import me.ferreira.graveto.portfolio.orders.service.command.CreateOrderCommand;
+import me.ferreira.graveto.portfolio.orders.service.command.UpdateOrderCommand;
 import me.ferreira.graveto.portfolio.orders.web.dto.request.CreateOrderRequestDto;
+import me.ferreira.graveto.portfolio.orders.web.dto.request.UpdateOrderRequestDto;
 import me.ferreira.graveto.portfolio.orders.web.dto.response.OrderResponseDto;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -71,6 +74,41 @@ public class OrderController {
         .toUri();
 
     return ResponseEntity.created(location).body(response);
+  }
+
+  @PatchMapping(produces = "application/json")
+  public ResponseEntity<OrderResponseDto> updateOrder(
+      @AuthenticationPrincipal final UUID userSid,
+      @Valid @RequestBody final UpdateOrderRequestDto requestDto) {
+
+    final UpdateOrderCommand command = new UpdateOrderCommand(
+        userSid,
+        requestDto.orderSid(),
+        requestDto.quantity(),
+        requestDto.price(),
+        requestDto.fees(),
+        requestDto.executedAt(),
+        requestDto.notes()
+    );
+
+    final Order updatedOrder = orderService.updateOrder(command);
+
+    final OrderResponseDto response = new OrderResponseDto(
+        updatedOrder.getSid(),
+        new OrderResponseDto.EnhancedInfoObject(updatedOrder.getBroker().getSid(),
+            updatedOrder.getBroker().getName()),
+        new OrderResponseDto.EnhancedInfoObject(updatedOrder.getAsset().getSid(),
+            updatedOrder.getAsset().getTicker()),
+        updatedOrder.getOrderType().name(),
+        updatedOrder.getQuantity(),
+        updatedOrder.getPricePerUnit(),
+        updatedOrder.getFees(),
+        updatedOrder.getCurrency().name(),
+        updatedOrder.getExecutedAt(),
+        updatedOrder.getNotes()
+    );
+
+    return ResponseEntity.ok().body(response);
   }
 
 }

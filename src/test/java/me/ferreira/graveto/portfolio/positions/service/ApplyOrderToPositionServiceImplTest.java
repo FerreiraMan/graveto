@@ -36,7 +36,9 @@ public class ApplyOrderToPositionServiceImplTest {
 
   @Test
   void shouldCreateNewPositionWhenNoneExistsForBuyOrder() {
-    // Arrange
+    // Scenario: No position exists for this broker+asset pair.
+    // Action: First BUY order — 10 units @ 72.50 + 2 fee.
+    // Expected: New position created with qty=10, avgCost=72.50, totalInvested=10×72.50+2=727
     final Order order =
         buildOrder(OrderType.BUY, new BigDecimal("10"), new BigDecimal("72.50"), new BigDecimal("2.00"));
 
@@ -77,7 +79,9 @@ public class ApplyOrderToPositionServiceImplTest {
 
   @Test
   void shouldUpdateExistingPositionOnBuyOrder() {
-    // Arrange
+    // Scenario: Existing position from BUY 10 @ 72.50 + 2 fee (qty=10, totalInvested=727).
+    // Action: New BUY order — 5 units @ 80 + 1.50 fee.
+    // Expected: qty=15, totalInvested=727+(5×80+1.50)=1128.50, avgCost recalculated
     final Broker broker = buildBroker();
     final Asset asset = buildAsset();
     final Order order =
@@ -102,7 +106,9 @@ public class ApplyOrderToPositionServiceImplTest {
 
   @Test
   void shouldUpdateExistingPositionOnSellOrder() {
-    // Arrange
+    // Scenario: Existing position from BUY 10 @ 72.50 + 2 fee (qty=10, avgCost=72.50, totalInvested=727).
+    // Action: SELL 3 units @ 90.
+    // Expected: qty=7, avgCost unchanged (72.50), totalInvested unchanged (727)
     final Broker broker = buildBroker();
     final Asset asset = buildAsset();
     final Order order =

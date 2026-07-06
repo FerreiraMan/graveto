@@ -24,4 +24,9 @@ public class OrderRepositoryImpl implements OrderRepository {
     return repository.findBySid(sid);
   }
 
+  @Override
+  public Optional<Order> findBySidAndUserSid(final UUID sid, final UUID userSid) {
+    return repository.findBySidAndUserSid(sid, userSid);
+  }
+
 }

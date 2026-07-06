@@ -50,7 +50,9 @@ public class PositionTest {
 
   @Test
   void shouldRecalculateAverageCostOnBuyOrder() {
-    // Arrange
+    // Scenario: Position has 10 units @ 15.
+    // New BUY order: 5 units @ 20.
+    // Expected new average: (10×15 + 5×20) / (10+5) = 250/15 = 16.66666667
     final Broker broker = Broker.create("Degiro", UUID.randomUUID(), Currency.EUR);
     final Asset asset = Asset.create("IWDA", "iShares Core MSCI World", AssetType.ETF, Currency.EUR);
     final BigDecimal quantity = BigDecimal.valueOf(10);
@@ -132,7 +134,9 @@ public class PositionTest {
 
   @Test
   void shouldAccumulateTotalInvestedOnBuyOrder() {
-    // Arrange
+    // Scenario: Position created from BUY 10 @ 15 + 1 fee = 151 total invested.
+    // New BUY order: 5 @ 20 + 2 fee = 102 added.
+    // Expected total invested: 151 + 102 = 253
     final Broker broker = Broker.create("Degiro", UUID.randomUUID(), Currency.EUR);
     final Asset asset = Asset.create("IWDA", "iShares Core MSCI World", AssetType.ETF, Currency.EUR);
     final BigDecimal quantity = BigDecimal.valueOf(10);
@@ -174,6 +178,74 @@ public class PositionTest {
 
     // Assert
     assertThat(position.getTotalInvested()).isEqualByComparingTo(expectedTotalInvested);
+  }
+
+  @Test
+  void shouldReverseFullBuyOrderImpactOnPosition() {
+    // Scenario: Position built from two BUY orders:
+    //   Order 1: 10 units @ 60 + 1 fee = 601 invested
+    //   Order 2: 10 units @ 80 + 2 fee = 802 invested
+    //   Position state: qty=20, avgCost=70, totalInvested=1403
+    //
+    // Action: Reverse order 2 (10@80, fee 2)
+    // Expected: Position returns to order 1 state: qty=10, avgCost=60, totalInvested=601
+    final Broker broker = Broker.create("Degiro", UUID.randomUUID(), Currency.EUR);
+    final Asset asset = Asset.create("IWDA", "iShares Core MSCI World", AssetType.ETF, Currency.EUR);
+    final Position position = Position.create(OrderType.BUY, broker, asset,
+        BigDecimal.valueOf(10), BigDecimal.valueOf(60), BigDecimal.valueOf(1));
+    position.recalculateAverageCost(OrderType.BUY, BigDecimal.valueOf(10), BigDecimal.valueOf(80));
+    position.updateQuantity(OrderType.BUY, BigDecimal.valueOf(10));
+    position.updateTotalInvested(OrderType.BUY, BigDecimal.valueOf(10), BigDecimal.valueOf(80), BigDecimal.valueOf(2));
+
+    // Act
+    position.reverseOrderImpact(OrderType.BUY, BigDecimal.valueOf(10), BigDecimal.valueOf(80), BigDecimal.valueOf(2));
+
+    // Assert
+    assertThat(position.getQuantity()).isEqualByComparingTo(new BigDecimal("10"));
+    assertThat(position.getAverageCost()).isEqualByComparingTo(new BigDecimal("60"));
+    assertThat(position.getTotalInvested()).isEqualByComparingTo(new BigDecimal("601"));
+  }
+
+  @Test
+  void shouldReverseSellOrderImpactOnPosition() {
+    // Scenario: Position has 10 units @ 72.50 (fee 2, totalInvested=727).
+    //   Then SELL 3 units → qty drops to 7. AvgCost/totalInvested unchanged (SELL doesn't affect them).
+    //
+    // Action: Reverse the SELL of 3 units.
+    // Expected: qty restored to 10, avgCost=72.50, totalInvested=727
+    final Broker broker = Broker.create("Degiro", UUID.randomUUID(), Currency.EUR);
+    final Asset asset = Asset.create("IWDA", "iShares Core MSCI World", AssetType.ETF, Currency.EUR);
+    final Position position = Position.create(OrderType.BUY, broker, asset,
+        BigDecimal.valueOf(10), BigDecimal.valueOf(72.50), BigDecimal.valueOf(2));
+    position.updateQuantity(OrderType.SELL, BigDecimal.valueOf(3));
+
+    // Act
+    position.reverseOrderImpact(OrderType.SELL, BigDecimal.valueOf(3), BigDecimal.valueOf(90), BigDecimal.ZERO);
+
+    // Assert
+    assertThat(position.getQuantity()).isEqualByComparingTo(new BigDecimal("10"));
+    assertThat(position.getAverageCost()).isEqualByComparingTo(new BigDecimal("72.50"));
+    assertThat(position.getTotalInvested()).isEqualByComparingTo(new BigDecimal("727"));
+  }
+
+  @Test
+  void shouldSetAverageCostToZeroWhenReversingOnlyBuyOrder() {
+    // Scenario: Position has only 1 BUY order: 10 @ 72.50, fee 2 (totalInvested=727).
+    //
+    // Action: Reverse that single order (effectively emptying the position).
+    // Expected: qty=0, avgCost=0, totalInvested=0 (division by zero guard kicks in)
+    final Broker broker = Broker.create("Degiro", UUID.randomUUID(), Currency.EUR);
+    final Asset asset = Asset.create("IWDA", "iShares Core MSCI World", AssetType.ETF, Currency.EUR);
+    final Position position = Position.create(OrderType.BUY, broker, asset,
+        BigDecimal.valueOf(10), BigDecimal.valueOf(72.50), BigDecimal.valueOf(2));
+
+    // Act
+    position.reverseOrderImpact(OrderType.BUY, BigDecimal.valueOf(10), BigDecimal.valueOf(72.50), BigDecimal.valueOf(2));
+
+    // Assert
+    assertThat(position.getQuantity()).isEqualByComparingTo(BigDecimal.ZERO);
+    assertThat(position.getAverageCost()).isEqualByComparingTo(BigDecimal.ZERO);
+    assertThat(position.getTotalInvested()).isEqualByComparingTo(BigDecimal.ZERO);
   }
 
   private BigDecimal calculateAverage(final BigDecimal originalAverage,

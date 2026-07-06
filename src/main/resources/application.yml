@@ -53,4 +53,4 @@ http:
 
 scheduled:
   cron:
-    price: 0 0 17 * * *
+    price: 0 30 10,17 * * *

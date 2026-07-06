@@ -1,7 +1,10 @@
 package me.ferreira.graveto.portfolio.orders.service.impl;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import me.ferreira.graveto.common.web.exception.portfolio.OrderNotFoundException;
 import me.ferreira.graveto.portfolio.assets.domain.Asset;
 import me.ferreira.graveto.portfolio.assets.service.AssetService;
 import me.ferreira.graveto.portfolio.assets.service.command.FetchAssetCommand;
@@ -12,6 +15,7 @@ import me.ferreira.graveto.portfolio.orders.domain.Order;
 import me.ferreira.graveto.portfolio.orders.repository.OrderRepository;
 import me.ferreira.graveto.portfolio.orders.service.OrderService;
 import me.ferreira.graveto.portfolio.orders.service.command.CreateOrderCommand;
+import me.ferreira.graveto.portfolio.orders.service.command.UpdateOrderCommand;
 import me.ferreira.graveto.portfolio.positions.service.PositionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +49,34 @@ public class OrderServiceImpl implements OrderService {
     positionService.applyOrderToPosition(savedOrder);
 
     return savedOrder;
+  }
+
+  @Override
+  @Transactional
+  public Order updateOrder(final UpdateOrderCommand command) {
+
+    final Order existingOrder = orderRepository.findBySidAndUserSid(command.sid(), command.userSid())
+        .orElseThrow(() -> new OrderNotFoundException(command.sid()));
+
+    existingOrder.getBroker()
+        .validateUserPermission(command.userSid(), BrokerMembershipRole::canUpdateOrders, "update orders");
+
+    final BigDecimal oldQuantity = existingOrder.getQuantity();
+    final BigDecimal oldPrice = existingOrder.getPricePerUnit();
+    final BigDecimal oldFees = existingOrder.getFees();
+
+    final BigDecimal effectiveQuantity = command.quantity() != null ? command.quantity() : oldQuantity;
+    final BigDecimal effectivePrice = command.price() != null ? command.price() : oldPrice;
+    final BigDecimal effectiveFees = command.fees() != null ? command.fees() : oldFees;
+    final LocalDateTime effectiveExecutedAt =
+        command.executedAt() != null ? command.executedAt() : existingOrder.getExecutedAt();
+    final String effectiveNotes = command.notes() != null ? command.notes() : existingOrder.getNotes();
+
+    existingOrder.updateDetails(effectiveQuantity, effectivePrice, effectiveFees, effectiveExecutedAt, effectiveNotes);
+
+    positionService.reapplyOrderToPosition(oldQuantity, oldPrice, oldFees, existingOrder);
+
+    return existingOrder;
   }
 
 }
