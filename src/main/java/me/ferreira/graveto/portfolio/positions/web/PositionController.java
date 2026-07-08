@@ -4,8 +4,11 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import me.ferreira.graveto.portfolio.positions.service.PositionService;
+import me.ferreira.graveto.portfolio.positions.service.command.FetchPortfolioOverviewCommand;
 import me.ferreira.graveto.portfolio.positions.service.command.FetchPositionOverviewCommand;
+import me.ferreira.graveto.portfolio.positions.service.payload.PortfolioSummary;
 import me.ferreira.graveto.portfolio.positions.service.payload.PositionValuation;
+import me.ferreira.graveto.portfolio.positions.web.dto.response.PortfolioValuationResponseDto;
 import me.ferreira.graveto.portfolio.positions.web.dto.response.PositionResponseDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,6 +24,7 @@ public class PositionController {
 
   private static final String POSITION_PATH = "/positions";
   private static final String BROKER_PATH = "/brokers";
+  private static final String SUMMARY_PATH = "/summary";
   private static final String BROKER_SID_PATH = "/{brokerSid}";
 
   @GetMapping(value = BROKER_PATH + BROKER_SID_PATH + POSITION_PATH, produces = "application/json")
@@ -45,6 +49,25 @@ public class PositionController {
             position.unrealizedPnlPercent()
         )
     ).toList();
+
+    return ResponseEntity.ok(response);
+  }
+
+  @GetMapping(value = BROKER_PATH + BROKER_SID_PATH + POSITION_PATH + SUMMARY_PATH, produces = "application/json")
+  public ResponseEntity<PortfolioValuationResponseDto> fetchPortfolioValuation(
+      @AuthenticationPrincipal final UUID userSid,
+      @PathVariable final UUID brokerSid) {
+
+    final FetchPortfolioOverviewCommand command = new FetchPortfolioOverviewCommand(userSid, brokerSid);
+
+    final PortfolioSummary portfolioValuationSummary = positionService.generatePortfolioValuationOverview(command);
+
+    final PortfolioValuationResponseDto response = new PortfolioValuationResponseDto(
+        portfolioValuationSummary.totalInvested(),
+        portfolioValuationSummary.totalMarketValue(),
+        portfolioValuationSummary.totalUnrealizedPnL(),
+        portfolioValuationSummary.totalUnrealizedPnlPercent()
+    );
 
     return ResponseEntity.ok(response);
   }

@@ -17,7 +17,9 @@ import me.ferreira.graveto.portfolio.orders.domain.OrderType;
 import me.ferreira.graveto.portfolio.positions.domain.Position;
 import me.ferreira.graveto.portfolio.positions.repository.PositionRepository;
 import me.ferreira.graveto.portfolio.positions.service.PositionService;
+import me.ferreira.graveto.portfolio.positions.service.command.FetchPortfolioOverviewCommand;
 import me.ferreira.graveto.portfolio.positions.service.command.FetchPositionOverviewCommand;
+import me.ferreira.graveto.portfolio.positions.service.payload.PortfolioSummary;
 import me.ferreira.graveto.portfolio.positions.service.payload.PositionValuation;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -88,6 +90,23 @@ public class PositionServiceImpl implements PositionService {
     return buildPositionValuation(positionAndAssetOverview);
   }
 
+  @Override
+  @Transactional(readOnly = true)
+  public PortfolioSummary generatePortfolioValuationOverview(final FetchPortfolioOverviewCommand command) {
+
+    brokerService
+        .fetchBrokerEntity(command.brokerSid())
+        .validateUserPermission(command.userSid(), BrokerMembershipRole::canRequestPortfolioOverview,
+            "request portfolio valuation overview");
+
+    final List<Position> positionAndAssetOverview =
+        positionRepository.fetchAllByBrokerSidWithAsset(command.brokerSid());
+
+    final List<PositionValuation> positionValuationList = buildPositionValuation(positionAndAssetOverview);
+
+    return buildPortfolioSummary(positionValuationList);
+  }
+
   private Position processUpdatedOrder(final Position existingPosition, final BigDecimal oldQuantity,
                                        final BigDecimal oldPrice, final BigDecimal oldFee,
                                        final Order updatedOrder) {
@@ -135,6 +154,24 @@ public class PositionServiceImpl implements PositionService {
     });
 
     return results;
+  }
+
+  private PortfolioSummary buildPortfolioSummary(final List<PositionValuation> positionValuationList) {
+
+    if (positionValuationList.isEmpty()) {
+      return new PortfolioSummary(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
+    }
+
+    final BigDecimal totalInvested =
+        positionValuationList.stream().map(PositionValuation::totalInvested).reduce(BigDecimal.ZERO, BigDecimal::add);
+    final BigDecimal totalMarketValue =
+        positionValuationList.stream().map(PositionValuation::marketValue).reduce(BigDecimal.ZERO, BigDecimal::add);
+    final BigDecimal totalUnrealizedPnL =
+        positionValuationList.stream().map(PositionValuation::unrealizedPnL).reduce(BigDecimal.ZERO, BigDecimal::add);
+    final BigDecimal totalUnrealizedPnlPercent =
+        totalUnrealizedPnL.divide(totalInvested, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+
+    return new PortfolioSummary(totalInvested, totalMarketValue, totalUnrealizedPnL, totalUnrealizedPnlPercent);
   }
 
 }
