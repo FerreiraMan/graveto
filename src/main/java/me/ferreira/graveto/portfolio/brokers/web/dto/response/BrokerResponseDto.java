@@ -1,4 +1,4 @@
-package me.ferreira.graveto.portfolio.brokers.web.response;
+package me.ferreira.graveto.portfolio.brokers.web.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;

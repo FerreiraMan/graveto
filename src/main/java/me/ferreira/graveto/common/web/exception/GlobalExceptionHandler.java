@@ -6,6 +6,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import me.ferreira.graveto.common.web.exception.common.ExternalApiUnavailableException;
 import me.ferreira.graveto.common.web.exception.common.TooManyRequestsException;
@@ -25,6 +26,7 @@ import me.ferreira.graveto.common.web.exception.portfolio.BrokerNotFoundExceptio
 import me.ferreira.graveto.common.web.exception.portfolio.InsufficientPermissionsOnBrokerException;
 import me.ferreira.graveto.common.web.exception.portfolio.InvalidExchangeException;
 import me.ferreira.graveto.common.web.exception.portfolio.OrderNotFoundException;
+import me.ferreira.graveto.common.web.exception.portfolio.PositionNotFoundException;
 import me.ferreira.graveto.common.web.exception.portfolio.StockExchangeNotFoundException;
 import me.ferreira.graveto.common.web.exception.portfolio.UserAlreadyBrokerMemberException;
 import me.ferreira.graveto.common.web.exception.portfolio.client.AssetInvalidRequestException;
@@ -189,6 +191,14 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(AssetNotFoundException.class)
   public ProblemDetail handleAssetNotFoundException(final AssetNotFoundException ex,
+                                                    final HttpServletRequest request) {
+
+    log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
+    return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+  }
+
+  @ExceptionHandler(PositionNotFoundException.class)
+  public ProblemDetail handlePositionNotFoundException(final PositionNotFoundException ex,
                                                     final HttpServletRequest request) {
 
     log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());

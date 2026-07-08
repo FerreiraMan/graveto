@@ -1,5 +1,6 @@
 package me.ferreira.graveto.portfolio.positions.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import me.ferreira.graveto.portfolio.positions.domain.Position;
@@ -10,5 +11,8 @@ public interface PositionJpaRepository extends JpaRepository<Position, Long> {
 
   @Query("SELECT p FROM Position p WHERE p.broker.sid = ?1 AND p.asset.sid = ?2")
   Optional<Position> findByBrokerSidAndAssetSid(final UUID brokerSid, final UUID assetSid);
+
+  @Query("SELECT p FROM Position p JOIN FETCH p.asset WHERE p.broker.sid = ?1")
+  List<Position> fetchAllByBrokerSidWithAsset(UUID brokerSid);
 
 }

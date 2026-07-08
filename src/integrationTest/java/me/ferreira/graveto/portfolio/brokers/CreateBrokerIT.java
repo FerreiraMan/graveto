@@ -13,7 +13,7 @@ import me.ferreira.graveto.portfolio.brokers.domain.Broker;
 import me.ferreira.graveto.portfolio.brokers.domain.BrokerMembershipRole;
 import me.ferreira.graveto.portfolio.brokers.domain.BrokerStatus;
 import me.ferreira.graveto.portfolio.brokers.repository.BrokerRepository;
-import me.ferreira.graveto.portfolio.brokers.web.request.CreateBrokerRequestDto;
+import me.ferreira.graveto.portfolio.brokers.web.dto.request.CreateBrokerRequestDto;
 import me.ferreira.graveto.portfolio.config.PortfolioBaseIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

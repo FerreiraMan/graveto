@@ -14,7 +14,7 @@ import me.ferreira.graveto.portfolio.brokers.domain.BrokerStatus;
 import me.ferreira.graveto.portfolio.brokers.service.BrokerService;
 import me.ferreira.graveto.portfolio.brokers.service.command.CreateBrokerCommand;
 import me.ferreira.graveto.portfolio.brokers.service.payload.BrokerDetails;
-import me.ferreira.graveto.portfolio.brokers.web.request.CreateBrokerRequestDto;
+import me.ferreira.graveto.portfolio.brokers.web.dto.request.CreateBrokerRequestDto;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;

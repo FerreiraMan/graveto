@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.UUID;
 import me.ferreira.graveto.portfolio.brokers.domain.Broker;
 import me.ferreira.graveto.portfolio.brokers.repository.BrokerRepository;
-import me.ferreira.graveto.portfolio.brokers.web.response.BrokerSummaryResponseDto;
+import me.ferreira.graveto.portfolio.brokers.web.dto.response.BrokerSummaryResponseDto;
 import me.ferreira.graveto.portfolio.config.PortfolioBaseIntegrationTest;
 import me.ferreira.graveto.portfolio.utils.BrokerTestFactory;
 import org.junit.jupiter.api.Test;
