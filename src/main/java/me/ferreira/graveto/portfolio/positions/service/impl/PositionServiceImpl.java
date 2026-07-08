@@ -1,17 +1,24 @@
 package me.ferreira.graveto.portfolio.positions.service.impl;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.ferreira.graveto.portfolio.assets.domain.Asset;
 import me.ferreira.graveto.portfolio.brokers.domain.Broker;
+import me.ferreira.graveto.portfolio.brokers.domain.BrokerMembershipRole;
+import me.ferreira.graveto.portfolio.brokers.service.BrokerService;
 import me.ferreira.graveto.portfolio.orders.domain.Order;
 import me.ferreira.graveto.portfolio.orders.domain.OrderType;
 import me.ferreira.graveto.portfolio.positions.domain.Position;
 import me.ferreira.graveto.portfolio.positions.repository.PositionRepository;
 import me.ferreira.graveto.portfolio.positions.service.PositionService;
+import me.ferreira.graveto.portfolio.positions.service.command.FetchPositionOverviewCommand;
+import me.ferreira.graveto.portfolio.positions.service.payload.PositionValuation;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class PositionServiceImpl implements PositionService {
 
   private final PositionRepository positionRepository;
+  private final BrokerService brokerService;
 
   @Override
   @Transactional
@@ -65,6 +73,21 @@ public class PositionServiceImpl implements PositionService {
     return processUpdatedOrder(existingPosition, oldQuantity, oldPrice, oldFee, updatedOrder);
   }
 
+  @Override
+  @Transactional(readOnly = true)
+  public List<PositionValuation> generatePositionValuationOverview(final FetchPositionOverviewCommand command) {
+
+    brokerService
+        .fetchBrokerEntity(command.brokerSid())
+        .validateUserPermission(command.userSid(), BrokerMembershipRole::canRequestValuationOverview,
+            "request position valuation overview");
+
+    final List<Position> positionAndAssetOverview =
+        positionRepository.fetchAllByBrokerSidWithAsset(command.brokerSid());
+
+    return buildPositionValuation(positionAndAssetOverview);
+  }
+
   private Position processUpdatedOrder(final Position existingPosition, final BigDecimal oldQuantity,
                                        final BigDecimal oldPrice, final BigDecimal oldFee,
                                        final Order updatedOrder) {
@@ -78,6 +101,40 @@ public class PositionServiceImpl implements PositionService {
         orderType, updatedOrder.getQuantity(), updatedOrder.getPricePerUnit(), updatedOrder.getFees());
 
     return positionRepository.save(existingPosition);
+  }
+
+  private List<PositionValuation> buildPositionValuation(final List<Position> positionList) {
+
+    final List<PositionValuation> results = new ArrayList<>();
+
+    positionList.forEach(position -> {
+
+      final Asset asset = position.getAsset();
+
+      if (asset.getCurrentPrice() == null) {
+        log.warn("Asset [{}] has no current price. Skipping valuation.", asset.getTicker());
+        return;
+      }
+
+      final BigDecimal unrealizedPnL =
+          position.getQuantity().multiply(asset.getCurrentPrice()).subtract(position.getTotalInvested());
+      final BigDecimal unrealizedPnlPercent =
+          unrealizedPnL.divide(position.getTotalInvested(), 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+
+      results.add(new PositionValuation(
+          asset.getSid(),
+          asset.getTicker(),
+          position.getQuantity(),
+          position.getAverageCost(),
+          position.getTotalInvested(),
+          asset.getCurrentPrice(),
+          position.getQuantity().multiply(asset.getCurrentPrice()),
+          unrealizedPnL,
+          unrealizedPnlPercent
+      ));
+    });
+
+    return results;
   }
 
 }

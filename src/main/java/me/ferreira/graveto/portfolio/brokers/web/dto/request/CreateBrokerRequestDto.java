@@ -1,4 +1,4 @@
-package me.ferreira.graveto.portfolio.brokers.web.request;
+package me.ferreira.graveto.portfolio.brokers.web.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
