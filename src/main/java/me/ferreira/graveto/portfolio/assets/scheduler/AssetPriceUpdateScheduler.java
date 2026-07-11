@@ -15,7 +15,7 @@ public class AssetPriceUpdateScheduler {
 
   private final AssetService assetService;
 
-  @Scheduled(cron = "${scheduled.cron.price}", zone = "Europe/Lisbon")
+  @Scheduled(cron = "${scheduled.cron.asset-price}", zone = "Europe/Lisbon")
   public void dailyAssetPriceUpdate() {
 
     final List<AssetPriceUpdateResult> results = assetService.updateAssetPrices();

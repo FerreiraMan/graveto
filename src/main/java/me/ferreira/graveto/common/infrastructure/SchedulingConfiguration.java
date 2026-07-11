@@ -1,6 +1,9 @@
 package me.ferreira.graveto.common.infrastructure;
 
+import java.time.Clock;
+import java.time.ZoneId;
 import org.springframework.boot.task.ThreadPoolTaskSchedulerCustomizer;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
@@ -14,6 +17,11 @@ public class SchedulingConfiguration implements ThreadPoolTaskSchedulerCustomize
   public void customize(final ThreadPoolTaskScheduler taskScheduler) {
     taskScheduler.setThreadNamePrefix("scheduler-");
     taskScheduler.setErrorHandler(TaskUtils.LOG_AND_SUPPRESS_ERROR_HANDLER);
+  }
+
+  @Bean
+  public Clock clock() {
+    return Clock.system(ZoneId.of("Europe/Lisbon"));
   }
 
 }
