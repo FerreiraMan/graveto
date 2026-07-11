@@ -53,4 +53,5 @@ http:
 
 scheduled:
   cron:
-    price: 0 30 10,17 * * *
+    asset-price: 0 30 10,17 * * *
+    recurring-transaction: 0 0 10 * * *

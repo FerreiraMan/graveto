@@ -13,6 +13,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 @ApplicationModuleTest(
     module = "moneytracker",
     mode = ApplicationModuleTest.BootstrapMode.STANDALONE,
+    extraIncludes = "common",
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 @Import({MoneyTrackerIntegrationTestConfiguration.class, MoneyTrackerTestSecurityConfig.class})
