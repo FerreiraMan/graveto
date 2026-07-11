@@ -40,7 +40,9 @@ public class RecurringTransaction extends BaseEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "recurring_transactions_id_seq")
-  @SequenceGenerator(name = "recurring_transactions_id_seq", sequenceName = "recurring_transactions_id_seq", allocationSize = 1)
+  @SequenceGenerator(
+      name = "recurring_transactions_id_seq", sequenceName = "recurring_transactions_id_seq", allocationSize = 1
+  )
   private Long id;
 
   @Column(nullable = false, unique = true)
