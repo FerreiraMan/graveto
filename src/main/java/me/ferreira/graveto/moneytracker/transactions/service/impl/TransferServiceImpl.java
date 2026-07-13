@@ -1,4 +1,4 @@
-package me.ferreira.graveto.moneytracker.transactions.service.impl.transfer;
+package me.ferreira.graveto.moneytracker.transactions.service.impl;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
