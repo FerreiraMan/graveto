@@ -132,10 +132,10 @@ public class RecurringTransactionServiceImpl implements RecurringTransactionServ
         final int targetYear = isNextYear ? today.plusYears(1).getYear() : today.getYear();
 
         final YearMonth yearMonth = YearMonth.of(targetYear, targetMonth);
-        final boolean isValidDayInnMonth = yearMonth.isValidDay(command.dayOfMonth());
+        final boolean isValidDayInMonth = yearMonth.isValidDay(command.dayOfMonth());
 
         yield LocalDate.of(targetYear, targetMonth,
-            isValidDayInnMonth ? command.dayOfMonth() : yearMonth.atEndOfMonth().getDayOfMonth());
+            isValidDayInMonth ? command.dayOfMonth() : yearMonth.atEndOfMonth().getDayOfMonth());
       }
       case ANNUALLY ->  command.dayOfMonth() <= today.getDayOfMonth()
             ? today.plusYears(1).withDayOfMonth(command.dayOfMonth()) :
