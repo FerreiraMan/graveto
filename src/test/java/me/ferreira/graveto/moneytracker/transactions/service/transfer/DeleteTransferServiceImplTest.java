@@ -20,7 +20,7 @@ import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.repository.TransactionRepository;
 import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.DeleteTransferCommand;
-import me.ferreira.graveto.moneytracker.transactions.service.impl.transfer.TransferServiceImpl;
+import me.ferreira.graveto.moneytracker.transactions.service.impl.TransferServiceImpl;
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.payload.TransferResult;
 import me.ferreira.graveto.moneytracker.utils.AccountUtils;
 import org.junit.jupiter.api.Test;

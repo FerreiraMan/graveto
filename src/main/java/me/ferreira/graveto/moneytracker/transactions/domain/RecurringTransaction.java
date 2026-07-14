@@ -102,6 +102,34 @@ public class RecurringTransaction extends BaseEntity {
   @Column(name = "end_date")
   private LocalDate endDate;
 
+  public static RecurringTransaction create(final Account account, final Category category, final UUID userSid,
+                                            final String description, final BigDecimal amount,
+                                            final TransactionType transactionType,
+                                            final Frequency frequency, final Integer dayOfTheMonth,
+                                            final Integer dayOfTheWeek, final Boolean adjustToBusinessDay,
+                                            final LocalDate nextExecutionDate,
+                                            final LocalDate startDate, final LocalDate endDate) {
+
+    final RecurringTransaction rt = new RecurringTransaction();
+    rt.setSid(UUID.randomUUID());
+    rt.setAccount(account);
+    rt.setCategory(category);
+    rt.setUserSid(userSid);
+    rt.setDescription(description);
+    rt.setAmount(amount);
+    rt.setCurrency(account.getBaseCurrency());
+    rt.setType(transactionType);
+    rt.setFrequency(frequency);
+    rt.setDayOfTheMonth(dayOfTheMonth);
+    rt.setDayOfTheWeek(dayOfTheWeek);
+    rt.setAdjustToBusinessDay(adjustToBusinessDay);
+    rt.setNextExecutionDate(nextExecutionDate);
+    rt.setStatus(RecurringOperationStatus.ACTIVE);
+    rt.setStartDate(startDate);
+    rt.setEndDate(endDate);
+    return rt;
+  }
+
   public void updateNextExecutionDate(final Long amount, final ChronoUnit temporalUnit) {
     this.lastExecutedAt = LocalDateTime.now();
     this.nextExecutionDate = this.nextExecutionDate.plus(amount, temporalUnit);
