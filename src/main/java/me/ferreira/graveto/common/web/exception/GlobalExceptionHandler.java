@@ -18,6 +18,7 @@ import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundExc
 import me.ferreira.graveto.common.web.exception.moneytracker.IllegalCategoryHierarchyException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.common.web.exception.moneytracker.MemberNotRegisteredException;
+import me.ferreira.graveto.common.web.exception.moneytracker.RecurringTransactionNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserAlreadyAccountMemberException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserNotMemberOfAccountException;
@@ -149,6 +150,14 @@ public class GlobalExceptionHandler {
     return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
   }
 
+  @ExceptionHandler(RecurringTransactionNotFoundException.class)
+  public ProblemDetail handleRecurringTransactionNotFoundException(final RecurringTransactionNotFoundException ex,
+                                                                   final HttpServletRequest request) {
+
+    log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
+    return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+  }
+
   @ExceptionHandler(CategoryAlreadyExistsException.class)
   public ProblemDetail handleCategoryAlreadyExistsException(final CategoryAlreadyExistsException ex,
                                                             final HttpServletRequest request) {
@@ -199,7 +208,7 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(PositionNotFoundException.class)
   public ProblemDetail handlePositionNotFoundException(final PositionNotFoundException ex,
-                                                    final HttpServletRequest request) {
+                                                       final HttpServletRequest request) {
 
     log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
     return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);

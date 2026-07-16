@@ -81,11 +81,11 @@ public class RecurringTransactionScheduler {
   private void updateNextOccurrence(final RecurringTransaction recurringTransaction) {
 
     switch (recurringTransaction.getFrequency()) {
-      case DAILY -> recurringTransaction.updateNextExecutionDate(1L, ChronoUnit.DAYS);
-      case WEEKLY -> recurringTransaction.updateNextExecutionDate(1L, ChronoUnit.WEEKS);
-      case BI_WEEKLY -> recurringTransaction.updateNextExecutionDate(2L, ChronoUnit.WEEKS);
-      case MONTHLY -> recurringTransaction.updateNextExecutionDate(1L, ChronoUnit.MONTHS);
-      case ANNUALLY -> recurringTransaction.updateNextExecutionDate(1L, ChronoUnit.YEARS);
+      case DAILY -> recurringTransaction.scheduleNextExecutionDate(1L, ChronoUnit.DAYS);
+      case WEEKLY -> recurringTransaction.scheduleNextExecutionDate(1L, ChronoUnit.WEEKS);
+      case BI_WEEKLY -> recurringTransaction.scheduleNextExecutionDate(2L, ChronoUnit.WEEKS);
+      case MONTHLY -> recurringTransaction.scheduleNextExecutionDate(1L, ChronoUnit.MONTHS);
+      case ANNUALLY -> recurringTransaction.scheduleNextExecutionDate(1L, ChronoUnit.YEARS);
       default -> throw new IllegalStateException("Unhandled frequency: " + recurringTransaction.getFrequency());
     }
   }
