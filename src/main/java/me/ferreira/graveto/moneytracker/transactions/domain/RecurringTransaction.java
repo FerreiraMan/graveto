@@ -171,7 +171,7 @@ public class RecurringTransaction extends BaseEntity {
     if (!this.getStatus().canBeUpdated(newStatus) || this.status.isTerminal()) {
       throw new IllegalStateException(
           "Recurring transaction with status [" + this.getStatus().name() +
-              "] cannot have its status manually updated.");
+              "] cannot have its status manually updated to [" + newStatus + "].");
     }
 
     switch (newStatus) {
@@ -212,6 +212,10 @@ public class RecurringTransaction extends BaseEntity {
   }
 
   public void updateNextExecutionDate(final LocalDate nextExecutionDate) {
+
+    if (!this.status.equals(RecurringOperationStatus.ACTIVE)) {
+      return;
+    }
 
     if (nextExecutionDate != null) {
       validateExecutionDate(nextExecutionDate);

@@ -89,6 +89,9 @@ public class RecurringTransactionServiceImpl implements RecurringTransactionServ
           existingRecurringTransaction.getDayOfTheWeek(), existingRecurringTransaction.getDayOfTheMonth());
 
       existingRecurringTransaction.updateNextExecutionDate(command.nextExecutionDate());
+      log.info(
+          "Execution date updated - [{}]. Status: [{}], Frequency: [{}], Schedule config: [{}]",
+          existingRecurringTransaction.getNextExecutionDate(), isStatusUpdated, isFrequencyUpdated, isScheduleUpdated);
     }
 
     final String effectiveDescription =
