@@ -93,7 +93,7 @@ public class CreateRecurringTransactionServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> recurringTransactionService.createRecurringTransaction(command))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Day of the month or an explicit start date needs to be provided when selecting annual operation.");
+        .hasMessage("Day of the month needs to be provided when selecting annual operation.");
   }
 
   @Test

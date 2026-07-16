@@ -23,7 +23,7 @@ import me.ferreira.graveto.moneytracker.config.MoneyTrackerBaseIntegrationTest;
 import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransaction;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.repository.recurringtransaction.RecurringTransactionRepository;
-import me.ferreira.graveto.moneytracker.transactions.web.dto.request.recurringtransaction.CreateRecurringTransactionDto;
+import me.ferreira.graveto.moneytracker.transactions.web.dto.request.recurringtransaction.CreateRecurringTransactionRequestDto;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
@@ -46,7 +46,7 @@ public class CreateRecurringTransactionIT extends MoneyTrackerBaseIntegrationTes
     final Category category = setupCategory();
     final LocalDate startDate = LocalDate.now().plusMonths(1).withDayOfMonth(15);
 
-    final CreateRecurringTransactionDto request = new CreateRecurringTransactionDto(
+    final CreateRecurringTransactionRequestDto request = new CreateRecurringTransactionRequestDto(
         account.getSid(), category.getSid(), "Home Insurance", new BigDecimal("50.00"),
         TransactionType.EXPENSE, Frequency.MONTHLY, 15, null, true, startDate, null);
 
@@ -90,7 +90,7 @@ public class CreateRecurringTransactionIT extends MoneyTrackerBaseIntegrationTes
     final Account account = setupAccount(userSid);
     final Category category = setupCategory();
 
-    final CreateRecurringTransactionDto request = new CreateRecurringTransactionDto(
+    final CreateRecurringTransactionRequestDto request = new CreateRecurringTransactionRequestDto(
         account.getSid(), category.getSid(), "Internet", new BigDecimal("35.00"),
         TransactionType.EXPENSE, Frequency.MONTHLY, 15, null, true, null, null);
 
@@ -114,7 +114,7 @@ public class CreateRecurringTransactionIT extends MoneyTrackerBaseIntegrationTes
     final Account account = setupAccount(userSid);
     final Category category = setupCategory(); // EXPENSE category
 
-    final CreateRecurringTransactionDto request = new CreateRecurringTransactionDto(
+    final CreateRecurringTransactionRequestDto request = new CreateRecurringTransactionRequestDto(
         account.getSid(), category.getSid(), "Salary", new BigDecimal("3000.00"),
         TransactionType.INCOME, Frequency.MONTHLY, 25, null, true,
         LocalDate.now().plusMonths(1), null);
@@ -137,7 +137,7 @@ public class CreateRecurringTransactionIT extends MoneyTrackerBaseIntegrationTes
     final Account account = setupAccount(userSid);
     final Category category = setupCategory();
 
-    final CreateRecurringTransactionDto request = new CreateRecurringTransactionDto(
+    final CreateRecurringTransactionRequestDto request = new CreateRecurringTransactionRequestDto(
         account.getSid(), category.getSid(), "Test", new BigDecimal("10.00"),
         TransactionType.EXPENSE, Frequency.MONTHLY, null, null, true, null, null);
 
@@ -160,7 +160,7 @@ public class CreateRecurringTransactionIT extends MoneyTrackerBaseIntegrationTes
     final Account account = setupAccount(ownerSid);
     final Category category = setupCategory();
 
-    final CreateRecurringTransactionDto request = new CreateRecurringTransactionDto(
+    final CreateRecurringTransactionRequestDto request = new CreateRecurringTransactionRequestDto(
         account.getSid(), category.getSid(), "Test", new BigDecimal("10.00"),
         TransactionType.EXPENSE, Frequency.MONTHLY, 15, null, true,
         LocalDate.now().plusMonths(1), null);

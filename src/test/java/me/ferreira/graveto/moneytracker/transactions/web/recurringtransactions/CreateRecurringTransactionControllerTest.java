@@ -20,7 +20,7 @@ import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.service.RecurringTransactionService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.CreateRecurringTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.web.RecurringTransactionController;
-import me.ferreira.graveto.moneytracker.transactions.web.dto.request.recurringtransaction.CreateRecurringTransactionDto;
+import me.ferreira.graveto.moneytracker.transactions.web.dto.request.recurringtransaction.CreateRecurringTransactionRequestDto;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -56,40 +56,40 @@ public class CreateRecurringTransactionControllerTest {
 
   private static Stream<Arguments> invalidRequests() {
     return Stream.of(
-        Arguments.of(new CreateRecurringTransactionDto(
+        Arguments.of(new CreateRecurringTransactionRequestDto(
             null, UUID.randomUUID(), "desc", BigDecimal.TEN, TransactionType.EXPENSE,
             Frequency.MONTHLY, 15, null, true, null, null), "accountSid"),
-        Arguments.of(new CreateRecurringTransactionDto(
+        Arguments.of(new CreateRecurringTransactionRequestDto(
             UUID.randomUUID(), null, "desc", BigDecimal.TEN, TransactionType.EXPENSE,
             Frequency.MONTHLY, 15, null, true, null, null), "categorySid"),
-        Arguments.of(new CreateRecurringTransactionDto(
+        Arguments.of(new CreateRecurringTransactionRequestDto(
             UUID.randomUUID(), UUID.randomUUID(), "desc", null, TransactionType.EXPENSE,
             Frequency.MONTHLY, 15, null, true, null, null), "amount"),
-        Arguments.of(new CreateRecurringTransactionDto(
+        Arguments.of(new CreateRecurringTransactionRequestDto(
             UUID.randomUUID(), UUID.randomUUID(), "desc", BigDecimal.ZERO, TransactionType.EXPENSE,
             Frequency.MONTHLY, 15, null, true, null, null), "amount"),
-        Arguments.of(new CreateRecurringTransactionDto(
+        Arguments.of(new CreateRecurringTransactionRequestDto(
             UUID.randomUUID(), UUID.randomUUID(), "desc", BigDecimal.TEN.negate(), TransactionType.EXPENSE,
             Frequency.MONTHLY, 15, null, true, null, null), "amount"),
-        Arguments.of(new CreateRecurringTransactionDto(
+        Arguments.of(new CreateRecurringTransactionRequestDto(
             UUID.randomUUID(), UUID.randomUUID(), "desc", BigDecimal.TEN, null,
             Frequency.MONTHLY, 15, null, true, null, null), "transactionType"),
-        Arguments.of(new CreateRecurringTransactionDto(
+        Arguments.of(new CreateRecurringTransactionRequestDto(
             UUID.randomUUID(), UUID.randomUUID(), "desc", BigDecimal.TEN, TransactionType.EXPENSE,
             null, 15, null, true, null, null), "frequency"),
-        Arguments.of(new CreateRecurringTransactionDto(
+        Arguments.of(new CreateRecurringTransactionRequestDto(
             UUID.randomUUID(), UUID.randomUUID(), "desc", BigDecimal.TEN, TransactionType.EXPENSE,
             Frequency.MONTHLY, null, null, null, null, null), "adjustToBusinessDay"),
-        Arguments.of(new CreateRecurringTransactionDto(
+        Arguments.of(new CreateRecurringTransactionRequestDto(
             UUID.randomUUID(), UUID.randomUUID(), "desc", BigDecimal.TEN, TransactionType.EXPENSE,
             Frequency.MONTHLY, 0, null, true, null, null), "dayOfMonth"),
-        Arguments.of(new CreateRecurringTransactionDto(
+        Arguments.of(new CreateRecurringTransactionRequestDto(
             UUID.randomUUID(), UUID.randomUUID(), "desc", BigDecimal.TEN, TransactionType.EXPENSE,
             Frequency.MONTHLY, 32, null, true, null, null), "dayOfMonth"),
-        Arguments.of(new CreateRecurringTransactionDto(
+        Arguments.of(new CreateRecurringTransactionRequestDto(
             UUID.randomUUID(), UUID.randomUUID(), "desc", BigDecimal.TEN, TransactionType.EXPENSE,
             Frequency.WEEKLY, null, 0, true, null, null), "dayOfWeek"),
-        Arguments.of(new CreateRecurringTransactionDto(
+        Arguments.of(new CreateRecurringTransactionRequestDto(
             UUID.randomUUID(), UUID.randomUUID(), "desc", BigDecimal.TEN, TransactionType.EXPENSE,
             Frequency.WEEKLY, null, 8, true, null, null), "dayOfWeek")
     );
@@ -98,7 +98,7 @@ public class CreateRecurringTransactionControllerTest {
   @ParameterizedTest
   @MethodSource("invalidRequests")
   void shouldReturnBadRequestForInvalidPayloads(
-      final CreateRecurringTransactionDto request,
+      final CreateRecurringTransactionRequestDto request,
       final String expectedErrorField) {
 
     final MvcTestResult result = mvc.post()
@@ -123,7 +123,7 @@ public class CreateRecurringTransactionControllerTest {
     final UUID rtSid = UUID.randomUUID();
     final LocalDate nextExecution = LocalDate.of(2026, 8, 15);
 
-    final CreateRecurringTransactionDto request = new CreateRecurringTransactionDto(
+    final CreateRecurringTransactionRequestDto request = new CreateRecurringTransactionRequestDto(
         accountSid, categorySid, "Home Insurance", new BigDecimal("50.00"), TransactionType.EXPENSE,
         Frequency.MONTHLY, 15, null, true, null, null);
 
@@ -188,7 +188,7 @@ public class CreateRecurringTransactionControllerTest {
   @Test
   void shouldTrimDescriptionBeforePassingToService() {
     // Arrange
-    final CreateRecurringTransactionDto request = new CreateRecurringTransactionDto(
+    final CreateRecurringTransactionRequestDto request = new CreateRecurringTransactionRequestDto(
         UUID.randomUUID(), UUID.randomUUID(), "  Home Insurance  ", new BigDecimal("50.00"),
         TransactionType.EXPENSE, Frequency.MONTHLY, 15, null, true, null, null);
 

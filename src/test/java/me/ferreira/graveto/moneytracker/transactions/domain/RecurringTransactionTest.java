@@ -1,6 +1,7 @@
 package me.ferreira.graveto.moneytracker.transactions.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -35,7 +36,7 @@ public class RecurringTransactionTest {
     final RecurringTransaction rt = RecurringTransaction.create(
         account, category, userSid, "Home Insurance", new BigDecimal("50.00"),
         TransactionType.EXPENSE, Frequency.MONTHLY, 15, null, true,
-        startDate, startDate, endDate);
+        startDate, endDate);
 
     // Assert
     assertThat(rt.getSid()).isNotNull();
@@ -73,7 +74,7 @@ public class RecurringTransactionTest {
     final RecurringTransaction rt = RecurringTransaction.create(
         account, category, UUID.randomUUID(), "Rent", new BigDecimal("800.00"),
         TransactionType.EXPENSE, Frequency.MONTHLY, 1, null, true,
-        startDate, startDate, null);
+        startDate, null);
 
     // Assert
     assertThat(rt.getEndDate()).isNull();
@@ -96,7 +97,7 @@ public class RecurringTransactionTest {
     final RecurringTransaction rt = RecurringTransaction.create(
         account, category, UUID.randomUUID(), "Weekly groceries", new BigDecimal("100.00"),
         TransactionType.EXPENSE, Frequency.WEEKLY, null, 1, false,
-        startDate, startDate, null);
+        startDate, null);
 
     // Assert
     assertThat(rt.getFrequency()).isEqualTo(Frequency.WEEKLY);
@@ -106,12 +107,24 @@ public class RecurringTransactionTest {
   }
 
   @Test
+  void shouldThrowIfSchedulerExecutionDateOnNonActiveRecurringTransaction() {
+    // Arrange
+    final RecurringTransaction rt = buildRecurringTransaction(LocalDate.of(2026, 7, 10), null);
+    rt.setStatus(RecurringOperationStatus.PAUSED);
+
+    // Act
+    assertThatThrownBy(
+        () -> rt.scheduleNextExecutionDate(1L, ChronoUnit.DAYS))
+        .isInstanceOf(IllegalStateException.class).withFailMessage("Scheduled operation is not in an active state.");
+  }
+
+  @Test
   void shouldAdvanceNextExecutionDateByDays() {
     // Arrange
     final RecurringTransaction rt = buildRecurringTransaction(LocalDate.of(2026, 7, 10), null);
 
     // Act
-    rt.updateNextExecutionDate(1L, ChronoUnit.DAYS);
+    rt.scheduleNextExecutionDate(1L, ChronoUnit.DAYS);
 
     // Assert
     assertThat(rt.getNextExecutionDate()).isEqualTo(LocalDate.of(2026, 7, 11));
@@ -123,7 +136,7 @@ public class RecurringTransactionTest {
     final RecurringTransaction rt = buildRecurringTransaction(LocalDate.of(2026, 7, 10), null);
 
     // Act
-    rt.updateNextExecutionDate(1L, ChronoUnit.WEEKS);
+    rt.scheduleNextExecutionDate(1L, ChronoUnit.WEEKS);
 
     // Assert
     assertThat(rt.getNextExecutionDate()).isEqualTo(LocalDate.of(2026, 7, 17));
@@ -135,7 +148,7 @@ public class RecurringTransactionTest {
     final RecurringTransaction rt = buildRecurringTransaction(LocalDate.of(2026, 7, 10), null);
 
     // Act
-    rt.updateNextExecutionDate(2L, ChronoUnit.WEEKS);
+    rt.scheduleNextExecutionDate(2L, ChronoUnit.WEEKS);
 
     // Assert
     assertThat(rt.getNextExecutionDate()).isEqualTo(LocalDate.of(2026, 7, 24));
@@ -147,7 +160,7 @@ public class RecurringTransactionTest {
     final RecurringTransaction rt = buildRecurringTransaction(LocalDate.of(2026, 7, 10), null);
 
     // Act
-    rt.updateNextExecutionDate(1L, ChronoUnit.MONTHS);
+    rt.scheduleNextExecutionDate(1L, ChronoUnit.MONTHS);
 
     // Assert
     assertThat(rt.getNextExecutionDate()).isEqualTo(LocalDate.of(2026, 8, 10));
@@ -159,7 +172,7 @@ public class RecurringTransactionTest {
     final RecurringTransaction rt = buildRecurringTransaction(LocalDate.of(2026, 7, 10), null);
 
     // Act
-    rt.updateNextExecutionDate(1L, ChronoUnit.YEARS);
+    rt.scheduleNextExecutionDate(1L, ChronoUnit.YEARS);
 
     // Assert
     assertThat(rt.getNextExecutionDate()).isEqualTo(LocalDate.of(2027, 7, 10));
@@ -172,7 +185,7 @@ public class RecurringTransactionTest {
     assertThat(rt.getLastExecutedAt()).isNull();
 
     // Act
-    rt.updateNextExecutionDate(1L, ChronoUnit.DAYS);
+    rt.scheduleNextExecutionDate(1L, ChronoUnit.DAYS);
 
     // Assert
     assertThat(rt.getLastExecutedAt()).isNotNull();
@@ -186,7 +199,7 @@ public class RecurringTransactionTest {
     rt.setStatus(RecurringOperationStatus.ACTIVE);
 
     // Act
-    rt.updateNextExecutionDate(1L, ChronoUnit.WEEKS);
+    rt.scheduleNextExecutionDate(1L, ChronoUnit.WEEKS);
 
     // Assert
     assertThat(rt.getStatus()).isEqualTo(RecurringOperationStatus.COMPLETED);
@@ -201,7 +214,7 @@ public class RecurringTransactionTest {
     rt.setStatus(RecurringOperationStatus.ACTIVE);
 
     // Act
-    rt.updateNextExecutionDate(1L, ChronoUnit.WEEKS);
+    rt.scheduleNextExecutionDate(1L, ChronoUnit.WEEKS);
 
     // Assert
     assertThat(rt.getStatus()).isEqualTo(RecurringOperationStatus.ACTIVE);
@@ -214,7 +227,7 @@ public class RecurringTransactionTest {
     rt.setStatus(RecurringOperationStatus.ACTIVE);
 
     // Act
-    rt.updateNextExecutionDate(1L, ChronoUnit.MONTHS);
+    rt.scheduleNextExecutionDate(1L, ChronoUnit.MONTHS);
 
     // Assert
     assertThat(rt.getStatus()).isEqualTo(RecurringOperationStatus.ACTIVE);
@@ -227,7 +240,7 @@ public class RecurringTransactionTest {
     final RecurringTransaction rt = buildRecurringTransaction(LocalDate.of(2027, 1, 31), null);
 
     // Act
-    rt.updateNextExecutionDate(1L, ChronoUnit.MONTHS);
+    rt.scheduleNextExecutionDate(1L, ChronoUnit.MONTHS);
 
     // Assert
     assertThat(rt.getNextExecutionDate()).isEqualTo(LocalDate.of(2027, 2, 28));
@@ -236,6 +249,7 @@ public class RecurringTransactionTest {
   private static RecurringTransaction buildRecurringTransaction(final LocalDate nextExecutionDate,
                                                                 final LocalDate endDate) {
     final RecurringTransaction rt = new RecurringTransaction();
+    rt.setStatus(RecurringOperationStatus.ACTIVE);
     rt.setNextExecutionDate(nextExecutionDate);
     rt.setEndDate(endDate);
     return rt;

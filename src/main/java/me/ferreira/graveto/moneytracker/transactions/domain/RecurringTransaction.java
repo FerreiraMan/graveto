@@ -15,7 +15,10 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -107,7 +110,6 @@ public class RecurringTransaction extends BaseEntity {
                                             final TransactionType transactionType,
                                             final Frequency frequency, final Integer dayOfTheMonth,
                                             final Integer dayOfTheWeek, final Boolean adjustToBusinessDay,
-                                            final LocalDate nextExecutionDate,
                                             final LocalDate startDate, final LocalDate endDate) {
 
     final RecurringTransaction rt = new RecurringTransaction();
@@ -123,19 +125,139 @@ public class RecurringTransaction extends BaseEntity {
     rt.setDayOfTheMonth(dayOfTheMonth);
     rt.setDayOfTheWeek(dayOfTheWeek);
     rt.setAdjustToBusinessDay(adjustToBusinessDay);
-    rt.setNextExecutionDate(nextExecutionDate);
     rt.setStatus(RecurringOperationStatus.ACTIVE);
-    rt.setStartDate(startDate);
     rt.setEndDate(endDate);
+
+    final LocalDate effectiveStartDate =
+        startDate != null ? startDate : rt.resolveExecutionDate(dayOfTheWeek, dayOfTheMonth);
+
+    rt.setNextExecutionDate(effectiveStartDate);
+    rt.setStartDate(effectiveStartDate);
+
     return rt;
   }
 
-  public void updateNextExecutionDate(final Long amount, final ChronoUnit temporalUnit) {
+  public void updateDetails(final String description, final BigDecimal amount, final Boolean adjustToBusinessDay) {
+
+    if (this.status == RecurringOperationStatus.CANCELED) {
+      throw new IllegalStateException("Cannot update a canceled recurring transaction.");
+    }
+
+    this.description = description;
+    this.amount = amount;
+    this.adjustToBusinessDay = adjustToBusinessDay;
+  }
+
+  public void scheduleNextExecutionDate(final Long amount, final ChronoUnit temporalUnit) {
+
+    if (!RecurringOperationStatus.ACTIVE.equals(this.status)) {
+      throw new IllegalStateException("Scheduled operation is not in an active state.");
+    }
+
     this.lastExecutedAt = LocalDateTime.now();
     this.nextExecutionDate = this.nextExecutionDate.plus(amount, temporalUnit);
 
     if (this.endDate != null && this.nextExecutionDate.isAfter(endDate)) {
       this.status = RecurringOperationStatus.COMPLETED;
+    }
+  }
+
+  public boolean updateStatus(final RecurringOperationStatus newStatus) {
+
+    if (newStatus == null || (this.getStatus().equals(newStatus))) {
+      return false;
+    }
+
+    if (!this.getStatus().canBeUpdated(newStatus) || this.status.isTerminal()) {
+      throw new IllegalStateException(
+          "Recurring transaction with status [" + this.getStatus().name() +
+              "] cannot have its status manually updated.");
+    }
+
+    switch (newStatus) {
+      case ACTIVE -> this.status = RecurringOperationStatus.ACTIVE;
+      case PAUSED -> this.status = RecurringOperationStatus.PAUSED;
+      default -> throw new IllegalStateException("Unhandled status transition: " + newStatus);
+    }
+    return true;
+  }
+
+  public boolean updateFrequency(final Frequency newFrequency) {
+
+    if (newFrequency == null || (this.getFrequency().equals(newFrequency))) {
+      return false;
+    }
+
+    this.frequency = newFrequency;
+    return true;
+  }
+
+  public boolean updateSchedule(final Integer dayOfTheWeek, final Integer dayOfTheMonth, final LocalDate endDate) {
+
+    final boolean isDayOfTheWeekUnchanged = dayOfTheWeek == null || Objects.equals(this.dayOfTheWeek, dayOfTheWeek);
+    final boolean isDayOfTheMonthUnchanged = dayOfTheMonth == null || Objects.equals(this.dayOfTheMonth, dayOfTheMonth);
+    final boolean isEndDateUnchanged = endDate == null || Objects.equals(this.endDate, endDate);
+
+    if (!isDayOfTheWeekUnchanged) {
+      this.dayOfTheWeek = dayOfTheWeek;
+    }
+    if (!isDayOfTheMonthUnchanged) {
+      this.dayOfTheMonth = dayOfTheMonth;
+    }
+    if (!isEndDateUnchanged) {
+      this.endDate = endDate;
+    }
+
+    return !isDayOfTheWeekUnchanged || !isDayOfTheMonthUnchanged || !isEndDateUnchanged;
+  }
+
+  public void updateNextExecutionDate(final LocalDate nextExecutionDate) {
+
+    if (nextExecutionDate != null) {
+      validateExecutionDate(nextExecutionDate);
+      this.nextExecutionDate = nextExecutionDate;
+      return;
+    }
+
+    this.nextExecutionDate = this.resolveExecutionDate(this.dayOfTheWeek, this.dayOfTheMonth);
+    validateExecutionDate(this.nextExecutionDate);
+  }
+
+  private LocalDate resolveExecutionDate(final Integer dayOfWeek, final Integer dayOfTheMonth) {
+
+    final LocalDate today = LocalDate.now();
+
+    return switch (this.frequency) {
+      case DAILY -> today.plusDays(1);
+      case WEEKLY -> dayOfWeek <= today.getDayOfWeek().getValue()
+          ? today.plusWeeks(1).with(ChronoField.DAY_OF_WEEK, dayOfWeek) :
+          today.with(ChronoField.DAY_OF_WEEK, dayOfWeek);
+      case BI_WEEKLY -> dayOfWeek <= today.getDayOfWeek().getValue()
+          ? today.plusWeeks(2).with(ChronoField.DAY_OF_WEEK, dayOfWeek) :
+          today.with(ChronoField.DAY_OF_WEEK, dayOfWeek);
+      case MONTHLY -> {
+        final int targetMonth =
+            dayOfTheMonth > today.getDayOfMonth() ? today.getMonthValue() : today.plusMonths(1).getMonthValue();
+        final boolean isNextYear = dayOfTheMonth <= today.getDayOfMonth() && targetMonth == 1;
+        final int targetYear = isNextYear ? today.plusYears(1).getYear() : today.getYear();
+
+        final YearMonth yearMonth = YearMonth.of(targetYear, targetMonth);
+        final boolean isValidDayInMonth = yearMonth.isValidDay(dayOfTheMonth);
+
+        yield LocalDate.of(targetYear, targetMonth,
+            isValidDayInMonth ? dayOfTheMonth : yearMonth.atEndOfMonth().getDayOfMonth());
+      }
+      case ANNUALLY -> dayOfTheMonth <= today.getDayOfMonth()
+          ? today.plusYears(1).withDayOfMonth(dayOfTheMonth) :
+          today.withDayOfMonth(dayOfTheMonth);
+    };
+  }
+
+  private void validateExecutionDate(final LocalDate nextExecutionDate) {
+
+    if (nextExecutionDate != null && this.endDate != null && nextExecutionDate.isAfter(this.endDate)) {
+      throw new IllegalStateException(
+          "Requested execution date [" + nextExecutionDate + "] is after defined end date [" + this.endDate + "].");
     }
   }
 
