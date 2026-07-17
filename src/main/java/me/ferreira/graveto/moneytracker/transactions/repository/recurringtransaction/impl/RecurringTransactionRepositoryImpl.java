@@ -7,8 +7,14 @@ import java.util.UUID;
 import lombok.AllArgsConstructor;
 import me.ferreira.graveto.common.domain.RecurringOperationStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransaction;
+import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransaction_;
 import me.ferreira.graveto.moneytracker.transactions.repository.recurringtransaction.RecurringTransactionJpaRepository;
 import me.ferreira.graveto.moneytracker.transactions.repository.recurringtransaction.RecurringTransactionRepository;
+import me.ferreira.graveto.moneytracker.transactions.repository.recurringtransaction.RecurringTransactionsSpecs;
+import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.FindAllRecurringTransactionsCommand;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.PredicateSpecification;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -25,6 +31,17 @@ public class RecurringTransactionRepositoryImpl implements RecurringTransactionR
   @Override
   public List<RecurringTransaction> saveAll(final List<RecurringTransaction> recurringTransactionList) {
     return repository.saveAll(recurringTransactionList);
+  }
+
+  @Override
+  public List<RecurringTransaction> findAll(FindAllRecurringTransactionsCommand command) {
+
+    final PredicateSpecification<RecurringTransaction> predicateSpec =
+        RecurringTransactionsSpecs.buildFromCommand(command);
+    final Specification<RecurringTransaction> classicSpec = Specification.where(predicateSpec);
+    final Sort sortByEarliestExecutionDate = Sort.by(RecurringTransaction_.NEXT_EXECUTION_DATE);
+
+    return repository.findAll(classicSpec, sortByEarliestExecutionDate);
   }
 
   @Override
