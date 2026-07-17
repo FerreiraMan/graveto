@@ -6,12 +6,15 @@ import java.util.Optional;
 import java.util.UUID;
 import me.ferreira.graveto.common.domain.RecurringOperationStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransaction;
+import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.FindAllRecurringTransactionsCommand;
 
 public interface RecurringTransactionRepository {
 
   RecurringTransaction save(RecurringTransaction recurringTransaction);
 
   List<RecurringTransaction> saveAll(List<RecurringTransaction> recurringTransactionList);
+
+  List<RecurringTransaction> findAll(FindAllRecurringTransactionsCommand command);
 
   Optional<RecurringTransaction> findBySidAndBelongsToAccount(UUID sid, UUID accountSid);
 

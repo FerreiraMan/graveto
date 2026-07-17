@@ -1,6 +1,7 @@
 package me.ferreira.graveto.moneytracker.transactions.service.impl;
 
 import java.math.BigDecimal;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.ferreira.graveto.common.domain.Frequency;
@@ -16,6 +17,7 @@ import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.repository.recurringtransaction.RecurringTransactionRepository;
 import me.ferreira.graveto.moneytracker.transactions.service.RecurringTransactionService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.CreateRecurringTransactionCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.FindAllRecurringTransactionsCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.UpdateRecurringTransactionCommand;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -105,6 +107,13 @@ public class RecurringTransactionServiceImpl implements RecurringTransactionServ
     existingRecurringTransaction.updateDetails(effectiveDescription, effectiveAmount, effectiveAdjustToBusinessDay);
 
     return recurringTransactionRepository.save(existingRecurringTransaction);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<RecurringTransaction> fetchAllRecurringTransactions(final FindAllRecurringTransactionsCommand command) {
+
+    return recurringTransactionRepository.findAll(command);
   }
 
   private void validateTemporalInputs(final CreateRecurringTransactionCommand command) {

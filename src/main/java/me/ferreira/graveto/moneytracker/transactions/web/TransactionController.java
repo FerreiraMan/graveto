@@ -47,8 +47,8 @@ public class TransactionController {
 
   @PostMapping(produces = "application/json")
   public ResponseEntity<TransactionResponseDto> createTransaction(
-      @Valid @RequestBody final CreateTransactionRequestDto requestDto,
-      @AuthenticationPrincipal final UUID userSid) {
+      @AuthenticationPrincipal final UUID userSid,
+      @Valid @RequestBody final CreateTransactionRequestDto requestDto) {
 
     final CreateTransactionCommand command = new CreateTransactionCommand(
         userSid,
@@ -84,8 +84,8 @@ public class TransactionController {
 
   @GetMapping(produces = "application/json")
   public ResponseEntity<Page<TransactionResponseDto>> findAll(
-      @Valid @ModelAttribute final TransactionFilterRequestDto requestDto,
       @AuthenticationPrincipal final UUID userSid,
+      @Valid @ModelAttribute final TransactionFilterRequestDto requestDto,
       @PageableDefault(size = 20) @SortDefault(sort = Transaction_.OCCURRED_AT, direction = Sort.Direction.DESC)
       final Pageable pageable) {
 
