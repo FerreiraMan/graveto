@@ -77,7 +77,6 @@ public class RecurringTransactionController {
 
     final UpdateRecurringTransactionCommand command = new UpdateRecurringTransactionCommand(
         userSid,
-        requestDto.accountSid(),
         sid,
         StringUtils.trimToNull(requestDto.description()),
         requestDto.amount(),

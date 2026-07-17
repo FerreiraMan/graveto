@@ -45,8 +45,8 @@ public class RecurringTransactionRepositoryImpl implements RecurringTransactionR
   }
 
   @Override
-  public Optional<RecurringTransaction> findBySidAndBelongsToAccount(final UUID sid, final UUID accountSid) {
-    return repository.findBySidAndBelongsToAccount(sid, accountSid);
+  public Optional<RecurringTransaction> findBySid(final UUID sid) {
+    return repository.findBySid(sid);
   }
 
   @Override

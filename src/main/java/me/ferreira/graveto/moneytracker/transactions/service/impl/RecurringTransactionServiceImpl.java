@@ -73,12 +73,13 @@ public class RecurringTransactionServiceImpl implements RecurringTransactionServ
   @Transactional
   public RecurringTransaction updateRecurringTransaction(final UpdateRecurringTransactionCommand command) {
 
-    final Account account = accountService.fetchAccountEntity(command.accountSid());
-    account.validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction, RECURRING_TX_UPDATE_ACTION);
-
     final RecurringTransaction existingRecurringTransaction =
-        recurringTransactionRepository.findBySidAndBelongsToAccount(command.sid(), account.getSid())
+        recurringTransactionRepository.findBySid(command.sid())
             .orElseThrow(() -> new RecurringTransactionNotFoundException(command.sid()));
+
+    existingRecurringTransaction
+        .getAccount()
+        .validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction, RECURRING_TX_UPDATE_ACTION);
 
     final boolean isStatusUpdated = existingRecurringTransaction.updateStatus(command.status());
     final boolean isFrequencyUpdated = existingRecurringTransaction.updateFrequency(command.frequency());

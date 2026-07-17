@@ -16,7 +16,7 @@ public interface RecurringTransactionRepository {
 
   List<RecurringTransaction> findAll(FindAllRecurringTransactionsCommand command);
 
-  Optional<RecurringTransaction> findBySidAndBelongsToAccount(UUID sid, UUID accountSid);
+  Optional<RecurringTransaction> findBySid(UUID sid);
 
   List<RecurringTransaction> findAllByStatusAndNextExecutionDateLessThanEqual(RecurringOperationStatus status,
                                                                               LocalDate date);

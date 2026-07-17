@@ -45,7 +45,7 @@ public class UpdateRecurringTransactionIT extends MoneyTrackerBaseIntegrationTes
     final String rtSid = createRecurringTransaction(userSid, account);
 
     final UpdateRecurringTransactionRequestDto request = new UpdateRecurringTransactionRequestDto(
-        account.getSid(), "Updated Insurance", new BigDecimal("75.00"),
+        "Updated Insurance", new BigDecimal("75.00"),
         null, null, null, null, null, null, null);
 
     // Act
@@ -59,7 +59,7 @@ public class UpdateRecurringTransactionIT extends MoneyTrackerBaseIntegrationTes
         .statusCode(200);
 
     // Assert
-    final RecurringTransaction persisted = fetchPersistedRecord(account.getSid(), rtSid);
+    final RecurringTransaction persisted = fetchPersistedRecord(rtSid);
     assertThat(persisted.getDescription()).isEqualTo("Updated Insurance");
     assertThat(persisted.getAmount()).isEqualByComparingTo(new BigDecimal("75.00"));
     assertThat(persisted.getFrequency()).isEqualTo(Frequency.MONTHLY);
@@ -73,11 +73,11 @@ public class UpdateRecurringTransactionIT extends MoneyTrackerBaseIntegrationTes
     final Account account = setupAccount(userSid);
     final String rtSid = createRecurringTransaction(userSid, account);
 
-    final RecurringTransaction beforePause = fetchPersistedRecord(account.getSid(), rtSid);
+    final RecurringTransaction beforePause = fetchPersistedRecord(rtSid);
     final LocalDate originalNextExecution = beforePause.getNextExecutionDate();
 
     final UpdateRecurringTransactionRequestDto request = new UpdateRecurringTransactionRequestDto(
-        account.getSid(), null, null, null, null, null, null,
+        null, null, null, null, null, null,
         RecurringOperationStatus.PAUSED, null, null);
 
     // Act
@@ -91,7 +91,7 @@ public class UpdateRecurringTransactionIT extends MoneyTrackerBaseIntegrationTes
         .statusCode(200);
 
     // Assert
-    final RecurringTransaction persisted = fetchPersistedRecord(account.getSid(), rtSid);
+    final RecurringTransaction persisted = fetchPersistedRecord(rtSid);
     assertThat(persisted.getStatus()).isEqualTo(RecurringOperationStatus.PAUSED);
     assertThat(persisted.getNextExecutionDate()).isEqualTo(originalNextExecution);
   }
@@ -107,7 +107,7 @@ public class UpdateRecurringTransactionIT extends MoneyTrackerBaseIntegrationTes
         .contentType(ContentType.JSON)
         .header("Authorization", "Bearer " + userSid)
         .body(new UpdateRecurringTransactionRequestDto(
-            account.getSid(), null, null, null, null, null, null,
+            null, null, null, null, null, null,
             RecurringOperationStatus.PAUSED, null, null))
         .when()
         .patch("/recurring-transactions/" + rtSid)
@@ -119,7 +119,7 @@ public class UpdateRecurringTransactionIT extends MoneyTrackerBaseIntegrationTes
         .contentType(ContentType.JSON)
         .header("Authorization", "Bearer " + userSid)
         .body(new UpdateRecurringTransactionRequestDto(
-            account.getSid(), null, null, null, null, null, null,
+            null, null, null, null, null, null,
             RecurringOperationStatus.ACTIVE, null, null))
         .when()
         .patch("/recurring-transactions/" + rtSid)
@@ -127,7 +127,7 @@ public class UpdateRecurringTransactionIT extends MoneyTrackerBaseIntegrationTes
         .statusCode(200);
 
     // Assert
-    final RecurringTransaction persisted = fetchPersistedRecord(account.getSid(), rtSid);
+    final RecurringTransaction persisted = fetchPersistedRecord(rtSid);
     assertThat(persisted.getStatus()).isEqualTo(RecurringOperationStatus.ACTIVE);
     assertThat(persisted.getNextExecutionDate()).isNotNull();
   }
@@ -140,7 +140,7 @@ public class UpdateRecurringTransactionIT extends MoneyTrackerBaseIntegrationTes
     final String rtSid = createRecurringTransaction(userSid, account);
 
     final UpdateRecurringTransactionRequestDto request = new UpdateRecurringTransactionRequestDto(
-        account.getSid(), null, null, Frequency.WEEKLY, null, 3, null,
+        null, null, Frequency.WEEKLY, null, 3, null,
         null, null, null);
 
     // Act
@@ -154,7 +154,7 @@ public class UpdateRecurringTransactionIT extends MoneyTrackerBaseIntegrationTes
         .statusCode(200);
 
     // Assert
-    final RecurringTransaction persisted = fetchPersistedRecord(account.getSid(), rtSid);
+    final RecurringTransaction persisted = fetchPersistedRecord(rtSid);
     assertThat(persisted.getFrequency()).isEqualTo(Frequency.WEEKLY);
     assertThat(persisted.getDayOfTheWeek()).isEqualTo(3);
     assertThat(persisted.getNextExecutionDate().getDayOfWeek().getValue()).isEqualTo(3);
@@ -170,7 +170,7 @@ public class UpdateRecurringTransactionIT extends MoneyTrackerBaseIntegrationTes
     final LocalDate explicitDate = LocalDate.now().plusMonths(2).withDayOfMonth(1);
 
     final UpdateRecurringTransactionRequestDto request = new UpdateRecurringTransactionRequestDto(
-        account.getSid(), null, null, null, null, null, null,
+        null, null, null, null, null, null,
         RecurringOperationStatus.ACTIVE, explicitDate, null);
 
     // Act
@@ -184,7 +184,7 @@ public class UpdateRecurringTransactionIT extends MoneyTrackerBaseIntegrationTes
         .statusCode(200);
 
     // Assert
-    final RecurringTransaction persisted = fetchPersistedRecord(account.getSid(), rtSid);
+    final RecurringTransaction persisted = fetchPersistedRecord(rtSid);
     assertThat(persisted.getNextExecutionDate()).isEqualTo(explicitDate);
   }
 
@@ -195,7 +195,7 @@ public class UpdateRecurringTransactionIT extends MoneyTrackerBaseIntegrationTes
     final Account account = setupAccount(userSid);
 
     final UpdateRecurringTransactionRequestDto request = new UpdateRecurringTransactionRequestDto(
-        account.getSid(), null, new BigDecimal("100"), null, null, null, null,
+        null, new BigDecimal("100"), null, null, null, null,
         null, null, null);
 
     // Act & Assert
@@ -218,7 +218,7 @@ public class UpdateRecurringTransactionIT extends MoneyTrackerBaseIntegrationTes
     final String rtSid = createRecurringTransaction(ownerSid, account);
 
     final UpdateRecurringTransactionRequestDto request = new UpdateRecurringTransactionRequestDto(
-        account.getSid(), "Hacked", null, null, null, null, null,
+        "Hacked", null, null, null, null, null,
         null, null, null);
 
     // Act & Assert
@@ -232,8 +232,8 @@ public class UpdateRecurringTransactionIT extends MoneyTrackerBaseIntegrationTes
         .statusCode(403);
   }
 
-  private RecurringTransaction fetchPersistedRecord(final UUID accountSid, final String rtSid) {
-    return recurringTransactionRepository.findBySidAndBelongsToAccount(UUID.fromString(rtSid), accountSid)
+  private RecurringTransaction fetchPersistedRecord(final String rtSid) {
+    return recurringTransactionRepository.findBySid(UUID.fromString(rtSid))
         .orElseThrow();
   }
 
