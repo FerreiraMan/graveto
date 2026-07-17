@@ -53,11 +53,9 @@ public class UpdateRecurringTransactionServiceImplTest {
     final UUID rtSid = UUID.randomUUID();
     final Account account = buildAccount(accountSid, userSid);
 
-    when(accountService.fetchAccountEntity(accountSid)).thenReturn(account);
-    when(recurringTransactionRepository.findBySidAndBelongsToAccount(rtSid, accountSid))
-        .thenReturn(Optional.empty());
+    when(recurringTransactionRepository.findBySid(rtSid)).thenReturn(Optional.empty());
 
-    final UpdateRecurringTransactionCommand command = buildCommand(userSid, accountSid, rtSid,
+    final UpdateRecurringTransactionCommand command = buildCommand(userSid, rtSid,
         null, null, null, null, null, null, null, null, null);
 
     // Act & Assert
@@ -68,15 +66,17 @@ public class UpdateRecurringTransactionServiceImplTest {
   @Test
   void shouldThrowWhenUserLacksPermission() {
     // Arrange
-    final UUID ownerSid = UUID.randomUUID();
+    final UUID userSid = UUID.randomUUID();
     final UUID otherUserSid = UUID.randomUUID();
+    final UUID rtSid = UUID.randomUUID();
     final UUID accountSid = UUID.randomUUID();
-    final Account account = buildAccount(accountSid, ownerSid);
+    final Account account = buildAccount(accountSid, userSid);
+    final RecurringTransaction existingRt = buildExistingRecurringTransaction(rtSid, account);
 
-    when(accountService.fetchAccountEntity(accountSid)).thenReturn(account);
-
-    final UpdateRecurringTransactionCommand command = buildCommand(otherUserSid, accountSid, UUID.randomUUID(),
+    final UpdateRecurringTransactionCommand command = buildCommand(otherUserSid, existingRt.getSid(),
         null, null, null, null, null, null, null, null, null);
+
+    when(recurringTransactionRepository.findBySid(rtSid)).thenReturn(Optional.of(existingRt));
 
     // Act & Assert
     assertThatThrownBy(() -> recurringTransactionService.updateRecurringTransaction(command))
@@ -92,12 +92,10 @@ public class UpdateRecurringTransactionServiceImplTest {
     final Account account = buildAccount(accountSid, userSid);
     final RecurringTransaction existingRt = buildExistingRecurringTransaction(rtSid, account);
 
-    when(accountService.fetchAccountEntity(accountSid)).thenReturn(account);
-    when(recurringTransactionRepository.findBySidAndBelongsToAccount(rtSid, accountSid))
-        .thenReturn(Optional.of(existingRt));
+    when(recurringTransactionRepository.findBySid(rtSid)).thenReturn(Optional.of(existingRt));
     when(recurringTransactionRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
 
-    final UpdateRecurringTransactionCommand command = buildCommand(userSid, accountSid, rtSid,
+    final UpdateRecurringTransactionCommand command = buildCommand(userSid, rtSid,
         "Updated desc", new BigDecimal("99.99"), null, null, null, null, null, null, null);
 
     // Act
@@ -119,12 +117,10 @@ public class UpdateRecurringTransactionServiceImplTest {
     final RecurringTransaction existingRt = buildExistingRecurringTransaction(rtSid, account);
     final LocalDate originalNextExecution = existingRt.getNextExecutionDate();
 
-    when(accountService.fetchAccountEntity(accountSid)).thenReturn(account);
-    when(recurringTransactionRepository.findBySidAndBelongsToAccount(rtSid, accountSid))
-        .thenReturn(Optional.of(existingRt));
+    when(recurringTransactionRepository.findBySid(rtSid)).thenReturn(Optional.of(existingRt));
     when(recurringTransactionRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
 
-    final UpdateRecurringTransactionCommand command = buildCommand(userSid, accountSid, rtSid,
+    final UpdateRecurringTransactionCommand command = buildCommand(userSid, rtSid,
         null, null, null, null, null, null, RecurringOperationStatus.PAUSED, null, null);
 
     // Act
@@ -145,12 +141,10 @@ public class UpdateRecurringTransactionServiceImplTest {
     final RecurringTransaction existingRt = buildExistingRecurringTransaction(rtSid, account);
     existingRt.setDayOfTheWeek(3);
 
-    when(accountService.fetchAccountEntity(accountSid)).thenReturn(account);
-    when(recurringTransactionRepository.findBySidAndBelongsToAccount(rtSid, accountSid))
-        .thenReturn(Optional.of(existingRt));
+    when(recurringTransactionRepository.findBySid(rtSid)).thenReturn(Optional.of(existingRt));
     when(recurringTransactionRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
 
-    final UpdateRecurringTransactionCommand command = buildCommand(userSid, accountSid, rtSid,
+    final UpdateRecurringTransactionCommand command = buildCommand(userSid, rtSid,
         null, null, Frequency.WEEKLY, null, 3, null, null, null, null);
 
     // Act
@@ -172,13 +166,11 @@ public class UpdateRecurringTransactionServiceImplTest {
     final RecurringTransaction existingRt = buildExistingRecurringTransaction(rtSid, account);
     existingRt.setEndDate(LocalDate.of(2027, 12, 31));
 
-    when(accountService.fetchAccountEntity(accountSid)).thenReturn(account);
-    when(recurringTransactionRepository.findBySidAndBelongsToAccount(rtSid, accountSid))
-        .thenReturn(Optional.of(existingRt));
+    when(recurringTransactionRepository.findBySid(rtSid)).thenReturn(Optional.of(existingRt));
     when(recurringTransactionRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
 
     final LocalDate explicitDate = LocalDate.of(2026, 10, 1);
-    final UpdateRecurringTransactionCommand command = buildCommand(userSid, accountSid, rtSid,
+    final UpdateRecurringTransactionCommand command = buildCommand(userSid, rtSid,
         null, null, null, null, null, null, null, explicitDate, null);
 
     // Act
@@ -199,11 +191,9 @@ public class UpdateRecurringTransactionServiceImplTest {
     existingRt.setFrequency(Frequency.DAILY);
     existingRt.setDayOfTheMonth(null);
 
-    when(accountService.fetchAccountEntity(accountSid)).thenReturn(account);
-    when(recurringTransactionRepository.findBySidAndBelongsToAccount(rtSid, accountSid))
-        .thenReturn(Optional.of(existingRt));
+    when(recurringTransactionRepository.findBySid(rtSid)).thenReturn(Optional.of(existingRt));
 
-    final UpdateRecurringTransactionCommand command = buildCommand(userSid, accountSid, rtSid,
+    final UpdateRecurringTransactionCommand command = buildCommand(userSid, rtSid,
         null, null, Frequency.MONTHLY, null, null, null, null, null, null);
 
     // Act & Assert
@@ -223,11 +213,9 @@ public class UpdateRecurringTransactionServiceImplTest {
     existingRt.setFrequency(Frequency.DAILY);
     existingRt.setDayOfTheWeek(null);
 
-    when(accountService.fetchAccountEntity(accountSid)).thenReturn(account);
-    when(recurringTransactionRepository.findBySidAndBelongsToAccount(rtSid, accountSid))
-        .thenReturn(Optional.of(existingRt));
+    when(recurringTransactionRepository.findBySid(rtSid)).thenReturn(Optional.of(existingRt));
 
-    final UpdateRecurringTransactionCommand command = buildCommand(userSid, accountSid, rtSid,
+    final UpdateRecurringTransactionCommand command = buildCommand(userSid, rtSid,
         null, null, Frequency.WEEKLY, null, null, null, null, null, null);
 
     // Act & Assert
@@ -245,12 +233,10 @@ public class UpdateRecurringTransactionServiceImplTest {
     final Account account = buildAccount(accountSid, userSid);
     final RecurringTransaction existingRt = buildExistingRecurringTransaction(rtSid, account);
 
-    when(accountService.fetchAccountEntity(accountSid)).thenReturn(account);
-    when(recurringTransactionRepository.findBySidAndBelongsToAccount(rtSid, accountSid))
-        .thenReturn(Optional.of(existingRt));
+    when(recurringTransactionRepository.findBySid(rtSid)).thenReturn(Optional.of(existingRt));
     when(recurringTransactionRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
 
-    final UpdateRecurringTransactionCommand command = buildCommand(userSid, accountSid, rtSid,
+    final UpdateRecurringTransactionCommand command = buildCommand(userSid, rtSid,
         null, null, null, null, null, null, null, null, null);
 
     // Act
@@ -263,7 +249,7 @@ public class UpdateRecurringTransactionServiceImplTest {
     assertThat(result.getAdjustToBusinessDay()).isTrue();
   }
 
-  private static UpdateRecurringTransactionCommand buildCommand(final UUID userSid, final UUID accountSid,
+  private static UpdateRecurringTransactionCommand buildCommand(final UUID userSid,
                                                                 final UUID sid, final String description,
                                                                 final BigDecimal amount, final Frequency frequency,
                                                                 final Integer dayOfMonth, final Integer dayOfWeek,
@@ -272,7 +258,7 @@ public class UpdateRecurringTransactionServiceImplTest {
                                                                 final LocalDate nextExecutionDate,
                                                                 final LocalDate endDate) {
     return new UpdateRecurringTransactionCommand(
-        userSid, accountSid, sid, description, amount, frequency, dayOfMonth, dayOfWeek,
+        userSid, sid, description, amount, frequency, dayOfMonth, dayOfWeek,
         adjustToBusinessDay, status, nextExecutionDate, endDate);
   }
 

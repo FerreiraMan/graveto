@@ -12,9 +12,6 @@ import me.ferreira.graveto.common.domain.Frequency;
 import me.ferreira.graveto.common.domain.RecurringOperationStatus;
 
 public record UpdateRecurringTransactionRequestDto(
-    @NotNull(message = "Account identification is required.")
-    UUID accountSid,
-
     String description,
 
     @Positive(message = "Amount must be a positive value.")

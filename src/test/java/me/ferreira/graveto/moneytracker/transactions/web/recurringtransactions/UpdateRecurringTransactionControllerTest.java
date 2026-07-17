@@ -57,25 +57,22 @@ public class UpdateRecurringTransactionControllerTest {
   private static Stream<Arguments> invalidRequests() {
     return Stream.of(
         Arguments.of(new UpdateRecurringTransactionRequestDto(
-            null, "desc", BigDecimal.TEN, Frequency.MONTHLY, 15, null, true,
-            RecurringOperationStatus.ACTIVE, null, null), "accountSid"),
-        Arguments.of(new UpdateRecurringTransactionRequestDto(
-            UUID.randomUUID(), "desc", BigDecimal.ZERO, Frequency.MONTHLY, 15, null, true,
+            "desc", BigDecimal.ZERO, Frequency.MONTHLY, 15, null, true,
             null, null, null), "amount"),
         Arguments.of(new UpdateRecurringTransactionRequestDto(
-            UUID.randomUUID(), "desc", BigDecimal.TEN.negate(), Frequency.MONTHLY, 15, null, true,
+            "desc", BigDecimal.TEN.negate(), Frequency.MONTHLY, 15, null, true,
             null, null, null), "amount"),
         Arguments.of(new UpdateRecurringTransactionRequestDto(
-            UUID.randomUUID(), "desc", BigDecimal.TEN, Frequency.MONTHLY, 0, null, true,
+            "desc", BigDecimal.TEN, Frequency.MONTHLY, 0, null, true,
             null, null, null), "dayOfMonth"),
         Arguments.of(new UpdateRecurringTransactionRequestDto(
-            UUID.randomUUID(), "desc", BigDecimal.TEN, Frequency.MONTHLY, 32, null, true,
+            "desc", BigDecimal.TEN, Frequency.MONTHLY, 32, null, true,
             null, null, null), "dayOfMonth"),
         Arguments.of(new UpdateRecurringTransactionRequestDto(
-            UUID.randomUUID(), "desc", BigDecimal.TEN, Frequency.WEEKLY, null, 0, true,
+            "desc", BigDecimal.TEN, Frequency.WEEKLY, null, 0, true,
             null, null, null), "dayOfWeek"),
         Arguments.of(new UpdateRecurringTransactionRequestDto(
-            UUID.randomUUID(), "desc", BigDecimal.TEN, Frequency.WEEKLY, null, 8, true,
+            "desc", BigDecimal.TEN, Frequency.WEEKLY, null, 8, true,
             null, null, null), "dayOfWeek")
     );
   }
@@ -107,7 +104,7 @@ public class UpdateRecurringTransactionControllerTest {
     final UUID accountSid = UUID.randomUUID();
 
     final UpdateRecurringTransactionRequestDto request = new UpdateRecurringTransactionRequestDto(
-        accountSid, "Updated Insurance", new BigDecimal("75.00"), Frequency.WEEKLY, null, 3, false,
+        "Updated Insurance", new BigDecimal("75.00"), Frequency.WEEKLY, null, 3, false,
         RecurringOperationStatus.ACTIVE, LocalDate.of(2026, 9, 1), LocalDate.of(2027, 9, 1));
 
     final RecurringTransaction mockRt = buildMockRecurringTransaction(rtSid, accountSid, userSid);
@@ -136,7 +133,6 @@ public class UpdateRecurringTransactionControllerTest {
     final UpdateRecurringTransactionCommand captured = commandCaptor.getValue();
     assertThat(captured.userSid()).isEqualTo(userSid);
     assertThat(captured.sid()).isEqualTo(rtSid);
-    assertThat(captured.accountSid()).isEqualTo(accountSid);
     assertThat(captured.description()).isEqualTo("Updated Insurance");
     assertThat(captured.amount()).isEqualByComparingTo(new BigDecimal("75.00"));
     assertThat(captured.frequency()).isEqualTo(Frequency.WEEKLY);
@@ -159,7 +155,7 @@ public class UpdateRecurringTransactionControllerTest {
     final UUID accountSid = UUID.randomUUID();
 
     final UpdateRecurringTransactionRequestDto request = new UpdateRecurringTransactionRequestDto(
-        accountSid, null, new BigDecimal("100.00"), null, null, null, null,
+        null, new BigDecimal("100.00"), null, null, null, null,
         null, null, null);
 
     final RecurringTransaction mockRt = buildMockRecurringTransaction(rtSid, accountSid, userSid);
@@ -197,7 +193,7 @@ public class UpdateRecurringTransactionControllerTest {
     // Arrange
     final UUID accountSid = UUID.randomUUID();
     final UpdateRecurringTransactionRequestDto request = new UpdateRecurringTransactionRequestDto(
-        accountSid, "  Updated  ", null, null, null, null, null, null, null, null);
+        "  Updated  ", null, null, null, null, null, null, null, null);
 
     final RecurringTransaction mockRt = buildMockRecurringTransaction(UUID.randomUUID(), accountSid, UUID.randomUUID());
 
@@ -221,7 +217,7 @@ public class UpdateRecurringTransactionControllerTest {
   void shouldReturnBadRequestForInvalidSidPathVariable() {
     // Arrange
     final UpdateRecurringTransactionRequestDto request = new UpdateRecurringTransactionRequestDto(
-        UUID.randomUUID(), null, null, null, null, null, null, null, null, null);
+        null, null, null, null, null, null, null, null, null);
 
     // Act
     final MvcTestResult result = mvc.patch()

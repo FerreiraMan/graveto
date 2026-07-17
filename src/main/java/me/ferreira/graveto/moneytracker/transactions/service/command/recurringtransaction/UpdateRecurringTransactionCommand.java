@@ -8,7 +8,6 @@ import me.ferreira.graveto.common.domain.RecurringOperationStatus;
 
 public record UpdateRecurringTransactionCommand(
     UUID userSid,
-    UUID accountSid,
     UUID sid,
     String description,
     BigDecimal amount,

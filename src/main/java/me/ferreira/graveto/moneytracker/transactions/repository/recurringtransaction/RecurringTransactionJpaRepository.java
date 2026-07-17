@@ -26,7 +26,7 @@ public interface RecurringTransactionJpaRepository extends JpaRepository<Recurri
   List<RecurringTransaction> findAllByStatusAndNextExecutionDateLessThanEqual(final RecurringOperationStatus status,
                                                                               final LocalDate today);
 
-  @Query(value = "SELECT rt FROM RecurringTransaction rt JOIN FETCH rt.account " +
-      "WHERE rt.sid = ?1 AND rt.account.sid = ?2")
-  Optional<RecurringTransaction> findBySidAndBelongsToAccount(final UUID sid, final UUID accountSid);
+  @Query(value = "SELECT rt FROM RecurringTransaction rt JOIN FETCH rt.account WHERE rt.sid = ?1")
+  Optional<RecurringTransaction> findBySid(final UUID sid);
+
 }
