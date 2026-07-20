@@ -16,6 +16,7 @@ import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransaction
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.repository.recurringtransaction.RecurringTransactionRepository;
 import me.ferreira.graveto.moneytracker.transactions.service.RecurringTransactionService;
+import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.CancelRecurringTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.CreateRecurringTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.FindAllRecurringTransactionsCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.UpdateRecurringTransactionCommand;
@@ -29,6 +30,7 @@ public class RecurringTransactionServiceImpl implements RecurringTransactionServ
 
   private static final String RECURRING_TX_CREATE_ACTION = "create recurring transactions";
   private static final String RECURRING_TX_UPDATE_ACTION = "update recurring transactions";
+  private static final String RECURRING_TX_CANCEL_ACTION = "cancel recurring transactions";
 
   private final AccountService accountService;
   private final CategoryService categoryService;
@@ -115,6 +117,23 @@ public class RecurringTransactionServiceImpl implements RecurringTransactionServ
   public List<RecurringTransaction> fetchAllRecurringTransactions(final FindAllRecurringTransactionsCommand command) {
 
     return recurringTransactionRepository.findAll(command);
+  }
+
+  @Override
+  @Transactional
+  public RecurringTransaction cancelRecurringTransaction(final CancelRecurringTransactionCommand command) {
+
+    final RecurringTransaction existingRecurringTransaction =
+        recurringTransactionRepository.findBySid(command.sid())
+            .orElseThrow(() -> new RecurringTransactionNotFoundException(command.sid()));
+
+    existingRecurringTransaction
+        .getAccount()
+        .validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction, RECURRING_TX_CANCEL_ACTION);
+
+    existingRecurringTransaction.markAsCanceled();
+    log.info("Recurring transaction canceled successfully. Sid: {}", existingRecurringTransaction.getSid());
+    return recurringTransactionRepository.save(existingRecurringTransaction);
   }
 
   private void validateTemporalInputs(final CreateRecurringTransactionCommand command) {

@@ -8,6 +8,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransaction;
 import me.ferreira.graveto.moneytracker.transactions.service.RecurringTransactionService;
+import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.CancelRecurringTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.CreateRecurringTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.FindAllRecurringTransactionsCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.UpdateRecurringTransactionCommand;
@@ -18,6 +19,7 @@ import me.ferreira.graveto.moneytracker.transactions.web.dto.response.recurringt
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -112,6 +114,19 @@ public class RecurringTransactionController {
     return ResponseEntity.ok(
         recurringTransactions.stream().map(this::buildResponse).toList()
     );
+  }
+
+  @DeleteMapping(path = RECURRING_TRANSACTION_SID_PATH, produces = "application/json")
+  public ResponseEntity<RecurringTransactionResponseDto> cancelRecurringTransaction(
+      @AuthenticationPrincipal final UUID userSid,
+      @PathVariable final UUID sid) {
+
+    final CancelRecurringTransactionCommand command = new CancelRecurringTransactionCommand(userSid, sid);
+
+    final RecurringTransaction canceledRecurringTransaction =
+        recurringTransactionService.cancelRecurringTransaction(command);
+
+    return ResponseEntity.ok(buildResponse(canceledRecurringTransaction));
   }
 
   private RecurringTransactionResponseDto buildResponse(final RecurringTransaction recurringTransaction) {
