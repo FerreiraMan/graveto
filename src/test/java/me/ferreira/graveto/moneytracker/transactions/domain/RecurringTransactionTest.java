@@ -497,6 +497,33 @@ public class RecurringTransactionTest {
     assertThat(rt.getNextExecutionDate()).isEqualTo(originalDate);
   }
 
+  @Test
+  void shouldThrowWhenAttemptingToCancelAlreadyCanceledRecurringTransaction() {
+    // Arrange
+    final RecurringTransaction rt = buildRecurringTransaction(LocalDate.of(2026, 7, 10), null);
+    rt.setStatus(RecurringOperationStatus.CANCELED);
+
+    // Act & Assert
+    assertThatThrownBy(rt::markAsCanceled)
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Recurring transaction is already canceled.");
+  }
+
+  @Test
+  void shouldCancelRecurringTransaction() {
+    // Arrange
+    final RecurringTransaction rt =
+        buildRecurringTransactionWithSchedule(1, 15, LocalDate.of(2026, 8, 15), LocalDate.of(2028, 1, 31));
+    final LocalDate originalEndDate = rt.getEndDate();
+
+    // Act
+    rt.markAsCanceled();
+
+    // Assert
+    assertThat(rt.getEndDate()).isNotEqualTo(originalEndDate);
+    assertThat(rt.getStatus()).isEqualTo(RecurringOperationStatus.CANCELED);
+  }
+
   private static RecurringTransaction buildRecurringTransaction(final LocalDate nextExecutionDate,
                                                                 final LocalDate endDate) {
     final RecurringTransaction rt = new RecurringTransaction();

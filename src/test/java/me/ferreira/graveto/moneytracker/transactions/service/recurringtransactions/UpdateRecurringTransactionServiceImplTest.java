@@ -49,9 +49,7 @@ public class UpdateRecurringTransactionServiceImplTest {
   void shouldThrowWhenRecurringTransactionNotFound() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
-    final UUID accountSid = UUID.randomUUID();
     final UUID rtSid = UUID.randomUUID();
-    final Account account = buildAccount(accountSid, userSid);
 
     when(recurringTransactionRepository.findBySid(rtSid)).thenReturn(Optional.empty());
 

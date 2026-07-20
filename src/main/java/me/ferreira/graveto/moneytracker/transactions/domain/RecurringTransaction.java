@@ -227,6 +227,16 @@ public class RecurringTransaction extends BaseEntity {
     validateExecutionDate(this.nextExecutionDate);
   }
 
+  public void markAsCanceled() {
+
+    if (this.status == RecurringOperationStatus.CANCELED) {
+      throw new IllegalStateException("Recurring transaction is already canceled.");
+    }
+
+    this.status = RecurringOperationStatus.CANCELED;
+    this.endDate = LocalDate.now();
+  }
+
   private LocalDate resolveExecutionDate(final Integer dayOfWeek, final Integer dayOfTheMonth) {
 
     final LocalDate today = LocalDate.now();
