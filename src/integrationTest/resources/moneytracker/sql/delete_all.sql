@@ -1,1 +1,1 @@
-TRUNCATE recurring_transactions ,transactions, account_membership, accounts RESTART IDENTITY CASCADE;
+TRUNCATE recurring_transfers, recurring_transactions ,transactions, account_membership, accounts RESTART IDENTITY CASCADE;

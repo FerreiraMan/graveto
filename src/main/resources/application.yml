@@ -55,3 +55,4 @@ scheduled:
   cron:
     asset-price: 0 30 10,17 * * *
     recurring-transaction: 0 0 10 * * *
+    recurring-transfer: 0 0 10 * * *
