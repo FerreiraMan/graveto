@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import me.ferreira.graveto.common.domain.Frequency;
+import me.ferreira.graveto.common.util.TemporalConfigValidator;
 import me.ferreira.graveto.common.web.exception.moneytracker.RecurringTransactionNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
@@ -40,7 +40,9 @@ public class RecurringTransactionServiceImpl implements RecurringTransactionServ
   @Transactional
   public RecurringTransaction createRecurringTransaction(final CreateRecurringTransactionCommand command) {
 
-    validateTemporalInputs(command);
+    TemporalConfigValidator.validateTemporalInputs(command.startDate(), command.endDate());
+    TemporalConfigValidator.validateFrequencyAndDayConfig(command.frequency(), command.dayOfWeek(),
+        command.dayOfMonth());
 
     final Category category =
         categoryService.fetchCategory(new FetchCategoryCommand(command.accountSid(), command.categorySid()));
@@ -90,7 +92,7 @@ public class RecurringTransactionServiceImpl implements RecurringTransactionServ
 
     if (isStatusUpdated || isFrequencyUpdated || isScheduleUpdated || command.nextExecutionDate() != null) {
 
-      validateFrequencyAndDayConfig(existingRecurringTransaction.getFrequency(),
+      TemporalConfigValidator.validateFrequencyAndDayConfig(existingRecurringTransaction.getFrequency(),
           existingRecurringTransaction.getDayOfTheWeek(), existingRecurringTransaction.getDayOfTheMonth());
 
       existingRecurringTransaction.updateNextExecutionDate(command.nextExecutionDate());
@@ -134,32 +136,6 @@ public class RecurringTransactionServiceImpl implements RecurringTransactionServ
     existingRecurringTransaction.markAsCanceled();
     log.info("Recurring transaction canceled successfully. Sid: {}", existingRecurringTransaction.getSid());
     return recurringTransactionRepository.save(existingRecurringTransaction);
-  }
-
-  private void validateTemporalInputs(final CreateRecurringTransactionCommand command) {
-
-    if (command.endDate() != null && command.startDate() != null
-        && command.endDate().isBefore(command.startDate())) {
-
-      throw new IllegalArgumentException("End date must be after start date.");
-    }
-
-    validateFrequencyAndDayConfig(command.frequency(), command.dayOfWeek(), command.dayOfMonth());
-  }
-
-  private void validateFrequencyAndDayConfig(final Frequency frequency, final Integer dayOfWeek,
-                                             final Integer dayOfMonth) {
-
-    if (Frequency.MONTHLY.equals(frequency) && dayOfMonth == null) {
-      throw new IllegalArgumentException("Day of the month needs to be provided when selecting monthly operation.");
-    }
-    if ((Frequency.WEEKLY.equals(frequency) || Frequency.BI_WEEKLY.equals(frequency)) && dayOfWeek == null) {
-      throw new IllegalArgumentException(
-          "Day of the week needs to be provided when selecting weekly or bi-weekly operation.");
-    }
-    if (Frequency.ANNUALLY.equals(frequency) && dayOfMonth == null) {
-      throw new IllegalArgumentException("Day of the month needs to be provided when selecting annual operation.");
-    }
   }
 
   private void validateSameTypeOnCategory(final TransactionType categoryTransactionType,
