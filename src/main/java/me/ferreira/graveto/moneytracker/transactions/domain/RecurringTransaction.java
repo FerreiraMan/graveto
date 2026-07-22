@@ -15,8 +15,6 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.YearMonth;
-import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import java.util.UUID;
@@ -28,6 +26,8 @@ import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.common.domain.Frequency;
 import me.ferreira.graveto.common.domain.RecurringOperationStatus;
 import me.ferreira.graveto.common.jpa.BaseEntity;
+import me.ferreira.graveto.common.util.RecurringDateCalculator;
+import me.ferreira.graveto.common.util.TemporalConfigValidator;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import org.hibernate.annotations.DynamicUpdate;
@@ -129,7 +129,8 @@ public class RecurringTransaction extends BaseEntity {
     rt.setEndDate(endDate);
 
     final LocalDate effectiveStartDate =
-        startDate != null ? startDate : rt.resolveExecutionDate(dayOfTheWeek, dayOfTheMonth);
+        startDate != null ? startDate :
+            RecurringDateCalculator.calculateNextExecution(frequency, dayOfTheWeek, dayOfTheMonth);
 
     rt.setNextExecutionDate(effectiveStartDate);
     rt.setStartDate(effectiveStartDate);
@@ -218,13 +219,14 @@ public class RecurringTransaction extends BaseEntity {
     }
 
     if (nextExecutionDate != null) {
-      validateExecutionDate(nextExecutionDate);
+      TemporalConfigValidator.validateExecutionDate(nextExecutionDate, this.endDate);
       this.nextExecutionDate = nextExecutionDate;
       return;
     }
 
-    this.nextExecutionDate = this.resolveExecutionDate(this.dayOfTheWeek, this.dayOfTheMonth);
-    validateExecutionDate(this.nextExecutionDate);
+    this.nextExecutionDate =
+        RecurringDateCalculator.calculateNextExecution(this.frequency, this.dayOfTheWeek, this.dayOfTheMonth);
+    TemporalConfigValidator.validateExecutionDate(this.nextExecutionDate, this.endDate);
   }
 
   public void markAsCanceled() {
@@ -235,44 +237,6 @@ public class RecurringTransaction extends BaseEntity {
 
     this.status = RecurringOperationStatus.CANCELED;
     this.endDate = LocalDate.now();
-  }
-
-  private LocalDate resolveExecutionDate(final Integer dayOfWeek, final Integer dayOfTheMonth) {
-
-    final LocalDate today = LocalDate.now();
-
-    return switch (this.frequency) {
-      case DAILY -> today.plusDays(1);
-      case WEEKLY -> dayOfWeek <= today.getDayOfWeek().getValue()
-          ? today.plusWeeks(1).with(ChronoField.DAY_OF_WEEK, dayOfWeek) :
-          today.with(ChronoField.DAY_OF_WEEK, dayOfWeek);
-      case BI_WEEKLY -> dayOfWeek <= today.getDayOfWeek().getValue()
-          ? today.plusWeeks(2).with(ChronoField.DAY_OF_WEEK, dayOfWeek) :
-          today.with(ChronoField.DAY_OF_WEEK, dayOfWeek);
-      case MONTHLY -> {
-        final int targetMonth =
-            dayOfTheMonth > today.getDayOfMonth() ? today.getMonthValue() : today.plusMonths(1).getMonthValue();
-        final boolean isNextYear = dayOfTheMonth <= today.getDayOfMonth() && targetMonth == 1;
-        final int targetYear = isNextYear ? today.plusYears(1).getYear() : today.getYear();
-
-        final YearMonth yearMonth = YearMonth.of(targetYear, targetMonth);
-        final boolean isValidDayInMonth = yearMonth.isValidDay(dayOfTheMonth);
-
-        yield LocalDate.of(targetYear, targetMonth,
-            isValidDayInMonth ? dayOfTheMonth : yearMonth.atEndOfMonth().getDayOfMonth());
-      }
-      case ANNUALLY -> dayOfTheMonth <= today.getDayOfMonth()
-          ? today.plusYears(1).withDayOfMonth(dayOfTheMonth) :
-          today.withDayOfMonth(dayOfTheMonth);
-    };
-  }
-
-  private void validateExecutionDate(final LocalDate nextExecutionDate) {
-
-    if (nextExecutionDate != null && this.endDate != null && nextExecutionDate.isAfter(this.endDate)) {
-      throw new IllegalStateException(
-          "Requested execution date [" + nextExecutionDate + "] is after defined end date [" + this.endDate + "].");
-    }
   }
 
 }
