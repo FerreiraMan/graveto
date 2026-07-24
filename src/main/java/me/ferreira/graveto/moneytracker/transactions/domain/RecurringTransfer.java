@@ -25,6 +25,7 @@ import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.common.domain.Frequency;
 import me.ferreira.graveto.common.domain.RecurringOperationStatus;
 import me.ferreira.graveto.common.jpa.BaseEntity;
+import me.ferreira.graveto.common.util.RecurringDateCalculator;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import org.hibernate.annotations.DynamicUpdate;
 
@@ -96,6 +97,38 @@ public class RecurringTransfer extends BaseEntity {
 
   @Column(name = "end_date")
   private LocalDate endDate;
+
+  public static RecurringTransfer create(final Account sourceAccount, final Account destinationAccount,
+                                         final UUID userSid,
+                                         final String description, final BigDecimal amount,
+                                         final Frequency frequency, final Integer dayOfTheMonth,
+                                         final Integer dayOfTheWeek, final Boolean adjustToBusinessDay,
+                                         final LocalDate startDate, final LocalDate endDate) {
+
+    final RecurringTransfer rt = new RecurringTransfer();
+    rt.setSid(UUID.randomUUID());
+    rt.setSourceAccount(sourceAccount);
+    rt.setDestinationAccount(destinationAccount);
+    rt.setUserSid(userSid);
+    rt.setDescription(description);
+    rt.setAmount(amount);
+    rt.setCurrency(sourceAccount.getBaseCurrency());
+    rt.setFrequency(frequency);
+    rt.setDayOfTheMonth(dayOfTheMonth);
+    rt.setDayOfTheWeek(dayOfTheWeek);
+    rt.setAdjustToBusinessDay(adjustToBusinessDay);
+    rt.setStatus(RecurringOperationStatus.ACTIVE);
+    rt.setEndDate(endDate);
+
+    final LocalDate effectiveStartDate =
+        startDate != null ? startDate :
+            RecurringDateCalculator.calculateNextExecution(frequency, dayOfTheWeek, dayOfTheMonth);
+
+    rt.setNextExecutionDate(effectiveStartDate);
+    rt.setStartDate(effectiveStartDate);
+
+    return rt;
+  }
 
   public void scheduleNextExecutionDate(final Long amount, final ChronoUnit temporalUnit) {
 

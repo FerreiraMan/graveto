@@ -3,13 +3,95 @@ package me.ferreira.graveto.moneytracker.transactions.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.UUID;
+import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.common.domain.Frequency;
 import me.ferreira.graveto.common.domain.RecurringOperationStatus;
+import me.ferreira.graveto.moneytracker.accounts.domain.Account;
+import me.ferreira.graveto.moneytracker.accounts.domain.AccountStatus;
 import org.junit.jupiter.api.Test;
 
 public class RecurringTransferTest {
+
+  @Test
+  void shouldCreateRecurringTransferWithGeneratedSid() {
+    // Arrange
+    final Account sourceAccount = new Account();
+    sourceAccount.setSid(UUID.randomUUID());
+    sourceAccount.setBaseCurrency(Currency.EUR);
+    sourceAccount.setStatus(AccountStatus.ACTIVE);
+
+    final Account destinationAccount = new Account();
+    destinationAccount.setSid(UUID.randomUUID());
+    destinationAccount.setBaseCurrency(Currency.EUR);
+    destinationAccount.setStatus(AccountStatus.ACTIVE);
+
+    final UUID userSid = UUID.randomUUID();
+    final LocalDate startDate = LocalDate.of(2026, 8, 15);
+    final LocalDate endDate = LocalDate.of(2027, 8, 15);
+
+    // Act
+    final RecurringTransfer rt = RecurringTransfer.create(
+        sourceAccount, destinationAccount, userSid, "Home Insurance", new BigDecimal("50.00"),
+        Frequency.MONTHLY, 15, null, true, startDate, endDate);
+
+    // Assert
+    assertThat(rt.getSid()).isNotNull();
+    assertThat(rt.getSourceAccount()).isEqualTo(sourceAccount);
+    assertThat(rt.getDestinationAccount()).isEqualTo(destinationAccount);
+    assertThat(rt.getUserSid()).isEqualTo(userSid);
+    assertThat(rt.getDescription()).isEqualTo("Home Insurance");
+    assertThat(rt.getAmount()).isEqualByComparingTo(new BigDecimal("50.00"));
+    assertThat(rt.getCurrency()).isEqualTo(Currency.EUR);
+    assertThat(rt.getFrequency()).isEqualTo(Frequency.MONTHLY);
+    assertThat(rt.getDayOfTheMonth()).isEqualTo(15);
+    assertThat(rt.getDayOfTheWeek()).isNull();
+    assertThat(rt.getAdjustToBusinessDay()).isTrue();
+    assertThat(rt.getNextExecutionDate()).isEqualTo(startDate);
+    assertThat(rt.getStartDate()).isEqualTo(startDate);
+    assertThat(rt.getEndDate()).isEqualTo(endDate);
+    assertThat(rt.getStatus()).isEqualTo(RecurringOperationStatus.ACTIVE);
+    assertThat(rt.getLastExecutedAt()).isNull();
+  }
+
+  @Test
+  void shouldCreateRecurringTransferWithNullEndDate() {
+    // Arrange
+    final Account sourceAccount = new Account();
+    final Account destinationAccount = new Account();
+    final LocalDate startDate = LocalDate.of(2026, 8, 1);
+
+    // Act
+    final RecurringTransfer rt = RecurringTransfer.create(
+        sourceAccount, destinationAccount, UUID.randomUUID(), "Home Insurance", new BigDecimal("50.00"),
+        Frequency.MONTHLY, 15, null, true, startDate, null);
+
+    // Assert
+    assertThat(rt.getEndDate()).isNull();
+    assertThat(rt.getStatus()).isEqualTo(RecurringOperationStatus.ACTIVE);
+  }
+
+  @Test
+  void shouldCreateWeeklyRecurringTransferWithDayOfWeek() {
+    // Arrange
+    final Account sourceAccount = new Account();
+    final Account destinationAccount = new Account();
+    final LocalDate startDate = LocalDate.of(2026, 8, 1);
+
+    // Act
+    final RecurringTransfer rt = RecurringTransfer.create(
+        sourceAccount, destinationAccount, UUID.randomUUID(), "Home Insurance", new BigDecimal("50.00"),
+        Frequency.WEEKLY, null, 1, false, startDate, null);
+
+    // Assert
+    assertThat(rt.getFrequency()).isEqualTo(Frequency.WEEKLY);
+    assertThat(rt.getDayOfTheWeek()).isEqualTo(1);
+    assertThat(rt.getDayOfTheMonth()).isNull();
+    assertThat(rt.getAdjustToBusinessDay()).isFalse();
+  }
 
   @Test
   void shouldThrowIfSchedulerExecutionDateOnNonActiveRecurringTransfer() {
