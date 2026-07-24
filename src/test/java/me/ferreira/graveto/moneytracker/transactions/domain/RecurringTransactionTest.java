@@ -94,7 +94,7 @@ public class RecurringTransactionTest {
     final Category category = new Category();
     category.setSid(UUID.randomUUID());
 
-    final LocalDate startDate = LocalDate.of(2026, 7, 14); // Monday
+    final LocalDate startDate = LocalDate.of(2026, 7, 14);
 
     // Act
     final RecurringTransaction rt = RecurringTransaction.create(
