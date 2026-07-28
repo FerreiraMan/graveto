@@ -31,7 +31,12 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
-@WebMvcTest(controllers = RecurringTransferController.class, excludeFilters = @ComponentScan.Filter(type = FilterType.REGEX, pattern = "me.ferreira.graveto.identity.*"))
+@WebMvcTest(
+    controllers = RecurringTransferController.class,
+    excludeFilters = @ComponentScan.Filter(
+        type = FilterType.REGEX,
+        pattern = "me.ferreira.graveto.identity.*"
+    ))
 @Import(TestSecurityConfig.class)
 public class FindAllRecurringTransfersControllerTest {
 
