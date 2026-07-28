@@ -365,7 +365,6 @@ public class RecurringTransferTest {
     return rt;
   }
 
-
   @Test
   void shouldThrowIfSubmittedRequestedDateIsAfterCurrentEndDate() {
     // Arrange
@@ -461,7 +460,6 @@ public class RecurringTransferTest {
     assertThat(rt.getEndDate()).isNotEqualTo(originalEndDate);
     assertThat(rt.getStatus()).isEqualTo(RecurringOperationStatus.CANCELED);
   }
-
 
   private static RecurringTransfer buildRecurringTransferWithSchedule(final Integer dayOfWeek,
                                                                       final Integer dayOfMonth,
