@@ -16,6 +16,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -26,6 +27,7 @@ import me.ferreira.graveto.common.domain.Frequency;
 import me.ferreira.graveto.common.domain.RecurringOperationStatus;
 import me.ferreira.graveto.common.jpa.BaseEntity;
 import me.ferreira.graveto.common.util.RecurringDateCalculator;
+import me.ferreira.graveto.common.util.TemporalConfigValidator;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import org.hibernate.annotations.DynamicUpdate;
 
@@ -130,6 +132,17 @@ public class RecurringTransfer extends BaseEntity {
     return rt;
   }
 
+  public void updateDetails(final String description, final BigDecimal amount, final Boolean adjustToBusinessDay) {
+
+    if (this.status == RecurringOperationStatus.CANCELED) {
+      throw new IllegalStateException("Cannot update a canceled recurring transfer.");
+    }
+
+    this.description = description;
+    this.amount = amount;
+    this.adjustToBusinessDay = adjustToBusinessDay;
+  }
+
   public void scheduleNextExecutionDate(final Long amount, final ChronoUnit temporalUnit) {
 
     if (!RecurringOperationStatus.ACTIVE.equals(this.status)) {
@@ -142,6 +155,82 @@ public class RecurringTransfer extends BaseEntity {
     if (this.endDate != null && this.nextExecutionDate.isAfter(endDate)) {
       this.status = RecurringOperationStatus.COMPLETED;
     }
+  }
+
+  public boolean updateStatus(final RecurringOperationStatus newStatus) {
+
+    if (newStatus == null || (this.getStatus().equals(newStatus))) {
+      return false;
+    }
+
+    if (!this.getStatus().canBeUpdated(newStatus) || this.status.isTerminal()) {
+      throw new IllegalStateException(
+          "Recurring transfer with status [" + this.getStatus().name() +
+              "] cannot have its status manually updated to [" + newStatus + "].");
+    }
+
+    switch (newStatus) {
+      case ACTIVE -> this.status = RecurringOperationStatus.ACTIVE;
+      case PAUSED -> this.status = RecurringOperationStatus.PAUSED;
+      default -> throw new IllegalStateException("Unhandled status transition: " + newStatus);
+    }
+    return true;
+  }
+
+  public boolean updateFrequency(final Frequency newFrequency) {
+
+    if (newFrequency == null || (this.getFrequency().equals(newFrequency))) {
+      return false;
+    }
+
+    this.frequency = newFrequency;
+    return true;
+  }
+
+  public boolean updateSchedule(final Integer dayOfTheWeek, final Integer dayOfTheMonth, final LocalDate endDate) {
+
+    final boolean isDayOfTheWeekUnchanged = dayOfTheWeek == null || Objects.equals(this.dayOfTheWeek, dayOfTheWeek);
+    final boolean isDayOfTheMonthUnchanged = dayOfTheMonth == null || Objects.equals(this.dayOfTheMonth, dayOfTheMonth);
+    final boolean isEndDateUnchanged = endDate == null || Objects.equals(this.endDate, endDate);
+
+    if (!isDayOfTheWeekUnchanged) {
+      this.dayOfTheWeek = dayOfTheWeek;
+    }
+    if (!isDayOfTheMonthUnchanged) {
+      this.dayOfTheMonth = dayOfTheMonth;
+    }
+    if (!isEndDateUnchanged) {
+      this.endDate = endDate;
+    }
+
+    return !isDayOfTheWeekUnchanged || !isDayOfTheMonthUnchanged || !isEndDateUnchanged;
+  }
+
+  public void updateNextExecutionDate(final LocalDate nextExecutionDate) {
+
+    if (!this.status.equals(RecurringOperationStatus.ACTIVE)) {
+      return;
+    }
+
+    if (nextExecutionDate != null) {
+      TemporalConfigValidator.validateExecutionDate(nextExecutionDate, this.endDate);
+      this.nextExecutionDate = nextExecutionDate;
+      return;
+    }
+
+    this.nextExecutionDate =
+        RecurringDateCalculator.calculateNextExecution(this.frequency, this.dayOfTheWeek, this.dayOfTheMonth);
+    TemporalConfigValidator.validateExecutionDate(this.nextExecutionDate, this.endDate);
+  }
+
+  public void markAsCanceled() {
+
+    if (this.status == RecurringOperationStatus.CANCELED) {
+      throw new IllegalStateException("Recurring transfer is already canceled.");
+    }
+
+    this.status = RecurringOperationStatus.CANCELED;
+    this.endDate = LocalDate.now();
   }
 
 }

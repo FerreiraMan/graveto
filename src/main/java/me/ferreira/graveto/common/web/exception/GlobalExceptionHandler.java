@@ -6,7 +6,6 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import me.ferreira.graveto.common.web.exception.common.ExternalApiUnavailableException;
 import me.ferreira.graveto.common.web.exception.common.TooManyRequestsException;
@@ -19,6 +18,7 @@ import me.ferreira.graveto.common.web.exception.moneytracker.IllegalCategoryHier
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.common.web.exception.moneytracker.MemberNotRegisteredException;
 import me.ferreira.graveto.common.web.exception.moneytracker.RecurringTransactionNotFoundException;
+import me.ferreira.graveto.common.web.exception.moneytracker.RecurringTransferNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserAlreadyAccountMemberException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserNotMemberOfAccountException;
@@ -153,6 +153,14 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(RecurringTransactionNotFoundException.class)
   public ProblemDetail handleRecurringTransactionNotFoundException(final RecurringTransactionNotFoundException ex,
                                                                    final HttpServletRequest request) {
+
+    log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
+    return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+  }
+
+  @ExceptionHandler(RecurringTransferNotFoundException.class)
+  public ProblemDetail handleRecurringTransferNotFoundException(final RecurringTransferNotFoundException ex,
+                                                                final HttpServletRequest request) {
 
     log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
     return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);

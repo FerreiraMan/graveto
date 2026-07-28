@@ -1,8 +1,10 @@
 package me.ferreira.graveto.moneytracker.transactions.service.impl;
 
+import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.ferreira.graveto.common.util.TemporalConfigValidator;
+import me.ferreira.graveto.common.web.exception.moneytracker.RecurringTransferNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
@@ -10,6 +12,7 @@ import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransfer;
 import me.ferreira.graveto.moneytracker.transactions.repository.recurringtransfer.RecurringTransferRepository;
 import me.ferreira.graveto.moneytracker.transactions.service.RecurringTransferService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransfer.CreateRecurringTransferCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransfer.UpdateRecurringTransferCommand;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RecurringTransferServiceImpl implements RecurringTransferService {
 
   private static final String RECURRING_TR_CREATE_ACTION = "create recurring transfers";
+  private static final String RECURRING_TR_UPDATE_ACTION = "update recurring transfers";
 
   private final AccountService accountService;
   private final RecurringTransferRepository recurringTransferRepository;
@@ -61,6 +65,50 @@ public class RecurringTransferServiceImpl implements RecurringTransferService {
 
     log.info("Recurring transfer created successfully. Sid: {}", recurringTransfer.getSid());
     return recurringTransferRepository.save(recurringTransfer);
+  }
+
+  @Override
+  @Transactional
+  public RecurringTransfer updateRecurringTransfer(final UpdateRecurringTransferCommand command) {
+
+    final RecurringTransfer existingRecurringTransfer =
+        recurringTransferRepository.findBySid(command.sid())
+            .orElseThrow(() -> new RecurringTransferNotFoundException(command.sid()));
+
+    existingRecurringTransfer.getSourceAccount()
+        .validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction,
+            RECURRING_TR_UPDATE_ACTION);
+    existingRecurringTransfer.getDestinationAccount()
+        .validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction,
+            RECURRING_TR_UPDATE_ACTION);
+
+    final boolean isStatusUpdated = existingRecurringTransfer.updateStatus(command.status());
+    final boolean isFrequencyUpdated = existingRecurringTransfer.updateFrequency(command.frequency());
+    final boolean isScheduleUpdated =
+        existingRecurringTransfer.updateSchedule(command.dayOfWeek(), command.dayOfMonth(), command.endDate());
+
+    if (isStatusUpdated || isFrequencyUpdated || isScheduleUpdated || command.nextExecutionDate() != null) {
+
+      TemporalConfigValidator.validateFrequencyAndDayConfig(existingRecurringTransfer.getFrequency(),
+          existingRecurringTransfer.getDayOfTheWeek(), existingRecurringTransfer.getDayOfTheMonth());
+
+      existingRecurringTransfer.updateNextExecutionDate(command.nextExecutionDate());
+      log.info(
+          "Execution date updated - [{}]. Status: [{}], Frequency: [{}], Schedule config: [{}]",
+          existingRecurringTransfer.getNextExecutionDate(), isStatusUpdated, isFrequencyUpdated, isScheduleUpdated);
+    }
+
+    final String effectiveDescription =
+        command.description() != null ? command.description() : existingRecurringTransfer.getDescription();
+    final BigDecimal effectiveAmount =
+        command.amount() != null ? command.amount() : existingRecurringTransfer.getAmount();
+    final Boolean effectiveAdjustToBusinessDay =
+        command.adjustToBusinessDay() != null ? command.adjustToBusinessDay() :
+            existingRecurringTransfer.getAdjustToBusinessDay();
+
+    existingRecurringTransfer.updateDetails(effectiveDescription, effectiveAmount, effectiveAdjustToBusinessDay);
+
+    return recurringTransferRepository.save(existingRecurringTransfer);
   }
 
 }

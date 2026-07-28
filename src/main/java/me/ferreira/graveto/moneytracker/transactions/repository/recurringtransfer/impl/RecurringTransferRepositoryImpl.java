@@ -2,6 +2,8 @@ package me.ferreira.graveto.moneytracker.transactions.repository.recurringtransf
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import me.ferreira.graveto.common.domain.RecurringOperationStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransfer;
@@ -23,6 +25,11 @@ public class RecurringTransferRepositoryImpl implements RecurringTransferReposit
   @Override
   public List<RecurringTransfer> saveAll(final List<RecurringTransfer> recurringTransferList) {
     return repository.saveAll(recurringTransferList);
+  }
+
+  @Override
+  public Optional<RecurringTransfer> findBySid(final UUID sid) {
+    return repository.findBySid(sid);
   }
 
   @Override
