@@ -3,18 +3,23 @@ package me.ferreira.graveto.moneytracker.transactions.web;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransfer;
 import me.ferreira.graveto.moneytracker.transactions.service.RecurringTransferService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransfer.CreateRecurringTransferCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransfer.FindAllRecurringTransfersCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransfer.UpdateRecurringTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.recurringtransfer.CreateRecurringTransferRequestDto;
+import me.ferreira.graveto.moneytracker.transactions.web.dto.request.recurringtransfer.RecurringTransferFilterRequestDto;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.recurringtransfer.UpdateRecurringTransferRequestDto;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.response.recurringtransfer.RecurringTransferResponseDto;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -87,6 +92,26 @@ public class RecurringTransferController {
         recurringTransferService.updateRecurringTransfer(command);
 
     return ResponseEntity.ok(buildResponse(updateRecurringTransfer));
+  }
+
+  @GetMapping(produces = "application/json")
+  public ResponseEntity<List<RecurringTransferResponseDto>> findAll(
+      @AuthenticationPrincipal final UUID userSid,
+      @Valid @ModelAttribute final RecurringTransferFilterRequestDto requestDto) {
+
+    final FindAllRecurringTransfersCommand command = new FindAllRecurringTransfersCommand(
+        userSid,
+        requestDto.status(),
+        requestDto.sourceAccountSid(),
+        requestDto.destinationAccountSid()
+    );
+
+    final List<RecurringTransfer> recurringTransfers =
+        recurringTransferService.fetchAllRecurringTransfers(command);
+
+    return ResponseEntity.ok(
+        recurringTransfers.stream().map(this::buildResponse).toList()
+    );
   }
 
   private RecurringTransferResponseDto buildResponse(final RecurringTransfer recurringTransfer) {

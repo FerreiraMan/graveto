@@ -2,7 +2,9 @@ package me.ferreira.graveto.moneytracker.transactions.recurringtransaction;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
 
 import io.restassured.http.ContentType;
 import java.math.BigDecimal;
@@ -95,7 +97,8 @@ public class FindAllRecurringTransactionsIT extends MoneyTrackerBaseIntegrationT
         .get("/recurring-transactions")
         .then()
         .statusCode(200)
-        .body("$", hasSize(1));
+        .body("$", hasSize(1))
+        .body("[0].account.sid", not(hasItem(pausedSid)));
   }
 
   @Test
@@ -116,7 +119,8 @@ public class FindAllRecurringTransactionsIT extends MoneyTrackerBaseIntegrationT
         .get("/recurring-transactions")
         .then()
         .statusCode(200)
-        .body("$", hasSize(1));
+        .body("$", hasSize(1))
+        .body("[0].account.sid", not(hasItem(account2.getSid().toString())));
   }
 
   @Test
@@ -138,7 +142,8 @@ public class FindAllRecurringTransactionsIT extends MoneyTrackerBaseIntegrationT
         .get("/recurring-transactions")
         .then()
         .statusCode(200)
-        .body("$", hasSize(1));
+        .body("$", hasSize(1))
+        .body("[0].account.sid", not(hasItem(otherAccount.getSid().toString())));
   }
 
   @Test

@@ -1,6 +1,7 @@
 package me.ferreira.graveto.moneytracker.transactions.service.impl;
 
 import java.math.BigDecimal;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.ferreira.graveto.common.util.TemporalConfigValidator;
@@ -12,6 +13,7 @@ import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransfer;
 import me.ferreira.graveto.moneytracker.transactions.repository.recurringtransfer.RecurringTransferRepository;
 import me.ferreira.graveto.moneytracker.transactions.service.RecurringTransferService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransfer.CreateRecurringTransferCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransfer.FindAllRecurringTransfersCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransfer.UpdateRecurringTransferCommand;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -109,6 +111,13 @@ public class RecurringTransferServiceImpl implements RecurringTransferService {
     existingRecurringTransfer.updateDetails(effectiveDescription, effectiveAmount, effectiveAdjustToBusinessDay);
 
     return recurringTransferRepository.save(existingRecurringTransfer);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<RecurringTransfer> fetchAllRecurringTransfers(final FindAllRecurringTransfersCommand command) {
+
+    return recurringTransferRepository.findAll(command);
   }
 
 }
