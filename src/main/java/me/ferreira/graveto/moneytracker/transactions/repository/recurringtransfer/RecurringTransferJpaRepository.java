@@ -2,6 +2,8 @@ package me.ferreira.graveto.moneytracker.transactions.repository.recurringtransf
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import me.ferreira.graveto.common.domain.RecurringOperationStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransfer;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,5 +15,9 @@ public interface RecurringTransferJpaRepository extends JpaRepository<RecurringT
       "WHERE rt.status = ?1 AND rt.nextExecutionDate <= ?2")
   List<RecurringTransfer> findAllByStatusAndNextExecutionDateLessThanEqual(final RecurringOperationStatus status,
                                                                            final LocalDate today);
+
+  @Query(value = "SELECT rt FROM RecurringTransfer rt JOIN FETCH rt.sourceAccount JOIN FETCH rt.destinationAccount " +
+      "WHERE rt.sid = ?1")
+  Optional<RecurringTransfer> findBySid(final UUID sid);
 
 }
