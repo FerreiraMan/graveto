@@ -12,6 +12,7 @@ import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
 import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransfer;
 import me.ferreira.graveto.moneytracker.transactions.repository.recurringtransfer.RecurringTransferRepository;
 import me.ferreira.graveto.moneytracker.transactions.service.RecurringTransferService;
+import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransfer.CancelRecurringTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransfer.CreateRecurringTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransfer.FindAllRecurringTransfersCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransfer.UpdateRecurringTransferCommand;
@@ -25,6 +26,7 @@ public class RecurringTransferServiceImpl implements RecurringTransferService {
 
   private static final String RECURRING_TR_CREATE_ACTION = "create recurring transfers";
   private static final String RECURRING_TR_UPDATE_ACTION = "update recurring transfers";
+  private static final String RECURRING_TR_CANCEL_ACTION = "cancel recurring transfers";
 
   private final AccountService accountService;
   private final RecurringTransferRepository recurringTransferRepository;
@@ -118,6 +120,26 @@ public class RecurringTransferServiceImpl implements RecurringTransferService {
   public List<RecurringTransfer> fetchAllRecurringTransfers(final FindAllRecurringTransfersCommand command) {
 
     return recurringTransferRepository.findAll(command);
+  }
+
+  @Override
+  @Transactional
+  public RecurringTransfer cancelRecurringTransfer(final CancelRecurringTransferCommand command) {
+
+    final RecurringTransfer existingRecurringTransfer =
+        recurringTransferRepository.findBySid(command.sid())
+            .orElseThrow(() -> new RecurringTransferNotFoundException(command.sid()));
+
+    existingRecurringTransfer.getSourceAccount()
+        .validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction,
+            RECURRING_TR_CANCEL_ACTION);
+    existingRecurringTransfer.getDestinationAccount()
+        .validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction,
+            RECURRING_TR_CANCEL_ACTION);
+
+    existingRecurringTransfer.markAsCanceled();
+    log.info("Recurring transfer canceled successfully. Sid: {}", existingRecurringTransfer.getSid());
+    return recurringTransferRepository.save(existingRecurringTransfer);
   }
 
 }
