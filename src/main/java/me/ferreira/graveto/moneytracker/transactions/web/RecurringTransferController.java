@@ -8,6 +8,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransfer;
 import me.ferreira.graveto.moneytracker.transactions.service.RecurringTransferService;
+import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransfer.CancelRecurringTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransfer.CreateRecurringTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransfer.FindAllRecurringTransfersCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransfer.UpdateRecurringTransferCommand;
@@ -18,6 +19,7 @@ import me.ferreira.graveto.moneytracker.transactions.web.dto.response.recurringt
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -112,6 +114,19 @@ public class RecurringTransferController {
     return ResponseEntity.ok(
         recurringTransfers.stream().map(this::buildResponse).toList()
     );
+  }
+
+  @DeleteMapping(path = RECURRING_TRANSFER_SID_PATH, produces = "application/json")
+  public ResponseEntity<RecurringTransferResponseDto> cancelRecurringTransfer(
+      @AuthenticationPrincipal final UUID userSid,
+      @PathVariable final UUID sid) {
+
+    final CancelRecurringTransferCommand command = new CancelRecurringTransferCommand(userSid, sid);
+
+    final RecurringTransfer canceledRecurringTransfer =
+        recurringTransferService.cancelRecurringTransfer(command);
+
+    return ResponseEntity.ok(buildResponse(canceledRecurringTransfer));
   }
 
   private RecurringTransferResponseDto buildResponse(final RecurringTransfer recurringTransfer) {
