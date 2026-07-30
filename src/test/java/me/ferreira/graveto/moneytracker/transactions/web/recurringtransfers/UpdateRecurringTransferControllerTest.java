@@ -20,6 +20,7 @@ import me.ferreira.graveto.moneytracker.transactions.service.RecurringTransferSe
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransfer.UpdateRecurringTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.web.RecurringTransferController;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.recurringtransfer.UpdateRecurringTransferRequestDto;
+import me.ferreira.graveto.moneytracker.transactions.web.helper.RecurringTransferDtoAssertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -103,12 +104,12 @@ public class UpdateRecurringTransferControllerTest {
     final UUID accountSid = UUID.randomUUID();
 
     final UpdateRecurringTransferRequestDto request = new UpdateRecurringTransferRequestDto(
-        "Updated Insurance", new BigDecimal("75.00"), Frequency.WEEKLY, null, 3, false,
+        "Updated Insurance", new BigDecimal("75"), Frequency.WEEKLY, null, 3, false,
         RecurringOperationStatus.ACTIVE, LocalDate.of(2026, 9, 1), LocalDate.of(2027, 9, 1));
 
     final RecurringTransfer mockRt = buildMockRecurringTransfer(rtSid, accountSid, userSid);
     mockRt.setDescription("Updated Insurance");
-    mockRt.setAmount(new BigDecimal("75.00"));
+    mockRt.setAmount(new BigDecimal("75"));
     mockRt.setFrequency(Frequency.WEEKLY);
     mockRt.setDayOfTheWeek(3);
     mockRt.setAdjustToBusinessDay(false);
@@ -133,7 +134,7 @@ public class UpdateRecurringTransferControllerTest {
     assertThat(captured.userSid()).isEqualTo(userSid);
     assertThat(captured.sid()).isEqualTo(rtSid);
     assertThat(captured.description()).isEqualTo("Updated Insurance");
-    assertThat(captured.amount()).isEqualByComparingTo(new BigDecimal("75.00"));
+    assertThat(captured.amount()).isEqualByComparingTo(new BigDecimal("75"));
     assertThat(captured.frequency()).isEqualTo(Frequency.WEEKLY);
     assertThat(captured.dayOfWeek()).isEqualTo(3);
     assertThat(captured.adjustToBusinessDay()).isFalse();
@@ -141,9 +142,7 @@ public class UpdateRecurringTransferControllerTest {
     assertThat(captured.nextExecutionDate()).isEqualTo(LocalDate.of(2026, 9, 1));
     assertThat(captured.endDate()).isEqualTo(LocalDate.of(2027, 9, 1));
 
-    assertThat(result).bodyJson().extractingPath("$.sid").asString().isEqualTo(rtSid.toString());
-    assertThat(result).bodyJson().extractingPath("$.frequency").asString().isEqualTo("WEEKLY");
-    assertThat(result).bodyJson().extractingPath("$.status").asString().isEqualTo("ACTIVE");
+    RecurringTransferDtoAssertions.assertSingleResponse(result, mockRt);
   }
 
   @Test

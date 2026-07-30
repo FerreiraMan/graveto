@@ -17,6 +17,7 @@ import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransfer;
 import me.ferreira.graveto.moneytracker.transactions.service.RecurringTransferService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransfer.CancelRecurringTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.web.RecurringTransferController;
+import me.ferreira.graveto.moneytracker.transactions.web.helper.RecurringTransferDtoAssertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,13 +64,23 @@ public class CancelRecurringTransferControllerTest {
     final UUID userSid = UUID.randomUUID();
     final UUID rtSid = UUID.randomUUID();
 
+    final Account mockSourceAccount = new Account();
+    mockSourceAccount.setSid(UUID.randomUUID());
+    mockSourceAccount.setInstitution("Santander");
+    mockSourceAccount.setBaseCurrency(Currency.EUR);
+
+    final Account mockDestinationAccount = new Account();
+    mockDestinationAccount.setSid(UUID.randomUUID());
+    mockDestinationAccount.setInstitution("BCP");
+    mockDestinationAccount.setBaseCurrency(Currency.EUR);
+
     final RecurringTransfer mockRt = new RecurringTransfer();
     mockRt.setSid(rtSid);
-    mockRt.setSourceAccount(new Account());
-    mockRt.setDestinationAccount(new Account());
+    mockRt.setSourceAccount(mockSourceAccount);
+    mockRt.setDestinationAccount(mockDestinationAccount);
     mockRt.setUserSid(userSid);
     mockRt.setDescription("Home Insurance");
-    mockRt.setAmount(new BigDecimal("50.00"));
+    mockRt.setAmount(new BigDecimal("50"));
     mockRt.setCurrency(Currency.EUR);
     mockRt.setFrequency(Frequency.MONTHLY);
     mockRt.setNextExecutionDate(LocalDate.of(2026, 8, 15));
@@ -94,8 +105,7 @@ public class CancelRecurringTransferControllerTest {
     assertThat(captured.userSid()).isEqualTo(userSid);
     assertThat(captured.sid()).isEqualTo(rtSid);
 
-    assertThat(result).bodyJson().extractingPath("$.sid").asString().isEqualTo(rtSid.toString());
-    assertThat(result).bodyJson().extractingPath("$.status").asString().isEqualTo("CANCELED");
+    RecurringTransferDtoAssertions.assertSingleResponse(result, mockRt);
   }
 
 }

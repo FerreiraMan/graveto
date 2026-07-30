@@ -11,15 +11,17 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.config.AuthUtils;
 import me.ferreira.graveto.config.TestSecurityConfig;
+import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
-import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction_;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.FindAllTransactionsCommand;
+import me.ferreira.graveto.moneytracker.transactions.web.helper.TransactionDtoAssertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +37,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
-import tools.jackson.databind.ObjectMapper;
 
 @WebMvcTest(
     controllers = TransactionController.class,
@@ -48,8 +49,6 @@ public class FindAllTransactionsControllerTest {
 
   @Autowired
   private MockMvcTester mvc;
-  @Autowired
-  private ObjectMapper objectMapper;
   @MockitoBean
   private TransactionService service;
 
@@ -64,18 +63,16 @@ public class FindAllTransactionsControllerTest {
 
     final LocalDateTime occurredAt = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
 
+    final Account mockAccount = new Account();
+    mockAccount.setSid(accountSid);
+    mockAccount.setInstitution("BCP");
+    mockAccount.setBaseCurrency(Currency.EUR);
     final Category mockCategory = new Category();
+    mockCategory.setSid(categorySid);
     mockCategory.setDisplayName("Groceries");
-
-    final Transaction mockTransaction = new Transaction();
-    final UUID transactionSid = UUID.randomUUID();
-    mockTransaction.setSid(transactionSid);
-    mockTransaction.setAmount(BigDecimal.valueOf(50.50));
-    mockTransaction.setCategory(mockCategory);
-    mockTransaction.setDescription("Supermarket");
-    mockTransaction.setType(TransactionType.EXPENSE);
-    mockTransaction.setStatus(TransactionStatus.ACTIVE);
-    mockTransaction.setOccurredAt(occurredAt);
+    final Transaction mockTransaction =
+        Transaction.create(mockAccount, BigDecimal.ONE, "Supermarket", mockCategory, TransactionType.EXPENSE,
+            occurredAt);
 
     final Page<Transaction> mockPage = new PageImpl<>(List.of(mockTransaction));
 
@@ -100,16 +97,7 @@ public class FindAllTransactionsControllerTest {
 
     // Assert
     assertThat(testResult).hasStatus(HttpStatus.OK);
-    assertThat(testResult).bodyJson()
-        .extractingPath("$.content[0].sid").asString().isEqualTo(transactionSid.toString());
-    assertThat(testResult).bodyJson()
-        .extractingPath("$.content[0].amount").asNumber().isEqualTo(50.5);
-    assertThat(testResult).bodyJson()
-        .extractingPath("$.content[0].categoryName").asString().isEqualTo("Groceries");
-    assertThat(testResult).bodyJson()
-        .extractingPath("$.content[0].description").asString().isEqualTo("Supermarket");
-    assertThat(testResult).bodyJson()
-        .extractingPath("$.content[0].occurredAt").asString().isEqualTo(occurredAt.toString());
+    TransactionDtoAssertions.assertPageableResponse(testResult, mockTransaction, 0);
 
     final FindAllTransactionsCommand capturedCommand = commandCaptor.getValue();
     assertThat(capturedCommand.userSid()).isEqualTo(userSid);

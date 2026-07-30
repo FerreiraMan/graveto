@@ -11,12 +11,15 @@ import java.util.stream.Stream;
 import me.ferreira.graveto.config.AuthUtils;
 import me.ferreira.graveto.config.TestSecurityConfig;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
+import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.UpdateTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.TransferService;
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.payload.TransferResult;
 import me.ferreira.graveto.moneytracker.transactions.web.TransferController;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.transfer.UpdateTransferRequestDto;
+import me.ferreira.graveto.moneytracker.transactions.web.helper.TransferDtoAssertions;
 import me.ferreira.graveto.moneytracker.utils.AccountUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -67,6 +70,10 @@ public class UpdateTransferControllerTest {
     // Arrange
     final Account sourceAccount = AccountUtils.createAccount(BigDecimal.TEN);
     final Account destinationAccount = AccountUtils.createAccount(BigDecimal.TEN);
+    final Category mockCategory = new Category();
+    mockCategory.setSid(UUID.randomUUID());
+    mockCategory.setDisplayName("Gas");
+
     final UUID userSid = UUID.randomUUID();
     final UUID correlationId = UUID.randomUUID();
     final LocalDateTime newOccurredAt = LocalDateTime.now();
@@ -77,16 +84,30 @@ public class UpdateTransferControllerTest {
         newOccurredAt
     );
 
-    final Transaction mockExpense = new Transaction();
-    mockExpense.setCorrelationId(correlationId);
-    mockExpense.setAccount(sourceAccount);
-    final Transaction mockIncome = new Transaction();
-    mockIncome.setAccount(destinationAccount);
+    final Transaction mockTransactionOut = Transaction.createTransferTransaction(
+        sourceAccount,
+        BigDecimal.ONE,
+        "Lunch",
+        correlationId,
+        mockCategory,
+        TransactionType.TRANSFER_OUT,
+        newOccurredAt
+    );
 
-    final TransferResult mockResult = new TransferResult(mockExpense, mockIncome);
+    final Transaction mockTransactionIn = Transaction.createTransferTransaction(
+        destinationAccount,
+        BigDecimal.ONE,
+        "Lunch",
+        correlationId,
+        mockCategory,
+        TransactionType.TRANSFER_IN,
+        newOccurredAt
+    );
+
+    final TransferResult transferResult = new TransferResult(mockTransactionOut, mockTransactionIn);
 
     final ArgumentCaptor<UpdateTransferCommand> commandCaptor = ArgumentCaptor.forClass(UpdateTransferCommand.class);
-    when(service.updateTransfer(commandCaptor.capture())).thenReturn(mockResult);
+    when(service.updateTransfer(commandCaptor.capture())).thenReturn(transferResult);
 
     // Act
     final MvcTestResult testResult = mvc.patch()
@@ -106,8 +127,7 @@ public class UpdateTransferControllerTest {
     assertThat(capturedCommand.description()).isEqualTo(requestDto.description());
     assertThat(capturedCommand.occurredAt()).isEqualTo(requestDto.occurredAt());
 
-    assertThat(testResult).bodyJson()
-        .extractingPath("$.correlationId").asString().isEqualTo(correlationId.toString());
+    TransferDtoAssertions.assertResponse(testResult, transferResult);
   }
 
   @ParameterizedTest()

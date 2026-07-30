@@ -21,6 +21,7 @@ import me.ferreira.graveto.moneytracker.transactions.service.RecurringTransactio
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.CreateRecurringTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.web.RecurringTransactionController;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.recurringtransaction.CreateRecurringTransactionRequestDto;
+import me.ferreira.graveto.moneytracker.transactions.web.helper.RecurringTransactionDtoAssertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -62,6 +63,9 @@ public class CreateRecurringTransactionControllerTest {
         Arguments.of(new CreateRecurringTransactionRequestDto(
             UUID.randomUUID(), null, "desc", BigDecimal.TEN, TransactionType.EXPENSE,
             Frequency.MONTHLY, 15, null, true, null, null), "categorySid"),
+        Arguments.of(new CreateRecurringTransactionRequestDto(
+            UUID.randomUUID(), UUID.randomUUID(), null, BigDecimal.ONE, TransactionType.EXPENSE,
+            Frequency.MONTHLY, 15, null, true, null, null), "description"),
         Arguments.of(new CreateRecurringTransactionRequestDto(
             UUID.randomUUID(), UUID.randomUUID(), "desc", null, TransactionType.EXPENSE,
             Frequency.MONTHLY, 15, null, true, null, null), "amount"),
@@ -142,7 +146,7 @@ public class CreateRecurringTransactionControllerTest {
     mockRt.setCategory(mockCategory);
     mockRt.setUserSid(userSid);
     mockRt.setDescription("Home Insurance");
-    mockRt.setAmount(new BigDecimal("50.00"));
+    mockRt.setAmount(new BigDecimal("50"));
     mockRt.setCurrency(Currency.EUR);
     mockRt.setType(TransactionType.EXPENSE);
     mockRt.setFrequency(Frequency.MONTHLY);
@@ -171,18 +175,13 @@ public class CreateRecurringTransactionControllerTest {
     assertThat(captured.accountSid()).isEqualTo(accountSid);
     assertThat(captured.categorySid()).isEqualTo(categorySid);
     assertThat(captured.description()).isEqualTo("Home Insurance");
-    assertThat(captured.amount()).isEqualByComparingTo(new BigDecimal("50.00"));
+    assertThat(captured.amount()).isEqualByComparingTo(new BigDecimal("50"));
     assertThat(captured.transactionType()).isEqualTo(TransactionType.EXPENSE);
     assertThat(captured.frequency()).isEqualTo(Frequency.MONTHLY);
     assertThat(captured.dayOfMonth()).isEqualTo(15);
     assertThat(captured.adjustToBusinessDay()).isTrue();
 
-    assertThat(result).bodyJson().extractingPath("$.sid").asString().isEqualTo(rtSid.toString());
-    assertThat(result).bodyJson().extractingPath("$.account.name").asString().isEqualTo("Santander");
-    assertThat(result).bodyJson().extractingPath("$.category.name").asString().isEqualTo("Insurance");
-    assertThat(result).bodyJson().extractingPath("$.frequency").asString().isEqualTo("MONTHLY");
-    assertThat(result).bodyJson().extractingPath("$.status").asString().isEqualTo("ACTIVE");
-    assertThat(result).bodyJson().extractingPath("$.nextExecutionDate").asString().isEqualTo("2026-08-15");
+    RecurringTransactionDtoAssertions.assertSingleResponse(result, mockRt);
   }
 
   @Test

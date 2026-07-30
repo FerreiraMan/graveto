@@ -19,6 +19,7 @@ import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.service.RecurringTransactionService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.CancelRecurringTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.web.RecurringTransactionController;
+import me.ferreira.graveto.moneytracker.transactions.web.helper.RecurringTransactionDtoAssertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +32,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
-import tools.jackson.databind.ObjectMapper;
 
 @WebMvcTest(
     controllers = RecurringTransactionController.class,
@@ -44,8 +44,6 @@ public class CancelRecurringTransactionControllerTest {
 
   @Autowired
   private MockMvcTester mvc;
-  @Autowired
-  private ObjectMapper objectMapper;
   @MockitoBean
   private RecurringTransactionService service;
 
@@ -68,13 +66,22 @@ public class CancelRecurringTransactionControllerTest {
     final UUID userSid = UUID.randomUUID();
     final UUID rtSid = UUID.randomUUID();
 
+    final Account mockAccount = new Account();
+    mockAccount.setSid(UUID.randomUUID());
+    mockAccount.setInstitution("Santander");
+    mockAccount.setBaseCurrency(Currency.EUR);
+
+    final Category mockCategory = new Category();
+    mockCategory.setSid(UUID.randomUUID());
+    mockCategory.setDisplayName("Insurance");
+
     final RecurringTransaction mockRt = new RecurringTransaction();
     mockRt.setSid(rtSid);
-    mockRt.setAccount(new Account());
-    mockRt.setCategory(new Category());
+    mockRt.setAccount(mockAccount);
+    mockRt.setCategory(mockCategory);
     mockRt.setUserSid(userSid);
     mockRt.setDescription("Home Insurance");
-    mockRt.setAmount(new BigDecimal("50.00"));
+    mockRt.setAmount(new BigDecimal("50"));
     mockRt.setCurrency(Currency.EUR);
     mockRt.setType(TransactionType.EXPENSE);
     mockRt.setFrequency(Frequency.MONTHLY);
@@ -100,8 +107,7 @@ public class CancelRecurringTransactionControllerTest {
     assertThat(captured.userSid()).isEqualTo(userSid);
     assertThat(captured.sid()).isEqualTo(rtSid);
 
-    assertThat(result).bodyJson().extractingPath("$.sid").asString().isEqualTo(rtSid.toString());
-    assertThat(result).bodyJson().extractingPath("$.status").asString().isEqualTo("CANCELED");
+    RecurringTransactionDtoAssertions.assertSingleResponse(result, mockRt);
   }
 
 }

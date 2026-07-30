@@ -9,8 +9,10 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import java.util.stream.Stream;
+import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.config.AuthUtils;
 import me.ferreira.graveto.config.TestSecurityConfig;
+import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
@@ -18,6 +20,7 @@ import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.CreateTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.CreateTransactionRequestDto;
+import me.ferreira.graveto.moneytracker.transactions.web.helper.TransactionDtoAssertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -76,31 +79,30 @@ public class CreateTransactionControllerTest {
   @Test
   void shouldCreateNewTransaction() {
     // Arrange
-    final UUID transactionSid = UUID.randomUUID();
     final UUID userSid = UUID.randomUUID();
     final UUID accountSid = UUID.randomUUID();
     final UUID categorySid = UUID.randomUUID();
-    final BigDecimal amount = BigDecimal.TEN;
-    final String description = "Lunch";
     final LocalDateTime occurredAt = LocalDateTime.now();
 
     final CreateTransactionRequestDto request = new CreateTransactionRequestDto(
         accountSid,
         categorySid,
-        amount,
-        description,
+        BigDecimal.TEN,
+        "Lunch",
         TransactionType.EXPENSE,
         occurredAt
     );
 
+    final Account mockAccount = new Account();
+    mockAccount.setSid(UUID.randomUUID());
+    mockAccount.setInstitution("BCP");
+    mockAccount.setBaseCurrency(Currency.EUR);
     final Category mockCategory = new Category();
+    mockCategory.setSid(UUID.randomUUID());
     mockCategory.setDisplayName("Gas");
-
-    final Transaction mockTransaction = new Transaction();
-    mockTransaction.setSid(transactionSid);
-    mockTransaction.setStatus(TransactionStatus.ACTIVE);
-    mockTransaction.setType(TransactionType.EXPENSE);
-    mockTransaction.setCategory(mockCategory);
+    final Transaction mockTransaction =
+        Transaction.create(mockAccount, BigDecimal.ONE, null, mockCategory, TransactionType.EXPENSE,
+            LocalDateTime.of(2020, 2, 3, 2, 10));
 
     final ArgumentCaptor<CreateTransactionCommand> commandCaptor =
         ArgumentCaptor.forClass(CreateTransactionCommand.class);
@@ -116,22 +118,18 @@ public class CreateTransactionControllerTest {
 
     // Assert
     assertThat(testResult).hasStatus(HttpStatus.CREATED);
-    assertThat(testResult).hasHeader("Location", "http://localhost/transactions/" + transactionSid);
+    assertThat(testResult).hasHeader("Location", "http://localhost/transactions/" + mockTransaction.getSid());
 
     final CreateTransactionCommand capturedCommand = commandCaptor.getValue();
     assertThat(capturedCommand.userSid()).isEqualTo(userSid);
     assertThat(capturedCommand.accountSid()).isEqualTo(accountSid);
     assertThat(capturedCommand.categorySid()).isEqualTo(categorySid);
-    assertThat(capturedCommand.amount()).isEqualByComparingTo(amount);
-    assertThat(capturedCommand.description()).isEqualTo(description);
+    assertThat(capturedCommand.amount()).isEqualByComparingTo(BigDecimal.TEN);
+    assertThat(capturedCommand.description()).isEqualTo("Lunch");
     assertThat(capturedCommand.transactionType()).isEqualTo(TransactionType.EXPENSE);
     assertThat(capturedCommand.occurredAt()).isEqualTo(occurredAt);
 
-
-    assertThat(testResult).bodyJson()
-        .extractingPath("$.sid").asString().isEqualTo(transactionSid.toString());
-    assertThat(testResult).bodyJson()
-        .extractingPath("$.status").asString().isEqualTo(TransactionStatus.ACTIVE.name());
+    TransactionDtoAssertions.assertSingleResponse(testResult, mockTransaction);
   }
 
   @Test

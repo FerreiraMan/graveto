@@ -3,6 +3,7 @@ package me.ferreira.graveto.moneytracker.transactions.web.dto.request.recurringt
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
@@ -18,6 +19,7 @@ public record CreateRecurringTransactionRequestDto(
     @NotNull(message = "Category identification is required.")
     UUID categorySid,
 
+    @NotBlank(message = "Description is required.")
     String description,
 
     @NotNull(message = "Amount is required.")

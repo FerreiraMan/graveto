@@ -5,16 +5,20 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 import me.ferreira.graveto.config.AuthUtils;
 import me.ferreira.graveto.config.TestSecurityConfig;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
+import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
-import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.FetchTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.TransferService;
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.payload.TransferResult;
 import me.ferreira.graveto.moneytracker.transactions.web.TransferController;
+import me.ferreira.graveto.moneytracker.transactions.web.helper.TransferDtoAssertions;
+import me.ferreira.graveto.moneytracker.utils.AccountUtils;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,8 +30,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
-import tools.jackson.databind.ObjectMapper;
-
 @WebMvcTest(
     controllers = TransferController.class,
     excludeFilters = @ComponentScan.Filter(
@@ -39,39 +41,43 @@ public class FetchTransferControllerTest {
 
   @Autowired
   private MockMvcTester mvc;
-  @Autowired
-  private ObjectMapper objectMapper;
   @MockitoBean
   private TransferService service;
 
   @Test
   void shouldReturnTransferAndMapToResponseDto() {
     // Arrange
+    final Account sourceAccount = AccountUtils.createAccount(BigDecimal.TEN);
+    final Account destinationAccount = AccountUtils.createAccount(BigDecimal.TEN);
+    final Category mockCategory = new Category();
+    mockCategory.setSid(UUID.randomUUID());
+    mockCategory.setDisplayName("Gas");
+
     final UUID userSid = UUID.randomUUID();
     final UUID correlationId = UUID.randomUUID();
-    final BigDecimal amount = BigDecimal.valueOf(150);
+    final LocalDateTime occurredAt = LocalDateTime.of(2020, 2, 3, 2, 10);
 
-    final UUID sourceAccountSid = UUID.randomUUID();
-    final Account sourceAccount = new Account();
-    sourceAccount.setSid(sourceAccountSid);
+    final Transaction mockTransactionOut = Transaction.createTransferTransaction(
+        sourceAccount,
+        BigDecimal.ONE,
+        "Lunch",
+        correlationId,
+        mockCategory,
+        TransactionType.TRANSFER_OUT,
+        occurredAt
+    );
 
-    final UUID destAccountSid = UUID.randomUUID();
-    final Account destAccount = new Account();
-    destAccount.setSid(destAccountSid);
+    final Transaction mockTransactionIn = Transaction.createTransferTransaction(
+        destinationAccount,
+        BigDecimal.ONE,
+        "Lunch",
+        correlationId,
+        mockCategory,
+        TransactionType.TRANSFER_IN,
+        occurredAt
+    );
 
-    final Transaction mockExpense = new Transaction();
-    mockExpense.setAccount(sourceAccount);
-    mockExpense.setAmount(amount);
-    mockExpense.setCorrelationId(correlationId);
-    mockExpense.setStatus(TransactionStatus.ACTIVE);
-
-    final Transaction mockIncome = new Transaction();
-    mockIncome.setAccount(destAccount);
-    mockIncome.setAmount(amount);
-    mockIncome.setCorrelationId(correlationId);
-    mockIncome.setStatus(TransactionStatus.ACTIVE);
-
-    final TransferResult transferResult = new TransferResult(mockExpense, mockIncome);
+    final TransferResult transferResult = new TransferResult(mockTransactionOut, mockTransactionIn);
 
     final ArgumentCaptor<FetchTransferCommand> commandCaptor = ArgumentCaptor.forClass(FetchTransferCommand.class);
     when(service.fetchTransfer(commandCaptor.capture())).thenReturn(transferResult);
@@ -89,18 +95,7 @@ public class FetchTransferControllerTest {
     assertThat(capturedCommand.userSid()).isEqualTo(userSid);
     assertThat(capturedCommand.correlationId()).isEqualTo(correlationId);
 
-    assertThat(testResult).bodyJson()
-        .extractingPath("$.sourceAccountSid").asString().isEqualTo(sourceAccountSid.toString());
-    assertThat(testResult).bodyJson()
-        .extractingPath("$.destinationAccountSid").asString().isEqualTo(destAccountSid.toString());
-    assertThat(testResult).bodyJson()
-        .extractingPath("$.amount").asNumber().isEqualTo(amount.intValue());
-    assertThat(testResult).bodyJson()
-        .extractingPath("$.correlationId").asString().isEqualTo(correlationId.toString());
-    assertThat(testResult).bodyJson()
-        .extractingPath("$.transferStatus").asString().isEqualTo(TransactionStatus.ACTIVE.name());
-
-    assertThat(testResult).bodyJson().hasNoNullFieldsOrProperties();
+    TransferDtoAssertions.assertResponse(testResult, transferResult);
   }
 
   @Test

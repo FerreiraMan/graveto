@@ -8,14 +8,17 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.stream.Stream;
+import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.config.AuthUtils;
 import me.ferreira.graveto.config.TestSecurityConfig;
+import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.UpdateTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.UpdateTransactionRequestDto;
+import me.ferreira.graveto.moneytracker.transactions.web.helper.TransactionDtoAssertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -49,23 +52,6 @@ public class UpdateTransactionControllerTest {
   @MockitoBean
   private TransactionService service;
 
-  private static Transaction getTransaction(final UUID transactionSid) {
-    final BigDecimal amount = BigDecimal.TEN;
-    final String categoryDisplayName = "Gas";
-    final String description = "Diesel for car 1";
-
-    final Category mockCategory = new Category();
-    mockCategory.setDisplayName(categoryDisplayName);
-
-    final Transaction mockTransaction = new Transaction();
-    mockTransaction.setSid(transactionSid);
-    mockTransaction.setAmount(amount);
-    mockTransaction.setType(TransactionType.EXPENSE);
-    mockTransaction.setDescription(description);
-    mockTransaction.setCategory(mockCategory);
-    return mockTransaction;
-  }
-
   private static Stream<Arguments> invalidPayloadOnUpdateRequest() {
     return Stream.of(
         Arguments.of("invalid_sid", new UpdateTransactionRequestDto(null, null, null, null, null)),
@@ -83,9 +69,17 @@ public class UpdateTransactionControllerTest {
   void shouldReturnUpdatedTransactionAndMapToResponseDto() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
-    final UUID transactionSid = UUID.randomUUID();
     final UUID categorySid = UUID.randomUUID();
-    final Transaction mockTransaction = getTransaction(transactionSid);
+    final Account mockAccount = new Account();
+    mockAccount.setSid(UUID.randomUUID());
+    mockAccount.setInstitution("BCP");
+    mockAccount.setBaseCurrency(Currency.EUR);
+    final Category mockCategory = new Category();
+    mockCategory.setSid(UUID.randomUUID());
+    mockCategory.setDisplayName("Gas");
+    final Transaction mockTransaction =
+        Transaction.create(mockAccount, BigDecimal.TEN, "Diesel for car 1", mockCategory, TransactionType.EXPENSE,
+            LocalDateTime.of(2020, 2, 3, 2, 10));
     final LocalDateTime newOccurredAt = LocalDateTime.now();
 
     final UpdateTransactionRequestDto requestDto = new UpdateTransactionRequestDto(
@@ -102,7 +96,7 @@ public class UpdateTransactionControllerTest {
 
     // Act
     final MvcTestResult testResult = mvc.patch()
-        .uri("/transactions/{sid}", transactionSid)
+        .uri("/transactions/{sid}", mockTransaction.getSid())
         .with(authentication(AuthUtils.mockAuth(userSid)))
         .content(objectMapper.writeValueAsString(requestDto))
         .contentType(MediaType.APPLICATION_JSON)
@@ -113,26 +107,14 @@ public class UpdateTransactionControllerTest {
 
     final UpdateTransactionCommand capturedCommand = commandCaptor.getValue();
     assertThat(capturedCommand.userSid()).isEqualTo(userSid);
-    assertThat(capturedCommand.transactionSid()).isEqualTo(transactionSid);
+    assertThat(capturedCommand.transactionSid()).isEqualTo(mockTransaction.getSid());
     assertThat(capturedCommand.transactionType()).isEqualTo(requestDto.transactionType());
     assertThat(capturedCommand.categorySid()).isEqualTo(requestDto.categorySid());
     assertThat(capturedCommand.amount()).isEqualByComparingTo(requestDto.amount());
     assertThat(capturedCommand.description()).isEqualTo(requestDto.description());
     assertThat(capturedCommand.occurredAt()).isEqualTo(requestDto.occurredAt());
 
-    assertThat(testResult).bodyJson()
-        .extractingPath("$.sid").asString().isEqualTo(mockTransaction.getSid().toString());
-    assertThat(testResult).bodyJson()
-        .extractingPath("$.amount").asNumber().isEqualTo(mockTransaction.getAmount().intValue());
-    assertThat(testResult).bodyJson()
-        .extractingPath("$.categoryName").isEqualTo(mockTransaction.getCategory().getDisplayName());
-    assertThat(testResult).bodyJson()
-        .extractingPath("$.description").isEqualTo(mockTransaction.getDescription());
-    assertThat(testResult).bodyJson()
-        .extractingPath("$.type").asString().isEqualTo(mockTransaction.getType().name());
-
-    assertThat(testResult).bodyJson().hasNoNullFieldsOrProperties();
-    assertThat(testResult).bodyJson().doesNotHavePath("$.status");
+    TransactionDtoAssertions.assertSingleResponse(testResult, mockTransaction);
   }
 
   @ParameterizedTest()
