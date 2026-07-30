@@ -141,7 +141,7 @@ public class FindAllTransactionsIT extends MoneyTrackerBaseIntegrationTest {
         .body("totalElements", is((int) expectedCount))
         .body("content.sid", hasItem(guaranteedMatch.getSid().toString()))
         .body("content.every { it.type == '" + targetType.name() + "' }", is(true))
-        .body("content.every { it.categoryName == '" + firstCategory.getDisplayName() + "' }", is(true))
+        .body("content.every { it.category.name == '" + firstCategory.getDisplayName() + "' }", is(true))
         .body("content.every { it.status == 'ACTIVE' }", is(true));
   }
 

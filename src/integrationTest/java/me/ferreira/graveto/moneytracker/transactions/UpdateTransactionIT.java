@@ -76,7 +76,7 @@ public class UpdateTransactionIT extends MoneyTrackerBaseIntegrationTest {
         .statusCode(200)
         .body("sid", is(transaction.getSid().toString()))
         .body("amount", is(20))
-        .body("categoryName", is(newCategory.getDisplayName()))
+        .body("category.name", is(newCategory.getDisplayName()))
         .body("description", is("New description"))
         .body("type", is(TransactionType.EXPENSE.name()));
 

@@ -9,11 +9,19 @@ import java.util.UUID;
 public record TransactionResponseDto(
     UUID sid,
     BigDecimal amount,
-    String categoryName,
+    String currency,
     String description,
     String type,
-    String status,
     UUID correlationId,
+    EnhancedInfoObject account,
+    EnhancedInfoObject category,
+    String status,
+    LocalDateTime deletedAt,
     LocalDateTime occurredAt
 ) {
+  public record EnhancedInfoObject(
+      UUID sid,
+      String name
+  ) {
+  }
 }

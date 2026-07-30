@@ -68,9 +68,9 @@ public class CreateTransferIT extends MoneyTrackerBaseIntegrationTest {
     response.then()
         .log().ifValidationFails()
         .statusCode(201)
-        .body("sourceAccountSid", is(sourceAccount.getSid().toString()))
-        .body("destinationAccountSid", is(destinationAccount.getSid().toString()))
-        .body("amount", is(transferAmount.intValue()));
+        .body("sourceTransaction.account.sid", is(sourceAccount.getSid().toString()))
+        .body("destinationTransaction.account.sid", is(destinationAccount.getSid().toString()))
+        .body("sourceTransaction.amount", is(transferAmount.intValue()));
 
     // Assert
     final String correlationId = response.path("correlationId");

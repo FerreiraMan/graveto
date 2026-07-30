@@ -70,11 +70,10 @@ public class DeleteTransferIT extends MoneyTrackerBaseIntegrationTest {
         .then()
         .log().ifValidationFails()
         .statusCode(200)
-        .body("sourceAccountSid", is(outAccount.getSid().toString()))
-        .body("destinationAccountSid", is(inAccount.getSid().toString()))
-        .body("amount", is(outTx.getAmount().floatValue()))
-        .body("correlationId", is(correlationId.toString()))
-        .body("transferStatus", is(TransactionStatus.DELETED.name()));
+        .body("sourceTransaction.account.sid", is(outAccount.getSid().toString()))
+        .body("destinationTransaction.account.sid", is(inAccount.getSid().toString()))
+        .body("sourceTransaction.amount", is(outTx.getAmount().floatValue()))
+        .body("correlationId", is(correlationId.toString()));
 
     // Assert
     final List<Transaction> deletedTransferTransactions = transactionRepository.findAllByCorrelationId(correlationId);

@@ -12,12 +12,15 @@ import java.util.stream.Stream;
 import me.ferreira.graveto.config.AuthUtils;
 import me.ferreira.graveto.config.TestSecurityConfig;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
+import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.CreateTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.TransferService;
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.payload.TransferResult;
 import me.ferreira.graveto.moneytracker.transactions.web.TransferController;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.transfer.CreateTransferRequestDto;
+import me.ferreira.graveto.moneytracker.transactions.web.helper.TransferDtoAssertions;
 import me.ferreira.graveto.moneytracker.utils.AccountUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -74,35 +77,42 @@ public class CreateTransferControllerTest {
     // Arrange
     final Account sourceAccount = AccountUtils.createAccount(BigDecimal.TEN);
     final Account destinationAccount = AccountUtils.createAccount(BigDecimal.TEN);
-    final UUID sourceAccountSid = sourceAccount.getSid();
-    final UUID destinationAccountSid = destinationAccount.getSid();
+    final Category mockCategory = new Category();
+    mockCategory.setSid(UUID.randomUUID());
+    mockCategory.setDisplayName("Gas");
 
-    final UUID transactionOutSid = UUID.randomUUID();
-    final UUID transactionInSid = UUID.randomUUID();
-    final UUID correlationId = UUID.randomUUID();
     final UUID userSid = UUID.randomUUID();
-    final BigDecimal amount = BigDecimal.TEN;
-    final String description = "Lunch";
-    final LocalDateTime occurredAt = LocalDateTime.now();
+    final UUID correlationId = UUID.randomUUID();
+    final LocalDateTime occurredAt = LocalDateTime.of(2020, 2, 3, 2, 10);
 
     final CreateTransferRequestDto request = new CreateTransferRequestDto(
-        sourceAccountSid,
-        destinationAccountSid,
-        amount,
-        description,
+        sourceAccount.getSid(),
+        destinationAccount.getSid(),
+        BigDecimal.TEN,
+        "Lunch",
         occurredAt
     );
 
-    final Transaction mockTransactionOut = new Transaction();
-    final Transaction mockTransactionIn = new Transaction();
-    mockTransactionOut.setSid(transactionOutSid);
-    mockTransactionOut.setCorrelationId(correlationId);
-    mockTransactionOut.setAmount(amount);
-    mockTransactionOut.setAccount(sourceAccount);
-    mockTransactionIn.setSid(transactionInSid);
-    mockTransactionIn.setCorrelationId(correlationId);
-    mockTransactionIn.setAmount(amount);
-    mockTransactionIn.setAccount(destinationAccount);
+    final Transaction mockTransactionOut = Transaction.createTransferTransaction(
+        sourceAccount,
+        BigDecimal.ONE,
+        "Lunch",
+        correlationId,
+        mockCategory,
+        TransactionType.TRANSFER_OUT,
+        occurredAt
+    );
+
+    final Transaction mockTransactionIn = Transaction.createTransferTransaction(
+        destinationAccount,
+        BigDecimal.ONE,
+        "Lunch",
+        correlationId,
+        mockCategory,
+        TransactionType.TRANSFER_IN,
+        occurredAt
+    );
+
     final TransferResult transferResult = new TransferResult(mockTransactionOut, mockTransactionIn);
 
     final ArgumentCaptor<CreateTransferCommand> commandCaptor = ArgumentCaptor.forClass(CreateTransferCommand.class);
@@ -122,20 +132,13 @@ public class CreateTransferControllerTest {
 
     final CreateTransferCommand capturedCommand = commandCaptor.getValue();
     assertThat(capturedCommand.userSid()).isEqualTo(userSid);
-    assertThat(capturedCommand.sourceAccountSid()).isEqualTo(sourceAccountSid);
-    assertThat(capturedCommand.destinationAccountSid()).isEqualTo(destinationAccountSid);
-    assertThat(capturedCommand.amount()).isEqualByComparingTo(amount);
-    assertThat(capturedCommand.description()).isEqualTo(description);
+    assertThat(capturedCommand.sourceAccountSid()).isEqualTo(sourceAccount.getSid());
+    assertThat(capturedCommand.destinationAccountSid()).isEqualTo(destinationAccount.getSid());
+    assertThat(capturedCommand.amount()).isEqualByComparingTo(BigDecimal.TEN);
+    assertThat(capturedCommand.description()).isEqualTo("Lunch");
     assertThat(capturedCommand.occurredAt()).isEqualTo(occurredAt);
 
-    assertThat(testResult).bodyJson()
-        .extractingPath("$.sourceAccountSid").asString().isEqualTo(sourceAccountSid.toString());
-    assertThat(testResult).bodyJson()
-        .extractingPath("$.destinationAccountSid").asString().isEqualTo(destinationAccountSid.toString());
-    assertThat(testResult).bodyJson()
-        .extractingPath("$.amount").asNumber().isEqualTo(amount.intValue());
-    assertThat(testResult).bodyJson()
-        .extractingPath("$.correlationId").asString().isEqualTo(correlationId.toString());
+    TransferDtoAssertions.assertResponse(testResult, transferResult);
   }
 
   @Test

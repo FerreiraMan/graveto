@@ -4,13 +4,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
+import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.config.AuthUtils;
 import me.ferreira.graveto.config.TestSecurityConfig;
+import me.ferreira.graveto.moneytracker.accounts.domain.Account;
+import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
-import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.DeleteTransactionCommand;
+import me.ferreira.graveto.moneytracker.transactions.web.helper.TransactionDtoAssertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +28,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
-import tools.jackson.databind.ObjectMapper;
 
 @WebMvcTest(
     controllers = TransactionController.class,
@@ -35,8 +40,6 @@ public class DeleteTransactionControllerTest {
 
   @Autowired
   private MockMvcTester mvc;
-  @Autowired
-  private ObjectMapper objectMapper;
   @MockitoBean
   private TransactionService service;
 
@@ -44,11 +47,17 @@ public class DeleteTransactionControllerTest {
   void shouldReturnDeletedTransactionAndMapToResponseDto() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
-    final UUID transactionSid = UUID.randomUUID();
 
-    final Transaction mockTransaction = new Transaction();
-    mockTransaction.setSid(transactionSid);
-    mockTransaction.setStatus(TransactionStatus.ACTIVE);
+    final Account mockAccount = new Account();
+    mockAccount.setSid(UUID.randomUUID());
+    mockAccount.setInstitution("BCP");
+    mockAccount.setBaseCurrency(Currency.EUR);
+    final Category mockCategory = new Category();
+    mockCategory.setSid(UUID.randomUUID());
+    mockCategory.setDisplayName("Groceries");
+    final Transaction mockTransaction =
+        Transaction.create(mockAccount, BigDecimal.ONE, null, mockCategory, TransactionType.EXPENSE,
+            LocalDateTime.of(2020, 2, 3, 2, 10));
 
     final ArgumentCaptor<DeleteTransactionCommand> commandCaptor =
         ArgumentCaptor.forClass(DeleteTransactionCommand.class);
@@ -56,7 +65,7 @@ public class DeleteTransactionControllerTest {
 
     // Act
     final MvcTestResult testResult = mvc.delete()
-        .uri("/transactions/{sid}", transactionSid)
+        .uri("/transactions/{sid}", mockTransaction.getSid())
         .with(authentication(AuthUtils.mockAuth(userSid)))
         .exchange();
 
@@ -65,19 +74,9 @@ public class DeleteTransactionControllerTest {
 
     final DeleteTransactionCommand capturedCommand = commandCaptor.getValue();
     assertThat(capturedCommand.userSid()).isEqualTo(userSid);
-    assertThat(capturedCommand.transactionSid()).isEqualTo(transactionSid);
+    assertThat(capturedCommand.transactionSid()).isEqualTo(mockTransaction.getSid());
 
-    assertThat(testResult).bodyJson()
-        .extractingPath("$.sid").asString().isEqualTo(transactionSid.toString());
-    assertThat(testResult).bodyJson()
-        .extractingPath("$.status").asString().isEqualTo(TransactionStatus.ACTIVE.name());
-
-    assertThat(testResult).bodyJson().hasNoNullFieldsOrProperties();
-    assertThat(testResult).bodyJson().doesNotHavePath("$.amount");
-    assertThat(testResult).bodyJson().doesNotHavePath("$.categoryName");
-    assertThat(testResult).bodyJson().doesNotHavePath("$.description");
-    assertThat(testResult).bodyJson().doesNotHavePath("$.type");
-    assertThat(testResult).bodyJson().doesNotHavePath("$.occurredAt");
+    TransactionDtoAssertions.assertSingleResponse(testResult, mockTransaction);
   }
 
   @Test

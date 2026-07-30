@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
+import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.CreateTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.DeleteTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.FetchTransferCommand;
@@ -15,6 +15,7 @@ import me.ferreira.graveto.moneytracker.transactions.service.transfer.TransferSe
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.payload.TransferResult;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.transfer.CreateTransferRequestDto;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.transfer.UpdateTransferRequestDto;
+import me.ferreira.graveto.moneytracker.transactions.web.dto.response.TransactionResponseDto;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.response.transfer.TransferResponseDto;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
@@ -50,15 +51,7 @@ public class TransferController {
 
     final TransferResult transfer = transferService.fetchTransfer(command);
 
-    final TransferResponseDto response = new TransferResponseDto(
-        transfer.expense().getAccount().getSid(),
-        transfer.income().getAccount().getSid(),
-        transfer.expense().getAmount(),
-        transfer.expense().getCorrelationId(),
-        transfer.expense().getStatus()
-    );
-
-    return ResponseEntity.ok().body(response);
+    return ResponseEntity.ok().body(buildResponse(transfer));
   }
 
   @PostMapping(produces = "application/json")
@@ -77,21 +70,13 @@ public class TransferController {
 
     final TransferResult createdTransfer = transferService.createTransfer(command);
 
-    final TransferResponseDto response = new TransferResponseDto(
-        createdTransfer.expense().getAccount().getSid(),
-        createdTransfer.income().getAccount().getSid(),
-        createdTransfer.expense().getAmount(),
-        createdTransfer.expense().getCorrelationId(),
-        null
-    );
-
     final URI location = ServletUriComponentsBuilder
         .fromCurrentRequest()
         .path(TRANSFER_SID_PATH)
         .buildAndExpand(createdTransfer.expense().getCorrelationId())
         .toUri();
 
-    return ResponseEntity.created(location).body(response);
+    return ResponseEntity.created(location).body(buildResponse(createdTransfer));
   }
 
   @DeleteMapping(path = TRANSFER_SID_PATH, produces = "application/json")
@@ -103,15 +88,7 @@ public class TransferController {
 
     final TransferResult deletedTransfer = transferService.deleteTransfer(command);
 
-    final TransferResponseDto responseDto = new TransferResponseDto(
-        deletedTransfer.expense().getAccount().getSid(),
-        deletedTransfer.income().getAccount().getSid(),
-        deletedTransfer.expense().getAmount(),
-        deletedTransfer.expense().getCorrelationId(),
-        TransactionStatus.DELETED
-    );
-
-    return ResponseEntity.ok().body(responseDto);
+    return ResponseEntity.ok().body(buildResponse(deletedTransfer));
   }
 
   @PatchMapping(path = TRANSFER_SID_PATH, produces = "application/json")
@@ -130,15 +107,35 @@ public class TransferController {
 
     final TransferResult updatedTransfer = transferService.updateTransfer(command);
 
-    final TransferResponseDto responseDto = new TransferResponseDto(
-        updatedTransfer.expense().getAccount().getSid(),
-        updatedTransfer.income().getAccount().getSid(),
-        updatedTransfer.expense().getAmount(),
-        updatedTransfer.expense().getCorrelationId(),
-        null
-    );
+    return ResponseEntity.ok().body(buildResponse(updatedTransfer));
+  }
 
-    return ResponseEntity.ok().body(responseDto);
+  private TransferResponseDto buildResponse(final TransferResult transferResult) {
+
+    return new TransferResponseDto(
+        transferResult.expense().getCorrelationId(),
+        buildTransactionResponse(transferResult.expense()),
+        buildTransactionResponse(transferResult.income())
+    );
+  }
+
+  private TransactionResponseDto buildTransactionResponse(final Transaction transaction) {
+
+    return new TransactionResponseDto(
+        transaction.getSid(),
+        transaction.getAmount(),
+        transaction.getCurrency().name(),
+        transaction.getDescription() != null ? transaction.getDescription() : null,
+        transaction.getType().name(),
+        transaction.getCorrelationId() != null ? transaction.getCorrelationId() : null,
+        new TransactionResponseDto.EnhancedInfoObject(transaction.getAccount().getSid(),
+            transaction.getAccount().getInstitution()),
+        new TransactionResponseDto.EnhancedInfoObject(transaction.getCategory().getSid(),
+            transaction.getCategory().getDisplayName()),
+        transaction.getStatus().name(),
+        transaction.getDeletedAt() != null ? transaction.getDeletedAt() : null,
+        transaction.getOccurredAt()
+    );
   }
 
 }

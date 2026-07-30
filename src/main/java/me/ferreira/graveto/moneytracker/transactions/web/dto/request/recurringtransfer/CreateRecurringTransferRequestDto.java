@@ -3,6 +3,7 @@ package me.ferreira.graveto.moneytracker.transactions.web.dto.request.recurringt
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
@@ -17,6 +18,7 @@ public record CreateRecurringTransferRequestDto(
     @NotNull(message = "Destination account identification is required.")
     UUID destinationAccountSid,
 
+    @NotBlank(message = "Description is required.")
     String description,
 
     @NotNull(message = "Amount is required.")

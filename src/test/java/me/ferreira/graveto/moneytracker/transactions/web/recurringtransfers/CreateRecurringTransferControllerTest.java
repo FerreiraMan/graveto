@@ -19,6 +19,7 @@ import me.ferreira.graveto.moneytracker.transactions.service.RecurringTransferSe
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransfer.CreateRecurringTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.web.RecurringTransferController;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.recurringtransfer.CreateRecurringTransferRequestDto;
+import me.ferreira.graveto.moneytracker.transactions.web.helper.RecurringTransferDtoAssertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -60,6 +61,9 @@ public class CreateRecurringTransferControllerTest {
         Arguments.of(new CreateRecurringTransferRequestDto(
             UUID.randomUUID(), null, "desc", BigDecimal.TEN,
             Frequency.MONTHLY, 15, null, true, null, null), "destinationAccountSid"),
+        Arguments.of(new CreateRecurringTransferRequestDto(
+            UUID.randomUUID(), UUID.randomUUID(), null, BigDecimal.TEN,
+            Frequency.MONTHLY, 15, null, true, null, null), "description"),
         Arguments.of(new CreateRecurringTransferRequestDto(
             UUID.randomUUID(), UUID.randomUUID(), "desc", null,
             Frequency.MONTHLY, 15, null, true, null, null), "amount"),
@@ -119,7 +123,7 @@ public class CreateRecurringTransferControllerTest {
     final LocalDate nextExecution = LocalDate.of(2026, 8, 15);
 
     final CreateRecurringTransferCommand request = new CreateRecurringTransferCommand(userSid,
-        sourceAccountSid, destinationAccountSid, "Home Insurance", new BigDecimal("50.00"),
+        sourceAccountSid, destinationAccountSid, "Home Insurance", new BigDecimal("50"),
         Frequency.MONTHLY, 15, null, true, null, null);
 
     final Account mockSourceAccount = new Account();
@@ -138,7 +142,7 @@ public class CreateRecurringTransferControllerTest {
     mockRt.setDestinationAccount(mockDestinationAccount);
     mockRt.setUserSid(userSid);
     mockRt.setDescription("Home Insurance");
-    mockRt.setAmount(new BigDecimal("50.00"));
+    mockRt.setAmount(new BigDecimal("50"));
     mockRt.setCurrency(Currency.EUR);
     mockRt.setFrequency(Frequency.MONTHLY);
     mockRt.setNextExecutionDate(nextExecution);
@@ -171,12 +175,7 @@ public class CreateRecurringTransferControllerTest {
     assertThat(captured.dayOfMonth()).isEqualTo(15);
     assertThat(captured.adjustToBusinessDay()).isTrue();
 
-    assertThat(result).bodyJson().extractingPath("$.sid").asString().isEqualTo(rtSid.toString());
-    assertThat(result).bodyJson().extractingPath("$.sourceAccount.name").asString().isEqualTo("Santander");
-    assertThat(result).bodyJson().extractingPath("$.destinationAccount.name").asString().isEqualTo("BCP");
-    assertThat(result).bodyJson().extractingPath("$.frequency").asString().isEqualTo("MONTHLY");
-    assertThat(result).bodyJson().extractingPath("$.status").asString().isEqualTo("ACTIVE");
-    assertThat(result).bodyJson().extractingPath("$.nextExecutionDate").asString().isEqualTo("2026-08-15");
+    RecurringTransferDtoAssertions.assertSingleResponse(result, mockRt);
   }
 
   @Test

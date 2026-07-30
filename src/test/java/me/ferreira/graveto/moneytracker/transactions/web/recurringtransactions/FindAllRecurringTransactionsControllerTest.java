@@ -20,6 +20,7 @@ import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.service.RecurringTransactionService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.FindAllRecurringTransactionsCommand;
 import me.ferreira.graveto.moneytracker.transactions.web.RecurringTransactionController;
+import me.ferreira.graveto.moneytracker.transactions.web.helper.RecurringTransactionDtoAssertions;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -71,10 +72,7 @@ public class FindAllRecurringTransactionsControllerTest {
     assertThat(captured.status()).isNull();
     assertThat(captured.accountSid()).isNull();
 
-    assertThat(result).bodyJson().extractingPath("$[0].sid").asString().isEqualTo(rt.getSid().toString());
-    assertThat(result).bodyJson().extractingPath("$[0].frequency").asString().isEqualTo("MONTHLY");
-    assertThat(result).bodyJson().extractingPath("$[0].status").asString().isEqualTo("ACTIVE");
-    assertThat(result).bodyJson().extractingPath("$[0].account.name").asString().isEqualTo("Santander");
+    RecurringTransactionDtoAssertions.assertListResponse(result, rt, 0);
   }
 
   @Test
@@ -153,7 +151,7 @@ public class FindAllRecurringTransactionsControllerTest {
     rt.setCategory(category);
     rt.setUserSid(UUID.randomUUID());
     rt.setDescription("Home Insurance");
-    rt.setAmount(new BigDecimal("50.00"));
+    rt.setAmount(new BigDecimal("50"));
     rt.setCurrency(Currency.EUR);
     rt.setType(TransactionType.EXPENSE);
     rt.setFrequency(Frequency.MONTHLY);

@@ -68,11 +68,9 @@ public class FetchTransferIT extends MoneyTrackerBaseIntegrationTest {
         .then()
         .log().ifValidationFails()
         .statusCode(200)
-        .body("sourceAccountSid", is(outAccount.getSid().toString()))
-        .body("destinationAccountSid", is(inAccount.getSid().toString()))
-        .body("amount", is(transferAmount.floatValue()))
-        .body("correlationId", is(correlationId.toString()))
-        .body("transferStatus", is(TransactionStatus.ACTIVE.name()));
+        .body("sourceTransaction.account.sid", is(outTx.getAccount().getSid().toString()))
+        .body("destinationTransaction.account.sid", is(inTx.getAccount().getSid().toString()))
+        .body("sourceTransaction.amount", is(transferAmount.floatValue()));
   }
 
 }

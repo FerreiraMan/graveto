@@ -62,24 +62,13 @@ public class TransactionController {
 
     final Transaction createdTransaction = transactionService.createTransaction(command);
 
-    final TransactionResponseDto response = new TransactionResponseDto(
-        createdTransaction.getSid(),
-        createdTransaction.getAmount(),
-        createdTransaction.getCategory().getDisplayName(),
-        createdTransaction.getDescription(),
-        createdTransaction.getType().name(),
-        createdTransaction.getStatus().name(),
-        createdTransaction.getCorrelationId(),
-        createdTransaction.getOccurredAt()
-    );
-
     final URI location = ServletUriComponentsBuilder
         .fromCurrentRequest()
         .path(TRANSACTION_SID_PATH)
         .buildAndExpand(createdTransaction.getSid())
         .toUri();
 
-    return ResponseEntity.created(location).body(response);
+    return ResponseEntity.created(location).body(buildResponse(createdTransaction));
   }
 
   @GetMapping(produces = "application/json")
@@ -102,19 +91,7 @@ public class TransactionController {
 
     final Page<Transaction> transactions = transactionService.findAll(command);
 
-    final Page<TransactionResponseDto> responseDto = transactions.map(
-        t -> new TransactionResponseDto(
-            t.getSid(),
-            t.getAmount(),
-            t.getCategory().getDisplayName(),
-            t.getDescription(),
-            t.getType().name(),
-            t.getStatus().name(),
-            t.getCorrelationId(),
-            t.getOccurredAt()
-        ));
-
-    return ResponseEntity.ok().body(responseDto);
+    return ResponseEntity.ok().body(transactions.map(this::buildResponse));
   }
 
   @DeleteMapping(path = TRANSACTION_SID_PATH, produces = "application/json")
@@ -124,20 +101,9 @@ public class TransactionController {
 
     final DeleteTransactionCommand command = new DeleteTransactionCommand(userSid, sid);
 
-    final Transaction transaction = transactionService.deleteTransaction(command);
+    final Transaction deletedTransaction = transactionService.deleteTransaction(command);
 
-    final TransactionResponseDto responseDto = new TransactionResponseDto(
-        transaction.getSid(),
-        null,
-        null,
-        null,
-        null,
-        transaction.getStatus().name(),
-        transaction.getCorrelationId(),
-        null
-    );
-
-    return ResponseEntity.ok().body(responseDto);
+    return ResponseEntity.ok().body(buildResponse(deletedTransaction));
   }
 
   @PatchMapping(path = TRANSACTION_SID_PATH, produces = "application/json")
@@ -156,20 +122,28 @@ public class TransactionController {
         requestDto.occurredAt()
     );
 
-    final Transaction transaction = transactionService.updateTransaction(command);
+    final Transaction updatedTransaction = transactionService.updateTransaction(command);
 
-    final TransactionResponseDto responseDto = new TransactionResponseDto(
+    return ResponseEntity.ok().body(buildResponse(updatedTransaction));
+  }
+
+  private TransactionResponseDto buildResponse(final Transaction transaction) {
+
+    return new TransactionResponseDto(
         transaction.getSid(),
         transaction.getAmount(),
-        transaction.getCategory().getDisplayName(),
-        transaction.getDescription(),
+        transaction.getCurrency().name(),
+        transaction.getDescription() != null ? transaction.getDescription() : null,
         transaction.getType().name(),
-        null,
-        transaction.getCorrelationId(),
+        transaction.getCorrelationId() != null ? transaction.getCorrelationId() : null,
+        new TransactionResponseDto.EnhancedInfoObject(transaction.getAccount().getSid(),
+            transaction.getAccount().getInstitution()),
+        new TransactionResponseDto.EnhancedInfoObject(transaction.getCategory().getSid(),
+            transaction.getCategory().getDisplayName()),
+        transaction.getStatus().name(),
+        transaction.getDeletedAt() != null ? transaction.getDeletedAt() : null,
         transaction.getOccurredAt()
     );
-
-    return ResponseEntity.ok().body(responseDto);
   }
 
 }

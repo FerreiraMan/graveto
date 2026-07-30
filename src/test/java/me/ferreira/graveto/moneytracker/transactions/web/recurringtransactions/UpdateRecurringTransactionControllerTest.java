@@ -21,6 +21,7 @@ import me.ferreira.graveto.moneytracker.transactions.service.RecurringTransactio
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.UpdateRecurringTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.web.RecurringTransactionController;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.recurringtransaction.UpdateRecurringTransactionRequestDto;
+import me.ferreira.graveto.moneytracker.transactions.web.helper.RecurringTransactionDtoAssertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -103,13 +104,24 @@ public class UpdateRecurringTransactionControllerTest {
     final UUID rtSid = UUID.randomUUID();
     final UUID accountSid = UUID.randomUUID();
 
+    final Account mockAccount = new Account();
+    mockAccount.setSid(accountSid);
+    mockAccount.setInstitution("Santander");
+    mockAccount.setBaseCurrency(Currency.EUR);
+
+    final Category mockCategory = new Category();
+    mockCategory.setSid(UUID.randomUUID());
+    mockCategory.setDisplayName("Insurance");
+
     final UpdateRecurringTransactionRequestDto request = new UpdateRecurringTransactionRequestDto(
-        "Updated Insurance", new BigDecimal("75.00"), Frequency.WEEKLY, null, 3, false,
+        "Updated Insurance", new BigDecimal("75"), Frequency.WEEKLY, null, 3, false,
         RecurringOperationStatus.ACTIVE, LocalDate.of(2026, 9, 1), LocalDate.of(2027, 9, 1));
 
     final RecurringTransaction mockRt = buildMockRecurringTransaction(rtSid, accountSid, userSid);
     mockRt.setDescription("Updated Insurance");
-    mockRt.setAmount(new BigDecimal("75.00"));
+    mockRt.setAccount(mockAccount);
+    mockRt.setCategory(mockCategory);
+    mockRt.setAmount(new BigDecimal("75"));
     mockRt.setFrequency(Frequency.WEEKLY);
     mockRt.setDayOfTheWeek(3);
     mockRt.setAdjustToBusinessDay(false);
@@ -134,7 +146,7 @@ public class UpdateRecurringTransactionControllerTest {
     assertThat(captured.userSid()).isEqualTo(userSid);
     assertThat(captured.sid()).isEqualTo(rtSid);
     assertThat(captured.description()).isEqualTo("Updated Insurance");
-    assertThat(captured.amount()).isEqualByComparingTo(new BigDecimal("75.00"));
+    assertThat(captured.amount()).isEqualByComparingTo(new BigDecimal("75"));
     assertThat(captured.frequency()).isEqualTo(Frequency.WEEKLY);
     assertThat(captured.dayOfWeek()).isEqualTo(3);
     assertThat(captured.adjustToBusinessDay()).isFalse();
@@ -142,9 +154,7 @@ public class UpdateRecurringTransactionControllerTest {
     assertThat(captured.nextExecutionDate()).isEqualTo(LocalDate.of(2026, 9, 1));
     assertThat(captured.endDate()).isEqualTo(LocalDate.of(2027, 9, 1));
 
-    assertThat(result).bodyJson().extractingPath("$.sid").asString().isEqualTo(rtSid.toString());
-    assertThat(result).bodyJson().extractingPath("$.frequency").asString().isEqualTo("WEEKLY");
-    assertThat(result).bodyJson().extractingPath("$.status").asString().isEqualTo("ACTIVE");
+    RecurringTransactionDtoAssertions.assertSingleResponse(result, mockRt);
   }
 
   @Test
