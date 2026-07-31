@@ -21,6 +21,7 @@ import me.ferreira.graveto.moneytracker.accounts.service.command.CreateAccountCo
 import me.ferreira.graveto.moneytracker.accounts.service.command.FetchAccountCommand;
 import me.ferreira.graveto.moneytracker.accounts.service.payload.AccountDetails;
 import me.ferreira.graveto.moneytracker.accounts.web.dto.request.CreateAccountRequestDto;
+import me.ferreira.graveto.moneytracker.utils.AccountUtils;
 import me.ferreira.graveto.moneytracker.utils.common.ControllerUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -65,7 +66,6 @@ public class AccountControllerTest {
   void shouldCreateAccountSuccessfully() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
-    final UUID accountSid = UUID.randomUUID();
     final BigDecimal initialBalance = BigDecimal.TEN;
 
     final CreateAccountRequestDto request = new CreateAccountRequestDto(
@@ -74,9 +74,8 @@ public class AccountControllerTest {
         "Santander"
     );
 
-    final Account mockAccount = new Account();
-    mockAccount.setSid(accountSid);
-    mockAccount.setStatus(AccountStatus.ACTIVE);
+    final Account mockAccount =
+        AccountUtils.createAccount(UUID.randomUUID(), userSid, BigDecimal.TEN, MembershipRole.OWNER);
 
     final ArgumentCaptor<CreateAccountCommand> commandCaptor = ArgumentCaptor.forClass(CreateAccountCommand.class);
     when(service.createAccount(commandCaptor.capture())).thenReturn(mockAccount);
@@ -91,7 +90,7 @@ public class AccountControllerTest {
 
     // Assert
     assertThat(testResult).hasStatus(HttpStatus.CREATED);
-    assertThat(testResult).hasHeader("Location", "http://localhost/accounts/" + accountSid);
+    assertThat(testResult).hasHeader("Location", "http://localhost/accounts/" + mockAccount.getSid());
 
     final CreateAccountCommand capturedCommand = commandCaptor.getValue();
     assertThat(capturedCommand.userSid()).isEqualTo(userSid);
@@ -99,9 +98,19 @@ public class AccountControllerTest {
     assertThat(capturedCommand.initialBalance()).isEqualByComparingTo(initialBalance);
 
     assertThat(testResult).bodyJson()
-        .extractingPath("$.sid").asString().isEqualTo(accountSid.toString());
+        .extractingPath("$.sid").asString().isEqualTo(mockAccount.getSid().toString());
     assertThat(testResult).bodyJson()
-        .extractingPath("$.status").asString().isEqualTo(AccountStatus.ACTIVE.name());
+        .extractingPath("$.balance").asNumber().isEqualTo(mockAccount.getBalance().intValue());
+    assertThat(testResult).bodyJson()
+        .extractingPath("$.baseCurrency").isEqualTo(mockAccount.getBaseCurrency().name());
+    assertThat(testResult).bodyJson()
+        .extractingPath("$.status").isEqualTo(AccountStatus.ACTIVE.name());
+    assertThat(testResult).bodyJson()
+        .extractingPath("$.institution").isEqualTo(mockAccount.getInstitution());
+    assertThat(testResult).bodyJson()
+        .extractingPath("$.users[0].sid").isEqualTo(mockAccount.getMemberships().get(0).getUserSid().toString());
+    assertThat(testResult).bodyJson()
+        .extractingPath("$.users[0].role").asString().isEqualTo(mockAccount.getMemberships().get(0).getRole().name());
   }
 
   @ParameterizedTest

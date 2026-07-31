@@ -68,7 +68,7 @@ public class TransactionController {
         .buildAndExpand(createdTransaction.getSid())
         .toUri();
 
-    return ResponseEntity.created(location).body(buildResponse(createdTransaction));
+    return ResponseEntity.created(location).body(TransactionResponseDto.from(createdTransaction));
   }
 
   @GetMapping(produces = "application/json")
@@ -91,7 +91,7 @@ public class TransactionController {
 
     final Page<Transaction> transactions = transactionService.findAll(command);
 
-    return ResponseEntity.ok().body(transactions.map(this::buildResponse));
+    return ResponseEntity.ok().body(transactions.map(TransactionResponseDto::from));
   }
 
   @DeleteMapping(path = TRANSACTION_SID_PATH, produces = "application/json")
@@ -103,7 +103,7 @@ public class TransactionController {
 
     final Transaction deletedTransaction = transactionService.deleteTransaction(command);
 
-    return ResponseEntity.ok().body(buildResponse(deletedTransaction));
+    return ResponseEntity.ok().body(TransactionResponseDto.from(deletedTransaction));
   }
 
   @PatchMapping(path = TRANSACTION_SID_PATH, produces = "application/json")
@@ -124,26 +124,7 @@ public class TransactionController {
 
     final Transaction updatedTransaction = transactionService.updateTransaction(command);
 
-    return ResponseEntity.ok().body(buildResponse(updatedTransaction));
-  }
-
-  private TransactionResponseDto buildResponse(final Transaction transaction) {
-
-    return new TransactionResponseDto(
-        transaction.getSid(),
-        transaction.getAmount(),
-        transaction.getCurrency().name(),
-        transaction.getDescription() != null ? transaction.getDescription() : null,
-        transaction.getType().name(),
-        transaction.getCorrelationId() != null ? transaction.getCorrelationId() : null,
-        new TransactionResponseDto.EnhancedInfoObject(transaction.getAccount().getSid(),
-            transaction.getAccount().getInstitution()),
-        new TransactionResponseDto.EnhancedInfoObject(transaction.getCategory().getSid(),
-            transaction.getCategory().getDisplayName()),
-        transaction.getStatus().name(),
-        transaction.getDeletedAt() != null ? transaction.getDeletedAt() : null,
-        transaction.getOccurredAt()
-    );
+    return ResponseEntity.ok().body(TransactionResponseDto.from(updatedTransaction));
   }
 
 }

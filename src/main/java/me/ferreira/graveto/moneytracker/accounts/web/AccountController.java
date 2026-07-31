@@ -15,9 +15,6 @@ import me.ferreira.graveto.moneytracker.accounts.service.payload.AccountDetails;
 import me.ferreira.graveto.moneytracker.accounts.web.dto.request.AddMemberToAccountRequestDto;
 import me.ferreira.graveto.moneytracker.accounts.web.dto.request.CreateAccountRequestDto;
 import me.ferreira.graveto.moneytracker.accounts.web.dto.response.AccountResponseDto;
-import me.ferreira.graveto.moneytracker.accounts.web.dto.response.AccountSummaryResponseDto;
-import me.ferreira.graveto.moneytracker.accounts.web.dto.response.FullAccountResponseDto;
-import me.ferreira.graveto.moneytracker.accounts.web.dto.response.MembershipResponseDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -54,22 +51,17 @@ public class AccountController {
 
     final Account createdAccount = accountService.createAccount(command);
 
-    final AccountResponseDto response = new AccountResponseDto(
-        createdAccount.getSid(),
-        createdAccount.getStatus().name()
-    );
-
     final URI location = ServletUriComponentsBuilder
         .fromCurrentRequest()
         .path(ACCOUNT_SID_PATH)
         .buildAndExpand(createdAccount.getSid())
         .toUri();
 
-    return ResponseEntity.created(location).body(response);
+    return ResponseEntity.created(location).body(AccountResponseDto.from(createdAccount));
   }
 
   @GetMapping(path = ACCOUNT_SID_PATH, produces = "application/json")
-  public ResponseEntity<FullAccountResponseDto> fetchAccount(
+  public ResponseEntity<AccountResponseDto> fetchAccount(
       @AuthenticationPrincipal final UUID userSid,
       @PathVariable final UUID sid) {
 
@@ -77,43 +69,16 @@ public class AccountController {
 
     final AccountDetails accountDetails = accountService.fetchAccount(command);
 
-    final List<MembershipResponseDto> membershipResponseDto = accountDetails.users().stream()
-        .map(at -> new MembershipResponseDto(
-            at.sid(),
-            at.email(),
-            at.role()
-        ))
-        .toList();
-
-    final FullAccountResponseDto responseDto = new FullAccountResponseDto(
-        accountDetails.sid(),
-        accountDetails.balance(),
-        accountDetails.currency().name(),
-        accountDetails.status().name(),
-        accountDetails.institution(),
-        membershipResponseDto
-    );
-
-    return ResponseEntity.ok().body(responseDto);
+    return ResponseEntity.ok().body(AccountResponseDto.from(accountDetails));
   }
 
   @GetMapping(produces = "application/json")
-  public ResponseEntity<List<AccountSummaryResponseDto>> fetchAllAccounts(
+  public ResponseEntity<List<AccountResponseDto>> fetchAllAccounts(
       @AuthenticationPrincipal final UUID userSid) {
 
     final List<Account> accounts = accountService.fetchAllAccounts(userSid);
 
-    final List<AccountSummaryResponseDto> responseDto = accounts.stream()
-        .map(acc -> new AccountSummaryResponseDto(
-            acc.getSid(),
-            acc.getInstitution(),
-            acc.getBalance(),
-            acc.getBaseCurrency().name(),
-            acc.getStatus().name())
-        )
-        .toList();
-
-    return ResponseEntity.ok().body(responseDto);
+    return ResponseEntity.ok().body(accounts.stream().map(AccountResponseDto::from).toList());
   }
 
   @PatchMapping(path = ACCOUNT_SID_PATH + CLOSE_PATH, produces = "application/json")
@@ -125,16 +90,11 @@ public class AccountController {
 
     final Account account = accountService.closeAccount(command);
 
-    final AccountResponseDto responseDto = new AccountResponseDto(
-        account.getSid(),
-        account.getStatus().name()
-    );
-
-    return ResponseEntity.ok().body(responseDto);
+    return ResponseEntity.ok().body(AccountResponseDto.from(account));
   }
 
   @PostMapping(path = ACCOUNT_SID_PATH + MEMBERSHIP_PATH, produces = "application/json")
-  public ResponseEntity<FullAccountResponseDto> addMemberToAccount(
+  public ResponseEntity<AccountResponseDto> addMemberToAccount(
       @AuthenticationPrincipal final UUID userSid,
       @PathVariable final UUID sid,
       @Valid @RequestBody final AddMemberToAccountRequestDto requestDto) {
@@ -148,24 +108,7 @@ public class AccountController {
 
     final AccountDetails accountDetails = accountService.addMember(command);
 
-    final List<MembershipResponseDto> membershipResponseDto = accountDetails.users().stream()
-        .map(at -> new MembershipResponseDto(
-            at.sid(),
-            at.email(),
-            at.role()
-        ))
-        .toList();
-
-    final FullAccountResponseDto responseDto = new FullAccountResponseDto(
-        accountDetails.sid(),
-        accountDetails.balance(),
-        accountDetails.currency().name(),
-        accountDetails.status().name(),
-        accountDetails.institution(),
-        membershipResponseDto
-    );
-
-    return ResponseEntity.ok().body(responseDto);
+    return ResponseEntity.ok().body(AccountResponseDto.from(accountDetails));
   }
 
 }
