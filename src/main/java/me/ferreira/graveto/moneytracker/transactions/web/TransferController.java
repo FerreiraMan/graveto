@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.CreateTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.DeleteTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.FetchTransferCommand;
@@ -15,7 +14,6 @@ import me.ferreira.graveto.moneytracker.transactions.service.transfer.TransferSe
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.payload.TransferResult;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.transfer.CreateTransferRequestDto;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.transfer.UpdateTransferRequestDto;
-import me.ferreira.graveto.moneytracker.transactions.web.dto.response.TransactionResponseDto;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.response.transfer.TransferResponseDto;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
@@ -51,7 +49,7 @@ public class TransferController {
 
     final TransferResult transfer = transferService.fetchTransfer(command);
 
-    return ResponseEntity.ok().body(buildResponse(transfer));
+    return ResponseEntity.ok().body(TransferResponseDto.from(transfer));
   }
 
   @PostMapping(produces = "application/json")
@@ -76,7 +74,7 @@ public class TransferController {
         .buildAndExpand(createdTransfer.expense().getCorrelationId())
         .toUri();
 
-    return ResponseEntity.created(location).body(buildResponse(createdTransfer));
+    return ResponseEntity.created(location).body(TransferResponseDto.from(createdTransfer));
   }
 
   @DeleteMapping(path = TRANSFER_SID_PATH, produces = "application/json")
@@ -88,7 +86,7 @@ public class TransferController {
 
     final TransferResult deletedTransfer = transferService.deleteTransfer(command);
 
-    return ResponseEntity.ok().body(buildResponse(deletedTransfer));
+    return ResponseEntity.ok().body(TransferResponseDto.from(deletedTransfer));
   }
 
   @PatchMapping(path = TRANSFER_SID_PATH, produces = "application/json")
@@ -107,35 +105,7 @@ public class TransferController {
 
     final TransferResult updatedTransfer = transferService.updateTransfer(command);
 
-    return ResponseEntity.ok().body(buildResponse(updatedTransfer));
-  }
-
-  private TransferResponseDto buildResponse(final TransferResult transferResult) {
-
-    return new TransferResponseDto(
-        transferResult.expense().getCorrelationId(),
-        buildTransactionResponse(transferResult.expense()),
-        buildTransactionResponse(transferResult.income())
-    );
-  }
-
-  private TransactionResponseDto buildTransactionResponse(final Transaction transaction) {
-
-    return new TransactionResponseDto(
-        transaction.getSid(),
-        transaction.getAmount(),
-        transaction.getCurrency().name(),
-        transaction.getDescription() != null ? transaction.getDescription() : null,
-        transaction.getType().name(),
-        transaction.getCorrelationId() != null ? transaction.getCorrelationId() : null,
-        new TransactionResponseDto.EnhancedInfoObject(transaction.getAccount().getSid(),
-            transaction.getAccount().getInstitution()),
-        new TransactionResponseDto.EnhancedInfoObject(transaction.getCategory().getSid(),
-            transaction.getCategory().getDisplayName()),
-        transaction.getStatus().name(),
-        transaction.getDeletedAt() != null ? transaction.getDeletedAt() : null,
-        transaction.getOccurredAt()
-    );
+    return ResponseEntity.ok().body(TransferResponseDto.from(updatedTransfer));
   }
 
 }

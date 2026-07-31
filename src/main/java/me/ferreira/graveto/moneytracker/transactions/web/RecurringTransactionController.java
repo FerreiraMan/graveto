@@ -2,7 +2,6 @@ package me.ferreira.graveto.moneytracker.transactions.web;
 
 import jakarta.validation.Valid;
 import java.net.URI;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -68,7 +67,7 @@ public class RecurringTransactionController {
         .buildAndExpand(createdRecurringTransaction.getSid())
         .toUri();
 
-    return ResponseEntity.created(location).body(buildResponse(createdRecurringTransaction));
+    return ResponseEntity.created(location).body(RecurringTransactionResponseDto.from(createdRecurringTransaction));
   }
 
   @PatchMapping(path = RECURRING_TRANSACTION_SID_PATH, produces = "application/json")
@@ -94,7 +93,7 @@ public class RecurringTransactionController {
     final RecurringTransaction updateRecurringTransaction =
         recurringTransactionService.updateRecurringTransaction(command);
 
-    return ResponseEntity.ok(buildResponse(updateRecurringTransaction));
+    return ResponseEntity.ok(RecurringTransactionResponseDto.from(updateRecurringTransaction));
   }
 
   @GetMapping(produces = "application/json")
@@ -112,7 +111,7 @@ public class RecurringTransactionController {
         recurringTransactionService.fetchAllRecurringTransactions(command);
 
     return ResponseEntity.ok(
-        recurringTransactions.stream().map(this::buildResponse).toList()
+        recurringTransactions.stream().map(RecurringTransactionResponseDto::from).toList()
     );
   }
 
@@ -126,28 +125,7 @@ public class RecurringTransactionController {
     final RecurringTransaction canceledRecurringTransaction =
         recurringTransactionService.cancelRecurringTransaction(command);
 
-    return ResponseEntity.ok(buildResponse(canceledRecurringTransaction));
-  }
-
-  private RecurringTransactionResponseDto buildResponse(final RecurringTransaction recurringTransaction) {
-
-    return new RecurringTransactionResponseDto(
-        recurringTransaction.getSid(),
-        new RecurringTransactionResponseDto.EnhancedInfoObject(recurringTransaction.getAccount().getSid(),
-            recurringTransaction.getAccount().getInstitution()),
-        new RecurringTransactionResponseDto.EnhancedInfoObject(recurringTransaction.getCategory().getSid(),
-            recurringTransaction.getCategory().getDisplayName()),
-        recurringTransaction.getUserSid(),
-        recurringTransaction.getDescription(),
-        recurringTransaction.getAmount(),
-        recurringTransaction.getCurrency().name(),
-        recurringTransaction.getType().name(),
-        recurringTransaction.getFrequency().name(),
-        recurringTransaction.getNextExecutionDate().format(DateTimeFormatter.ISO_LOCAL_DATE),
-        recurringTransaction.getStatus().name(),
-        recurringTransaction.getEndDate() == null ? null :
-            recurringTransaction.getEndDate().format(DateTimeFormatter.ISO_LOCAL_DATE)
-    );
+    return ResponseEntity.ok(RecurringTransactionResponseDto.from(canceledRecurringTransaction));
   }
 
 }

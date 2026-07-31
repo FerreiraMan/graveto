@@ -2,7 +2,6 @@ package me.ferreira.graveto.moneytracker.transactions.web;
 
 import jakarta.validation.Valid;
 import java.net.URI;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -67,7 +66,7 @@ public class RecurringTransferController {
         .buildAndExpand(createdRecurringTransfer.getSid())
         .toUri();
 
-    return ResponseEntity.created(location).body(buildResponse(createdRecurringTransfer));
+    return ResponseEntity.created(location).body(RecurringTransferResponseDto.from(createdRecurringTransfer));
   }
 
   @PatchMapping(path = RECURRING_TRANSFER_SID_PATH, produces = "application/json")
@@ -93,7 +92,7 @@ public class RecurringTransferController {
     final RecurringTransfer updateRecurringTransfer =
         recurringTransferService.updateRecurringTransfer(command);
 
-    return ResponseEntity.ok(buildResponse(updateRecurringTransfer));
+    return ResponseEntity.ok(RecurringTransferResponseDto.from(updateRecurringTransfer));
   }
 
   @GetMapping(produces = "application/json")
@@ -112,7 +111,7 @@ public class RecurringTransferController {
         recurringTransferService.fetchAllRecurringTransfers(command);
 
     return ResponseEntity.ok(
-        recurringTransfers.stream().map(this::buildResponse).toList()
+        recurringTransfers.stream().map(RecurringTransferResponseDto::from).toList()
     );
   }
 
@@ -126,27 +125,7 @@ public class RecurringTransferController {
     final RecurringTransfer canceledRecurringTransfer =
         recurringTransferService.cancelRecurringTransfer(command);
 
-    return ResponseEntity.ok(buildResponse(canceledRecurringTransfer));
-  }
-
-  private RecurringTransferResponseDto buildResponse(final RecurringTransfer recurringTransfer) {
-
-    return new RecurringTransferResponseDto(
-        recurringTransfer.getSid(),
-        new RecurringTransferResponseDto.EnhancedInfoObject(recurringTransfer.getSourceAccount().getSid(),
-            recurringTransfer.getSourceAccount().getInstitution()),
-        new RecurringTransferResponseDto.EnhancedInfoObject(recurringTransfer.getDestinationAccount().getSid(),
-            recurringTransfer.getDestinationAccount().getInstitution()),
-        recurringTransfer.getUserSid(),
-        recurringTransfer.getDescription(),
-        recurringTransfer.getAmount(),
-        recurringTransfer.getCurrency().name(),
-        recurringTransfer.getFrequency().name(),
-        recurringTransfer.getNextExecutionDate().format(DateTimeFormatter.ISO_LOCAL_DATE),
-        recurringTransfer.getStatus().name(),
-        recurringTransfer.getEndDate() == null ? null :
-            recurringTransfer.getEndDate().format(DateTimeFormatter.ISO_LOCAL_DATE)
-    );
+    return ResponseEntity.ok(RecurringTransferResponseDto.from(canceledRecurringTransfer));
   }
 
 }
