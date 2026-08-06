@@ -16,7 +16,7 @@ import me.ferreira.graveto.moneytracker.analytics.service.payload.CashFlowResult
 import me.ferreira.graveto.moneytracker.analytics.service.payload.CategorySpendingResult;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.service.CategoryService;
-import me.ferreira.graveto.moneytracker.categories.service.command.FetchAllCategoriesCommand;
+import me.ferreira.graveto.moneytracker.categories.service.command.FindAllCategoriesCommand;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.domain.projection.CategoryAggregateProjection;
 import me.ferreira.graveto.moneytracker.transactions.domain.projection.MonthlyAggregateProjection;
@@ -70,7 +70,8 @@ public class AnalyticServiceImpl implements AnalyticService {
         transactionService.generateCategoryAggregates(aggregateCommand);
 
     final List<Category> accountAvailableCategories =
-        categoryService.fetchAllCategories(new FetchAllCategoriesCommand(command.userSid(), command.accountSid()));
+        categoryService.fetchAllCategories(
+            new FindAllCategoriesCommand(command.userSid(), null, command.accountSid(), null, null));
 
     return mapToCategorySpendingResult(command.year(), projections, accountAvailableCategories);
   }

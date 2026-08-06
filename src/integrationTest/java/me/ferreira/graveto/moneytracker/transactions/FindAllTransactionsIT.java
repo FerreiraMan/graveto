@@ -19,6 +19,7 @@ import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.repository.AccountRepository;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.repository.CategoryRepository;
+import me.ferreira.graveto.moneytracker.categories.service.command.FindAllCategoriesCommand;
 import me.ferreira.graveto.moneytracker.config.MoneyTrackerBaseIntegrationTest;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
@@ -58,7 +59,8 @@ public class FindAllTransactionsIT extends MoneyTrackerBaseIntegrationTest {
   void setupData() {
     accountRepository.saveAll(List.of(ACCOUNT_1, ACCOUNT_2));
 
-    final List<Category> categoryList = categoryRepository.findByAccountSidIsNull();
+    final List<Category> categoryList =
+        categoryRepository.findAll(new FindAllCategoriesCommand(null, null, null, null, null));
     firstCategory = categoryList.stream().filter(c -> !c.isInternal()).findAny().orElseThrow();
     secondCategory =
         categoryList.stream().filter(c -> !c.isInternal() && !c.getSid().equals(firstCategory.getSid())).findFirst()

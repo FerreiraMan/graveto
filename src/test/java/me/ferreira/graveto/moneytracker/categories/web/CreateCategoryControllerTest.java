@@ -74,6 +74,7 @@ public class CreateCategoryControllerTest {
     mockCategory.setAccountSid(accountSid);
     mockCategory.setDisplayName(categoryName);
     mockCategory.setParent(mockParent);
+    mockCategory.setTransactionType(TransactionType.EXPENSE);
 
     final ArgumentCaptor<CreateCategoryCommand> commandCaptor = ArgumentCaptor.forClass(CreateCategoryCommand.class);
     when(service.createCategory(commandCaptor.capture())).thenReturn(mockCategory);
@@ -99,11 +100,13 @@ public class CreateCategoryControllerTest {
     assertThat(testResult).bodyJson()
         .extractingPath("$.sid").asString().isEqualTo(categorySid.toString());
     assertThat(testResult).bodyJson()
-        .extractingPath("$.name").asString().isEqualTo(categoryName);
+        .extractingPath("$.displayName").asString().isEqualTo(categoryName);
     assertThat(testResult).bodyJson()
         .extractingPath("$.accountSid").asString().isEqualTo(accountSid.toString());
     assertThat(testResult).bodyJson()
         .extractingPath("$.parentSid").asString().isEqualTo(parentSid.toString());
+    assertThat(testResult).bodyJson()
+        .extractingPath("$.type").asString().isEqualTo(TransactionType.EXPENSE.name());
     assertThat(testResult).bodyJson()
         .extractingPath("$.isSystem").asBoolean().isFalse();
   }

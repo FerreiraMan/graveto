@@ -1,1 +1,1 @@
-DELETE FROM categories c WHERE c.name in ('Parent', 'Child', 'OIL_GAS');
+DELETE FROM categories c WHERE c.name in ('Parent', 'Child', 'OIL_GAS', 'GROCERIES', 'SALARY');

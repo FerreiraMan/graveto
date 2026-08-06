@@ -12,6 +12,7 @@ import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.repository.AccountRepository;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.repository.CategoryRepository;
+import me.ferreira.graveto.moneytracker.categories.service.command.FindAllCategoriesCommand;
 import me.ferreira.graveto.moneytracker.config.MoneyTrackerBaseIntegrationTest;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
@@ -37,7 +38,8 @@ public class DeleteTransactionIT extends MoneyTrackerBaseIntegrationTest {
   void shouldDeleteTransaction() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
-    final Category category = categoryRepository.findAllByAccountSid(userSid).getFirst();
+    final Category category =
+        categoryRepository.findAll(new FindAllCategoriesCommand(userSid, null, null, null, null)).getFirst();
     final BigDecimal initialBalance = BigDecimal.TEN;
 
     final Account account = AccountTestFactory.createAccountWithOwner(userSid, "Santander", initialBalance);

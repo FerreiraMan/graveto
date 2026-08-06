@@ -12,6 +12,16 @@ public class CategoryTestFactory {
       final Category parent,
       final boolean isInternal) {
 
+    return createCategory(name, accountSid, parent, isInternal, TransactionType.EXPENSE);
+  }
+
+  public static Category createCategory(
+      final String name,
+      final UUID accountSid,
+      final Category parent,
+      final boolean isInternal,
+      final TransactionType transactionType) {
+
     final Category category = new Category();
     category.setSid(UUID.randomUUID());
     category.setAccountSid(accountSid);
@@ -19,7 +29,7 @@ public class CategoryTestFactory {
     category.setParent(parent);
     category.setName(name);
     category.setDisplayName(name);
-    category.setTransactionType(TransactionType.EXPENSE);
+    category.setTransactionType(transactionType);
     return category;
   }
 

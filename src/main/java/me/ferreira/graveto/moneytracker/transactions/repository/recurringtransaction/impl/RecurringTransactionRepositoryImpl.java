@@ -34,7 +34,7 @@ public class RecurringTransactionRepositoryImpl implements RecurringTransactionR
   }
 
   @Override
-  public List<RecurringTransaction> findAll(FindAllRecurringTransactionsCommand command) {
+  public List<RecurringTransaction> findAll(final FindAllRecurringTransactionsCommand command) {
 
     final PredicateSpecification<RecurringTransaction> predicateSpec =
         RecurringTransactionsSpecs.buildFromCommand(command);
