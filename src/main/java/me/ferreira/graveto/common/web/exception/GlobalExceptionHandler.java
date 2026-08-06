@@ -312,7 +312,7 @@ public class GlobalExceptionHandler {
                                                                    final HttpServletRequest request) {
 
     log.error("Error with Jwt verification.", ex);
-    return createBaseProblemDetail(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    return createBaseProblemDetail(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
   }
 
   @ExceptionHandler(AssetInvalidRequestException.class)
