@@ -5,8 +5,14 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
+import me.ferreira.graveto.moneytracker.categories.domain.Category_;
 import me.ferreira.graveto.moneytracker.categories.repository.CategoryJpaRepository;
 import me.ferreira.graveto.moneytracker.categories.repository.CategoryRepository;
+import me.ferreira.graveto.moneytracker.categories.repository.CategorySpecs;
+import me.ferreira.graveto.moneytracker.categories.service.command.FindAllCategoriesCommand;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.PredicateSpecification;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -36,18 +42,18 @@ public class CategoryRepositoryImpl implements CategoryRepository {
   }
 
   @Override
-  public List<Category> findByAccountSidIsNull() {
-    return repository.findAllByAccountSidIsNull();
+  public List<Category> findAll(final FindAllCategoriesCommand command) {
+
+    final PredicateSpecification<Category> predicateSpec = CategorySpecs.buildFromCommand(command);
+    final Specification<Category> classicSpec = Specification.where(predicateSpec);
+    final Sort sortAlphabetically = Sort.by(Sort.Order.by(Category_.DISPLAY_NAME).ignoreCase());
+
+    return repository.findAll(classicSpec, sortAlphabetically);
   }
 
   @Override
   public List<Category> findAll() {
     return repository.findAll();
-  }
-
-  @Override
-  public List<Category> findAllByAccountSid(final UUID accountSid) {
-    return repository.findAllByAccountSid(accountSid);
   }
 
   @Override

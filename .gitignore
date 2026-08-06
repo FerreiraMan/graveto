@@ -36,3 +36,10 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Kiro ###
+.kiro/
+
+### Local project context ###
+.project-context.md
+

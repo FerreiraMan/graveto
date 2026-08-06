@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
+import me.ferreira.graveto.moneytracker.categories.service.command.FindAllCategoriesCommand;
 
 public interface CategoryRepository {
 
@@ -15,11 +16,9 @@ public interface CategoryRepository {
 
   Optional<Category> findBySidOrAccountSid(UUID categorySid, UUID accountSid);
 
-  List<Category> findByAccountSidIsNull();
+  List<Category> findAll(FindAllCategoriesCommand command);
 
   List<Category> findAll();
-
-  List<Category> findAllByAccountSid(UUID accountSid);
 
   boolean existsByNameForAccountOrSystem(String name, UUID accountSid);
 

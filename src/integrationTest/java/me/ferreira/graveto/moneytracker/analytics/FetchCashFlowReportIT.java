@@ -13,6 +13,7 @@ import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.repository.AccountRepository;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.repository.CategoryRepository;
+import me.ferreira.graveto.moneytracker.categories.service.command.FindAllCategoriesCommand;
 import me.ferreira.graveto.moneytracker.config.MoneyTrackerBaseIntegrationTest;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
@@ -42,12 +43,14 @@ public class FetchCashFlowReportIT extends MoneyTrackerBaseIntegrationTest {
         AccountTestFactory.createAccountWithOwner(userSid, "Main Checking", BigDecimal.valueOf(5000));
     accountRepository.save(account);
 
-    final Category incomeCategory = categoryRepository.findByAccountSidIsNull().stream()
-        .filter(c -> c.getTransactionType() == TransactionType.INCOME)
-        .findFirst().get();
-    final Category expenseCategory = categoryRepository.findByAccountSidIsNull().stream()
-        .filter(c -> c.getTransactionType() == TransactionType.EXPENSE)
-        .findFirst().get();
+    final Category incomeCategory =
+        categoryRepository.findAll(new FindAllCategoriesCommand(userSid, null, null, null, null)).stream()
+            .filter(c -> c.getTransactionType() == TransactionType.INCOME)
+            .findFirst().get();
+    final Category expenseCategory =
+        categoryRepository.findAll(new FindAllCategoriesCommand(userSid, null, null, null, null)).stream()
+            .filter(c -> c.getTransactionType() == TransactionType.EXPENSE)
+            .findFirst().get();
 
     final int targetYear = 2026;
 
