@@ -4,7 +4,7 @@
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0-brightgreen)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)
 
-Modular finance and portfolio management system. REST API for tracking accounts, transactions, transfers, spending analytics, and investment portfolios — built with Spring Boot and Spring Modulith.
+Modular finance and portfolio management system. REST API for tracking accounts, transactions, transfers, recurring transactions/transfers, spending analytics, and investment portfolios — built with Spring Boot and Spring Modulith.
 
 ## Stack
 
@@ -27,14 +27,14 @@ graveto/
 ├── identity/           # User registration, login, JWT issuance
 ├── moneytracker/
 │   ├── accounts/       # Financial accounts management
-│   ├── categories/     # Transaction categories (system + user-defined)
-│   ├── transactions/   # Income/expense transactions + transfers
+│   ├── categories/     # Transaction categories (system + user-defined, filterable)
+│   ├── transactions/   # Income/expense transactions, transfers, recurring transactions/transfers
 │   └── analytics/      # Cash flow and category spending reports
 ├── portfolio/
 │   ├── brokers/        # Investment platforms (DEGIRO, Trading 212, etc.)
 │   ├── assets/         # Tradeable instruments (ETFs, stocks) + Yahoo Finance integration
-│   ├── orders/         # Buy/sell order recording
-│   ├── positions/      # Portfolio positions (maintained aggregates from orders)
+│   ├── orders/         # Buy/sell order recording and updates
+│   ├── positions/      # Portfolio positions (maintained aggregates) + valuation
 │   └── stockexchange/  # Stock exchanges reference data (seeded)
 └── common/             # Shared domain, JPA base, HTTP infra, exception handling, scheduling
 ```
@@ -54,17 +54,29 @@ graveto/
 
 ### Transactions
 - Create income/expense transactions against an account and category
-- Paginated, filterable transaction list (by account, category, date range, type, status)
-- Update and soft-delete transactions
+- Paginated, filterable, sortable transaction list (by account, category, date range, type, status)
+- Update and soft-delete transactions (balance reverted on delete)
 
 ### Transfers
 - Transfer funds between two accounts (creates correlated debit/credit pair)
 - Fetch, update, and delete transfers by correlation ID
 
+### Recurring Transactions
+- Schedule recurring income/expense transactions (daily, weekly, bi-weekly, monthly, annually)
+- Configurable day-of-week/day-of-month, optional end date, business-day adjustment
+- Update schedule, frequency, status (active/paused), or next execution date
+- List with filtering by status and account; cancel (soft-terminates the schedule)
+- Daily scheduler creates due transactions and advances the next execution date
+
+### Recurring Transfers
+- Same recurring scheduling model as recurring transactions, applied to transfers between two accounts
+- Create, update, list (filter by status/source/destination account), and cancel
+- Daily scheduler creates due transfers and advances the next execution date
+
 ### Categories
 - System-provided default categories (hierarchical)
 - User-defined custom categories with optional parent and transaction type
-- List all categories (system + user's own)
+- List categories filtered by display name, account, parent, and transaction type
 
 ### Analytics
 - **Cash flow report**: monthly income, expense, and net flow for a given year
@@ -81,19 +93,22 @@ graveto/
 - Search tradeable instruments via Yahoo Finance API (autocomplete)
 - Create/follow assets (find-or-create pattern, avoids duplicates)
 - Automatic price enrichment on asset creation via Yahoo Finance quote API
-- Daily scheduled price update for all tracked assets
+- Twice-daily scheduled price update for all tracked assets
 - Rate-limited external API calls (per-user burst window)
 - Stock exchange reference data (seeded via migrations, includes Yahoo Finance suffix)
 
 ### Orders
 - Record buy/sell orders against a broker and asset
+- Update order (quantity, price, fees, executed date, notes) with position recalculation
 - Automatic position creation/update on order creation (weighted average cost basis)
 - Order fees tracking
 
-### Positions
+### Positions & Valuation
 - Maintained aggregates (not derived on the fly) — quantity, average cost, total invested
-- Updated transactionally within the same transaction as order creation
+- Updated transactionally within the same transaction as order creation/update
 - One position per broker+asset pair
+- Per-position valuation (market value, unrealized P&L, P&L %) using latest tracked asset price
+- Portfolio-level valuation summary per broker
 
 ## Getting Started
 
@@ -141,6 +156,7 @@ cp .env.example .env
 | `GRAVETO_APP_PASSWORD` | `graveto_app_password` | App runtime password |
 | `GRAVETO_MIGRATOR_USER` | `graveto_migrator_user` | Flyway migrations user (DDL) |
 | `GRAVETO_MIGRATOR_PASSWORD` | `graveto_migrator_password` | Flyway migrations password |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost:3000` | Comma-separated list of allowed CORS origins |
 | `jwt.signing-secret` | `jwt_graveto_secret` | JWT signing secret — **change in production** |
 | `jwt.expiration-ms` | `3600000` | JWT expiry in milliseconds (default: 1h) |
 | `YFINANCE_API_KEY` | `yfinance_api_key` | Yahoo Finance API key |
@@ -168,7 +184,7 @@ All endpoints are prefixed with `/api`. Protected endpoints require `Authorizati
 | POST | `/api/auth/register` | ✗ | Register user |
 | POST | `/api/auth/login` | ✗ | Login, returns JWT |
 
-### Money Tracker
+### Accounts
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
@@ -177,15 +193,38 @@ All endpoints are prefixed with `/api`. Protected endpoints require `Authorizati
 | GET | `/api/accounts/{sid}` | ✓ | Get account detail |
 | PATCH | `/api/accounts/{sid}/close` | ✓ | Close account |
 | POST | `/api/accounts/{sid}/memberships` | ✓ | Add member to account |
+
+### Transactions & Transfers
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
 | POST | `/api/transactions` | ✓ | Create transaction |
-| GET | `/api/transactions` | ✓ | List transactions (paginated) |
+| GET | `/api/transactions` | ✓ | List transactions (paginated, filterable) |
 | PATCH | `/api/transactions/{sid}` | ✓ | Update transaction |
 | DELETE | `/api/transactions/{sid}` | ✓ | Delete transaction |
 | POST | `/api/transfers` | ✓ | Create transfer |
 | GET | `/api/transfers/{correlationId}` | ✓ | Get transfer |
 | PATCH | `/api/transfers/{correlationId}` | ✓ | Update transfer |
 | DELETE | `/api/transfers/{correlationId}` | ✓ | Delete transfer |
-| GET | `/api/categories` | ✓ | List categories |
+
+### Recurring Transactions & Transfers
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | `/api/recurring-transactions` | ✓ | Create recurring transaction |
+| GET | `/api/recurring-transactions` | ✓ | List recurring transactions (filter by status, account) |
+| PATCH | `/api/recurring-transactions/{sid}` | ✓ | Update recurring transaction |
+| DELETE | `/api/recurring-transactions/{sid}` | ✓ | Cancel recurring transaction |
+| POST | `/api/recurring-transfers` | ✓ | Create recurring transfer |
+| GET | `/api/recurring-transfers` | ✓ | List recurring transfers (filter by status, source/destination account) |
+| PATCH | `/api/recurring-transfers/{sid}` | ✓ | Update recurring transfer |
+| DELETE | `/api/recurring-transfers/{sid}` | ✓ | Cancel recurring transfer |
+
+### Categories & Analytics
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| GET | `/api/categories` | ✓ | List categories (filter by display name, account, parent, type) |
 | POST | `/api/categories` | ✓ | Create category |
 | GET | `/api/analytics/{accountSid}/cash-flow` | ✓ | Cash flow report |
 | GET | `/api/analytics/{accountSid}/category-spending` | ✓ | Category spending report |
@@ -200,6 +239,9 @@ All endpoints are prefixed with `/api`. Protected endpoints require `Authorizati
 | GET | `/api/assets/search` | ✓ | Search assets (Yahoo Finance) |
 | POST | `/api/assets` | ✓ | Create/follow asset |
 | POST | `/api/orders` | ✓ | Create order (+ position update) |
+| PATCH | `/api/orders` | ✓ | Update order (+ position recalculation) |
+| GET | `/api/brokers/{brokerSid}/positions` | ✓ | Position valuation overview |
+| GET | `/api/brokers/{brokerSid}/positions/summary` | ✓ | Portfolio valuation summary |
 
 ### Authentication flow
 
@@ -221,9 +263,13 @@ curl http://localhost:8080/api/accounts \
 
 ## Scheduled Tasks
 
-| Task | Schedule | Description |
+All schedules run on the `Europe/Lisbon` timezone and are configurable via `scheduled.cron.*` properties.
+
+| Task | Default Schedule | Description |
 |---|---|---|
-| Asset price update | Daily at 17:00 | Fetches current market prices from Yahoo Finance for all tracked assets |
+| Asset price update | Daily at 10:30 and 17:30 | Fetches current market prices from Yahoo Finance for all tracked assets |
+| Recurring transaction processing | Daily at 10:00 | Creates due recurring transactions and advances their next execution date |
+| Recurring transfer processing | Daily at 10:00 | Creates due recurring transfers and advances their next execution date |
 
 ## Testing
 
