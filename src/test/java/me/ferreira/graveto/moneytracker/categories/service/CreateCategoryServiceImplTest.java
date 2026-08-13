@@ -283,7 +283,8 @@ public class CreateCategoryServiceImplTest {
     final Category parentOfParentCategory =
         CategoryUtils.createCategory("Parent", null, null, false, TransactionType.EXPENSE);
     final Category parentCategory =
-        CategoryUtils.createCategory("Leisure", otherAccountSid, parentOfParentCategory, false, TransactionType.EXPENSE);
+        CategoryUtils.createCategory("Leisure", otherAccountSid, parentOfParentCategory, false,
+            TransactionType.EXPENSE);
     final CreateCategoryCommand command =
         new CreateCategoryCommand(userSid, name, accountSid, parentSid, TransactionType.EXPENSE);
 
