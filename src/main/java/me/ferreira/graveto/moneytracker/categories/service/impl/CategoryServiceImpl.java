@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryAlreadyExistsException;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.IllegalCategoryHierarchyException;
+import me.ferreira.graveto.common.web.exception.moneytracker.MaxCategoryDepthExceededException;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.domain.SystemCategory;
@@ -36,7 +37,7 @@ public class CategoryServiceImpl implements CategoryService {
   @Transactional(readOnly = true)
   public Category fetchInternalCategory(final UUID systemCategorySid) {
 
-    if (!SystemCategory.allSids().contains(systemCategorySid)) {
+    if (!SystemCategory.allInternalSids().contains(systemCategorySid)) {
       throw new IllegalArgumentException(INTERNAL_CATEGORY_SID_INVALID);
     }
 
@@ -80,6 +81,10 @@ public class CategoryServiceImpl implements CategoryService {
 
       parentCategory = categoryRepository.findBySid(command.parentSid())
           .orElseThrow(() -> new CategoryNotFoundException(command.parentSid()));
+
+      if (parentCategory.getParent() != null) {
+        throw new MaxCategoryDepthExceededException();
+      }
 
       if (Objects.nonNull(parentCategory.getAccountSid()) && !parentCategory.getAccountSid()
           .equals(command.accountSid())) {

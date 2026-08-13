@@ -1,11 +1,13 @@
 package me.ferreira.graveto.moneytracker.categories.repository.impl;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.domain.Category_;
+import me.ferreira.graveto.moneytracker.categories.domain.SystemCategory;
 import me.ferreira.graveto.moneytracker.categories.repository.CategoryJpaRepository;
 import me.ferreira.graveto.moneytracker.categories.repository.CategoryRepository;
 import me.ferreira.graveto.moneytracker.categories.repository.CategorySpecs;
@@ -18,6 +20,11 @@ import org.springframework.stereotype.Repository;
 @Repository
 @AllArgsConstructor
 public class CategoryRepositoryImpl implements CategoryRepository {
+
+  // Relies on stable sort: DB-level sortAlphabetically preserves alphabetical order within each group.
+  // Do not remove sortAlphabetically from findAll — it serves as the tie-breaker for this comparator.
+  private static final Comparator<Category> FALLBACK_LAST_COMPARATOR =
+      Comparator.comparing((final Category c) -> SystemCategory.isFallback(c.getName()));
 
   private final CategoryJpaRepository repository;
 
@@ -48,7 +55,10 @@ public class CategoryRepositoryImpl implements CategoryRepository {
     final Specification<Category> classicSpec = Specification.where(predicateSpec);
     final Sort sortAlphabetically = Sort.by(Sort.Order.by(Category_.DISPLAY_NAME).ignoreCase());
 
-    return repository.findAll(classicSpec, sortAlphabetically);
+    final List<Category> sortedAlphabeticallyCategoryList = repository.findAll(classicSpec, sortAlphabetically);
+    sortedAlphabeticallyCategoryList.sort(FALLBACK_LAST_COMPARATOR);
+
+    return sortedAlphabeticallyCategoryList;
   }
 
   @Override

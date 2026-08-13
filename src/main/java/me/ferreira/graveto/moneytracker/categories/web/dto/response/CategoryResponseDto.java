@@ -9,6 +9,7 @@ import me.ferreira.graveto.moneytracker.categories.domain.Category;
 public record CategoryResponseDto(
     UUID sid,
     String displayName,
+    String parentDisplayName,
     UUID accountSid,
     UUID parentSid,
     String type,
@@ -19,6 +20,7 @@ public record CategoryResponseDto(
     return new CategoryResponseDto(
         category.getSid(),
         category.getDisplayName(),
+        Objects.nonNull(category.getParent()) ? category.getParent().getDisplayName() : null,
         category.getAccountSid(),
         Objects.nonNull(category.getParent()) ? category.getParent().getSid() : null,
         category.getTransactionType().name(),

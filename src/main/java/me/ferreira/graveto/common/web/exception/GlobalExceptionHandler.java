@@ -16,6 +16,7 @@ import me.ferreira.graveto.common.web.exception.moneytracker.CategoryAlreadyExis
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.IllegalCategoryHierarchyException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
+import me.ferreira.graveto.common.web.exception.moneytracker.MaxCategoryDepthExceededException;
 import me.ferreira.graveto.common.web.exception.moneytracker.MemberNotRegisteredException;
 import me.ferreira.graveto.common.web.exception.moneytracker.RecurringTransactionNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.RecurringTransferNotFoundException;
@@ -180,6 +181,14 @@ public class GlobalExceptionHandler {
 
     log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
     return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+  }
+
+  @ExceptionHandler(MaxCategoryDepthExceededException.class)
+  public ProblemDetail handleMaxCategoryDepthExceededException(final MaxCategoryDepthExceededException ex,
+                                                               final HttpServletRequest request) {
+
+    log.warn("Business rule violation: Max depth of categories is 2. Message: {}", ex.getMessage());
+    return createBaseProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request);
   }
 
   @ExceptionHandler(IllegalCategoryHierarchyException.class)

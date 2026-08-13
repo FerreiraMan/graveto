@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
@@ -92,7 +93,7 @@ public class FindAllCategoriesIT extends MoneyTrackerBaseIntegrationTest {
   @Test
   void shouldFilterOutInternalCategoriesWhenAccountIsSpecified() {
     // Arrange
-    final List<String> internalCategorySids = SystemCategory.allSids().stream()
+    final List<String> internalCategorySids = SystemCategory.allInternalSids().stream()
         .map(UUID::toString)
         .toList();
 
@@ -114,7 +115,7 @@ public class FindAllCategoriesIT extends MoneyTrackerBaseIntegrationTest {
   @Test
   void shouldFilterOutInternalCategoriesWhenAccountIsNotSpecified() {
     // Arrange
-    final List<String> internalCategorySids = SystemCategory.allSids().stream()
+    final List<String> internalCategorySids = SystemCategory.allInternalSids().stream()
         .map(UUID::toString)
         .toList();
 
@@ -190,6 +191,71 @@ public class FindAllCategoriesIT extends MoneyTrackerBaseIntegrationTest {
   }
 
   @Test
+  void shouldReturnAllCategoriesWithFallbackAsTheLastOnes() {
+    // Act & Assert
+    final List<String> extractedSids =
+        given()
+            .header("Authorization", "Bearer " + ownerSid)
+            .when()
+            .get("/categories")
+            .then()
+            .statusCode(200)
+            .extract()
+            .path("sid");
+
+    final List<String> fallbackCategorySids =
+        List.of(SystemCategory.OTHER.getSid().toString(), SystemCategory.OTHER_INCOME.getSid().toString());
+
+    assertThat(extractedSids).containsAll(fallbackCategorySids);
+
+    final List<String> lastPositions =
+        extractedSids.subList(extractedSids.size() - fallbackCategorySids.size(), extractedSids.size());
+    assertThat(lastPositions).containsExactlyInAnyOrderElementsOf(fallbackCategorySids);
+  }
+
+  @Test
+  void shouldKeepNonFallbackCategoriesAlphabeticallySortedByDisplayName() {
+    // Act & Assert
+    final List<String> extractedSids =
+        given()
+            .header("Authorization", "Bearer " + ownerSid)
+            .queryParam("accountSid", account.getSid().toString())
+            .when()
+            .get("/categories")
+            .then()
+            .statusCode(200)
+            .extract()
+            .path("sid");
+
+    final List<String> extractedDisplayNames =
+        given()
+            .header("Authorization", "Bearer " + ownerSid)
+            .queryParam("accountSid", account.getSid().toString())
+            .when()
+            .get("/categories")
+            .then()
+            .statusCode(200)
+            .extract()
+            .path("displayName");
+
+    final List<String> fallbackSids = List.of(
+        SystemCategory.OTHER.getSid().toString(), SystemCategory.OTHER_INCOME.getSid().toString());
+
+    final List<String> nonFallbackDisplayNames = new ArrayList<>();
+    for (int i = 0; i < extractedSids.size(); i++) {
+      if (!fallbackSids.contains(extractedSids.get(i))) {
+        nonFallbackDisplayNames.add(extractedDisplayNames.get(i));
+      }
+    }
+
+    final List<String> expectedAlphabeticalOrder = nonFallbackDisplayNames.stream()
+        .sorted(String.CASE_INSENSITIVE_ORDER)
+        .toList();
+
+    assertThat(nonFallbackDisplayNames).containsExactlyElementsOf(expectedAlphabeticalOrder);
+  }
+
+  @Test
   void shouldReturnEnrichedResponsePayload() {
     // Act & Assert
     given()
@@ -202,6 +268,7 @@ public class FindAllCategoriesIT extends MoneyTrackerBaseIntegrationTest {
         .statusCode(200)
         .body("[0].sid", equalTo(accountCategory.getSid().toString()))
         .body("[0].displayName", equalTo("Child"))
+        .body("[0].parentDisplayName", equalTo("Parent"))
         .body("[0].type", equalTo(TransactionType.EXPENSE.name()))
         .body("[0].isSystem", equalTo(false))
         .body("[0].parentSid", equalTo(parentCategory.getSid().toString()))

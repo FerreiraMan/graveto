@@ -19,7 +19,7 @@ public class SystemCategoriesIT extends MoneyTrackerBaseIntegrationTest {
   @Test
   void shouldHaveDefinedInternalSystemCategories() {
     // Arrange
-    final List<UUID> definedSystemCategoriesSids = SystemCategory.allSids();
+    final List<UUID> definedSystemCategoriesSids = SystemCategory.allInternalSids();
 
     // Act
     final List<Category> categoryList = categoryRepository.findAll();
