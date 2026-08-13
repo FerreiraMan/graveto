@@ -14,6 +14,7 @@ import java.util.UUID;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.repository.AccountRepository;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
+import me.ferreira.graveto.moneytracker.categories.domain.SystemCategory;
 import me.ferreira.graveto.moneytracker.categories.repository.CategoryRepository;
 import me.ferreira.graveto.moneytracker.categories.service.command.FindAllCategoriesCommand;
 import me.ferreira.graveto.moneytracker.config.MoneyTrackerBaseIntegrationTest;
@@ -45,7 +46,12 @@ public class UpdateTransactionIT extends MoneyTrackerBaseIntegrationTest {
     final List<Category> categoryList =
         categoryRepository.findAll(new FindAllCategoriesCommand(userSid, null, null, null, null));
     final Category initialCategory = categoryList.getFirst();
-    final Category newCategory = categoryList.getLast();
+    final Category newCategory = categoryList.stream()
+        .filter(c -> !c.equals(initialCategory))
+        .filter(c -> !SystemCategory.isFallback(c.getName()))
+        .filter(c -> c.getTransactionType() == TransactionType.EXPENSE)
+        .findFirst()
+        .orElseThrow();
     final BigDecimal initialBalance = BigDecimal.valueOf(100);
     final LocalDateTime newOccurredAt = LocalDateTime.now().minusDays(2);
 

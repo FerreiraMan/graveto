@@ -16,6 +16,7 @@ import java.util.stream.Stream;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryAlreadyExistsException;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.IllegalCategoryHierarchyException;
+import me.ferreira.graveto.common.web.exception.moneytracker.MaxCategoryDepthExceededException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserNotMemberOfAccountException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
@@ -202,7 +203,6 @@ public class CreateCategoryServiceImplTest {
     when(categoryRepository.existsByNameForAccountOrSystem(anyString(), eq(accountSid))).thenReturn(false);
     when(accountService.fetchAccountEntity(accountSid)).thenReturn(account);
 
-
     service.createCategory(command);
 
     final ArgumentCaptor<String> sanitizedNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -264,7 +264,6 @@ public class CreateCategoryServiceImplTest {
     when(categoryRepository.findBySid(parentSid)).thenReturn(Optional.empty());
     when(accountService.fetchAccountEntity(accountSid)).thenReturn(account);
 
-
     // Act & Assert
     assertThatThrownBy(() -> {
       service.createCategory(command);
@@ -273,16 +272,18 @@ public class CreateCategoryServiceImplTest {
   }
 
   @Test
-  void shouldThrowIfParentCategoryIsOwnedByOtherAccount() {
+  void shouldThrowIfParentCategoryIsNotTopLevelCategory() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
-    final UUID externalUser = UUID.randomUUID();
+    final UUID otherAccountSid = UUID.randomUUID();
     final String name = "Videogames";
     final UUID parentSid = UUID.randomUUID();
     final UUID accountSid = UUID.randomUUID();
     final Account account = AccountUtils.createAccount(accountSid, userSid, MembershipRole.OWNER);
+    final Category parentOfParentCategory =
+        CategoryUtils.createCategory("Parent", null, null, false, TransactionType.EXPENSE);
     final Category parentCategory =
-        CategoryUtils.createCategory("Leisure", externalUser, null, false, TransactionType.EXPENSE);
+        CategoryUtils.createCategory("Leisure", otherAccountSid, parentOfParentCategory, false, TransactionType.EXPENSE);
     final CreateCategoryCommand command =
         new CreateCategoryCommand(userSid, name, accountSid, parentSid, TransactionType.EXPENSE);
 
@@ -290,6 +291,30 @@ public class CreateCategoryServiceImplTest {
     when(categoryRepository.findBySid(parentSid)).thenReturn(Optional.of(parentCategory));
     when(accountService.fetchAccountEntity(accountSid)).thenReturn(account);
 
+    // Act & Assert
+    assertThatThrownBy(() -> {
+      service.createCategory(command);
+    }).isInstanceOf(MaxCategoryDepthExceededException.class)
+        .hasMessage("Maximum category depth exceeded. Cannot create categories deeper than level 2.");
+  }
+
+  @Test
+  void shouldThrowIfParentCategoryIsOwnedByOtherAccount() {
+    // Arrange
+    final UUID userSid = UUID.randomUUID();
+    final UUID otherAccountSid = UUID.randomUUID();
+    final String name = "Videogames";
+    final UUID parentSid = UUID.randomUUID();
+    final UUID accountSid = UUID.randomUUID();
+    final Account account = AccountUtils.createAccount(accountSid, userSid, MembershipRole.OWNER);
+    final Category parentCategory =
+        CategoryUtils.createCategory("Leisure", otherAccountSid, null, false, TransactionType.EXPENSE);
+    final CreateCategoryCommand command =
+        new CreateCategoryCommand(userSid, name, accountSid, parentSid, TransactionType.EXPENSE);
+
+    when(categoryRepository.existsByNameForAccountOrSystem(any(), any())).thenReturn(false);
+    when(categoryRepository.findBySid(parentSid)).thenReturn(Optional.of(parentCategory));
+    when(accountService.fetchAccountEntity(accountSid)).thenReturn(account);
 
     // Act & Assert
     assertThatThrownBy(() -> {
