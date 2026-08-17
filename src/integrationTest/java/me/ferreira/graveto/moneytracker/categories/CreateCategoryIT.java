@@ -76,4 +76,51 @@ public class CreateCategoryIT extends MoneyTrackerBaseIntegrationTest {
     assertThat(savedCategory.getTransactionType()).isEqualTo(TransactionType.EXPENSE);
   }
 
+  @Test
+  void shouldCreateCategoryWhenParentIsAtSecondLevel() {
+    // Arrange
+    final Category grandparentCategory = CategoryTestFactory.createCategory("Test Root", null, null, false);
+    final Category secondLevelParent =
+        CategoryTestFactory.createCategory("Test Fuel", null, grandparentCategory, false);
+    categoryRepository.saveAll(List.of(grandparentCategory, secondLevelParent));
+
+    final String expectedCategoryName = "Test Diesel";
+    final CreateCategoryRequestDto requestDto = new CreateCategoryRequestDto(
+        expectedCategoryName, account.getSid(), secondLevelParent.getSid(), TransactionType.EXPENSE
+    );
+
+    // Act & Assert
+    given()
+        .header("Authorization", "Bearer " + ownerSid)
+        .contentType(ContentType.JSON)
+        .body(requestDto)
+        .when()
+        .post("/categories").then()
+        .statusCode(201);
+  }
+
+  @Test
+  void shouldRejectCategoryWhenParentIsDeeperThanSecondLevel() {
+    // Arrange
+    final Category rootCategory = CategoryTestFactory.createCategory("Test Root", null, null, false);
+    final Category secondLevelParent =
+        CategoryTestFactory.createCategory("Test Fuel", null, rootCategory, false);
+    final Category thirdLevelParent =
+        CategoryTestFactory.createCategory("Test Diesel", null, secondLevelParent, false);
+    categoryRepository.saveAll(List.of(rootCategory, secondLevelParent, thirdLevelParent));
+
+    final CreateCategoryRequestDto requestDto = new CreateCategoryRequestDto(
+        "Test Premium Diesel", account.getSid(), thirdLevelParent.getSid(), TransactionType.EXPENSE
+    );
+
+    // Act & Assert
+    given()
+        .header("Authorization", "Bearer " + ownerSid)
+        .contentType(ContentType.JSON)
+        .body(requestDto)
+        .when()
+        .post("/categories").then()
+        .statusCode(422);
+  }
+
 }

@@ -187,7 +187,7 @@ public class GlobalExceptionHandler {
   public ProblemDetail handleMaxCategoryDepthExceededException(final MaxCategoryDepthExceededException ex,
                                                                final HttpServletRequest request) {
 
-    log.warn("Business rule violation: Max depth of categories is 2. Message: {}", ex.getMessage());
+    log.warn("Business rule violation: Max depth of categories is 3. Message: {}", ex.getMessage());
     return createBaseProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request);
   }
 
