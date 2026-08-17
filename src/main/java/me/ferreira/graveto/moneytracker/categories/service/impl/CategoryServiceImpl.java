@@ -82,7 +82,7 @@ public class CategoryServiceImpl implements CategoryService {
       parentCategory = categoryRepository.findBySid(command.parentSid())
           .orElseThrow(() -> new CategoryNotFoundException(command.parentSid()));
 
-      if (parentCategory.getParent() != null) {
+      if (parentCategory.getParent() != null && parentCategory.getParent().getParent() != null) {
         throw new MaxCategoryDepthExceededException();
       }
 

@@ -272,7 +272,7 @@ public class CreateCategoryServiceImplTest {
   }
 
   @Test
-  void shouldThrowIfParentCategoryIsNotTopLevelCategory() {
+  void shouldThrowIfParentCategoryIsAtMaxDepth() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
     final UUID otherAccountSid = UUID.randomUUID();
@@ -280,10 +280,12 @@ public class CreateCategoryServiceImplTest {
     final UUID parentSid = UUID.randomUUID();
     final UUID accountSid = UUID.randomUUID();
     final Account account = AccountUtils.createAccount(accountSid, userSid, MembershipRole.OWNER);
-    final Category parentOfParentCategory =
-        CategoryUtils.createCategory("Parent", null, null, false, TransactionType.EXPENSE);
+    final Category rootCategory =
+        CategoryUtils.createCategory("Transportation", null, null, false, TransactionType.EXPENSE);
+    final Category grandparentCategory =
+        CategoryUtils.createCategory("Fuel", null, rootCategory, false, TransactionType.EXPENSE);
     final Category parentCategory =
-        CategoryUtils.createCategory("Leisure", otherAccountSid, parentOfParentCategory, false,
+        CategoryUtils.createCategory("Diesel", otherAccountSid, grandparentCategory, false,
             TransactionType.EXPENSE);
     final CreateCategoryCommand command =
         new CreateCategoryCommand(userSid, name, accountSid, parentSid, TransactionType.EXPENSE);
@@ -296,7 +298,41 @@ public class CreateCategoryServiceImplTest {
     assertThatThrownBy(() -> {
       service.createCategory(command);
     }).isInstanceOf(MaxCategoryDepthExceededException.class)
-        .hasMessage("Maximum category depth exceeded. Cannot create categories deeper than level 2.");
+        .hasMessage("Maximum category depth exceeded. Cannot create categories deeper than level 3.");
+  }
+
+  @Test
+  void shouldCreateCategoryWhenParentIsAtSecondLevel() {
+    // Arrange
+    final String expectedCategoryName = "Diesel Top Up";
+    final String sanitizedName = "DIESEL_TOP_UP";
+    final UUID userSid = UUID.randomUUID();
+    final UUID accountSid = UUID.randomUUID();
+    final UUID parentSid = UUID.randomUUID();
+    final Account account = AccountUtils.createAccount(accountSid, userSid, MembershipRole.OWNER);
+    final Category rootCategory =
+        CategoryUtils.createCategory("Transportation", null, null, false, TransactionType.EXPENSE);
+    final Category parentCategory =
+        CategoryUtils.createCategory("Fuel", null, rootCategory, false, TransactionType.EXPENSE);
+    final CreateCategoryCommand command = new CreateCategoryCommand(
+        userSid,
+        expectedCategoryName,
+        accountSid,
+        parentSid,
+        TransactionType.EXPENSE
+    );
+
+    when(categoryRepository.existsByNameForAccountOrSystem(any(), any())).thenReturn(false);
+    when(categoryRepository.findBySid(parentSid)).thenReturn(Optional.of(parentCategory));
+    when(accountService.fetchAccountEntity(accountSid)).thenReturn(account);
+    when(categoryRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
+
+    // Act
+    final Category createdCategory = service.createCategory(command);
+
+    // Assert
+    assertThat(createdCategory.getName()).isEqualTo(sanitizedName);
+    assertThat(createdCategory.getParent()).isEqualTo(parentCategory);
   }
 
   @Test
