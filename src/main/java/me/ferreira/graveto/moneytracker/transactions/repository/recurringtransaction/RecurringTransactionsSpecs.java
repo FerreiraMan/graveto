@@ -13,19 +13,18 @@ public class RecurringTransactionsSpecs {
   public static PredicateSpecification<RecurringTransaction> buildFromCommand(
       final FindAllRecurringTransactionsCommand command) {
 
-    return isFromUser(command.userSid())
-        .and(hasStatus(command.status()))
-        .and(hasAccount(command.accountSid()));
+    return isFromAccount(command.accountSid())
+        .and(hasStatus(command.status()));
   }
 
-  private static PredicateSpecification<RecurringTransaction> isFromUser(final UUID userSid) {
+  private static PredicateSpecification<RecurringTransaction> isFromAccount(final UUID accountSid) {
 
-    if (userSid == null) {
-      throw new IllegalArgumentException("User SID is strictly required to view recurring transactions.");
+    if (accountSid == null) {
+      throw new IllegalArgumentException("Account SID is strictly required to view recurring transactions.");
     }
 
     return (from, builder) ->
-        builder.equal(from.get(RecurringTransaction_.userSid), userSid
+        builder.equal(from.join(RecurringTransaction_.account).get(Account_.sid), accountSid
         );
   }
 
@@ -37,17 +36,6 @@ public class RecurringTransactionsSpecs {
 
     return (from, builder) ->
         builder.equal(from.get(RecurringTransaction_.status), status
-        );
-  }
-
-  private static PredicateSpecification<RecurringTransaction> hasAccount(final UUID accountSid) {
-
-    if (accountSid == null) {
-      return PredicateSpecification.unrestricted();
-    }
-
-    return (from, builder) ->
-        builder.equal(from.join(RecurringTransaction_.account).get(Account_.sid), accountSid
         );
   }
 
