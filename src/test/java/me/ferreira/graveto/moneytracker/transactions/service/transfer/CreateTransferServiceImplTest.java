@@ -132,26 +132,42 @@ public class CreateTransferServiceImplTest {
   }
 
   @Test
-  void shouldThrowIfUserIsNotAuthorizedOnDestinationAccount() {
+  void shouldSuccessfullyCreateTransferWhenUserHasNoMembershipOnDestinationAccount() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
-    final UUID sourceSid = UUID.randomUUID();
-    final UUID destSid = UUID.randomUUID();
+    final BigDecimal transferAmount = BigDecimal.TEN;
+    final LocalDateTime occurredAt = LocalDateTime.now();
+    final String description = "Rent Payment";
+
+    final Account sourceAccount = AccountUtils.createAccount(UUID.randomUUID(), userSid, MembershipRole.OWNER);
+    sourceAccount.setBalance(new BigDecimal("100.00"));
+
+    final Account destAccount = AccountUtils.createAccount(UUID.randomUUID(), UUID.randomUUID(), MembershipRole.OWNER);
+    destAccount.setBalance(new BigDecimal("50.00"));
+
+    final Category outCategory =
+        CategoryUtils.createCategory("Transfer Out", null, null, true, TransactionType.TRANSFER_OUT);
+    final Category inCategory =
+        CategoryUtils.createCategory("Transfer In", null, null, true, TransactionType.TRANSFER_IN);
 
     final CreateTransferCommand command = new CreateTransferCommand(
-        userSid, sourceSid, destSid, BigDecimal.TEN, "Test", LocalDateTime.now()
+        userSid, sourceAccount.getSid(), destAccount.getSid(), transferAmount, description, occurredAt
     );
 
-    final Account sourceAccount = AccountUtils.createAccount(sourceSid, userSid, MembershipRole.OWNER);
-    final Account destAccount = AccountUtils.createAccount(destSid, userSid, null);
+    when(accountService.fetchAccountEntity(sourceAccount.getSid())).thenReturn(sourceAccount);
+    when(accountService.fetchAccountEntity(destAccount.getSid())).thenReturn(destAccount);
 
-    when(accountService.fetchAccountEntity(sourceSid)).thenReturn(sourceAccount);
-    when(accountService.fetchAccountEntity(destSid)).thenReturn(destAccount);
+    when(categoryService.fetchInternalCategory(SystemCategory.TRANSFER_OUT.getSid())).thenReturn(outCategory);
+    when(categoryService.fetchInternalCategory(SystemCategory.TRANSFER_IN.getSid())).thenReturn(inCategory);
 
-    // Act & Assert
-    assertThatThrownBy(() -> service.createTransfer(command))
-        .isInstanceOf(InsufficientPermissionsOnAccountException.class)
-        .hasMessage("User does not have the required role to create transfer transactions for this account.");
+    // Act
+    final TransferResult result = service.createTransfer(command);
+
+    // Assert
+    assertThat(sourceAccount.getBalance()).isEqualByComparingTo(new BigDecimal("90.00"));
+    assertThat(destAccount.getBalance()).isEqualByComparingTo(new BigDecimal("60.00"));
+    assertThat(result.expense().getAccount()).isEqualTo(sourceAccount);
+    assertThat(result.income().getAccount()).isEqualTo(destAccount);
   }
 
   @Test

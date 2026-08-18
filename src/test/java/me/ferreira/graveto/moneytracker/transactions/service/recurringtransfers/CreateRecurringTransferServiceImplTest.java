@@ -147,20 +147,46 @@ public class CreateRecurringTransferServiceImplTest {
   }
 
   @Test
-  void shouldThrowWhenUserDoesNotHavePermission() {
+  void shouldThrowWhenUserDoesNotHavePermissionOnSourceAccount() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
     final CreateRecurringTransferCommand command = buildCommandWithUser(
         UUID.randomUUID(), Frequency.MONTHLY, 15, null, null, null);
 
-    final Account account = buildAccount(command.sourceAccountSid(), userSid);
-    when(accountService.fetchAccountEntity(any())).thenReturn(account);
+    final Account sourceAccount = buildAccount(command.sourceAccountSid(), userSid);
+    when(accountService.fetchAccountEntity(command.sourceAccountSid())).thenReturn(sourceAccount);
     final Account destinationAccount = buildAccount(command.destinationAccountSid(), userSid);
-    when(accountService.fetchAccountEntity(any())).thenReturn(destinationAccount);
+    when(accountService.fetchAccountEntity(command.destinationAccountSid())).thenReturn(destinationAccount);
 
     // Act & Assert
     assertThatThrownBy(() -> recurringTransferService.createRecurringTransfer(command))
         .isInstanceOf(InsufficientPermissionsOnAccountException.class);
+
+    verify(recurringTransferRepository, never()).save(any());
+  }
+
+  @Test
+  void shouldCreateRecurringTransferWhenUserHasNoMembershipOnDestinationAccount() {
+    // Arrange
+    final UUID userSid = UUID.randomUUID();
+    final LocalDate startDate = LocalDate.of(2026, 8, 15);
+    final CreateRecurringTransferCommand command = buildCommandWithUser(
+        userSid, Frequency.MONTHLY, 15, null, startDate, null);
+
+    final Account sourceAccount = buildAccount(command.sourceAccountSid(), userSid);
+    when(accountService.fetchAccountEntity(command.sourceAccountSid())).thenReturn(sourceAccount);
+
+    final Account destinationAccount = buildAccount(command.destinationAccountSid(), UUID.randomUUID());
+    when(accountService.fetchAccountEntity(command.destinationAccountSid())).thenReturn(destinationAccount);
+    when(recurringTransferRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
+
+    // Act
+    final RecurringTransfer result = recurringTransferService.createRecurringTransfer(command);
+
+    // Assert
+    assertThat(result.getSourceAccount()).isEqualTo(sourceAccount);
+    assertThat(result.getDestinationAccount()).isEqualTo(destinationAccount);
+    verify(recurringTransferRepository).save(any());
   }
 
   @Test
