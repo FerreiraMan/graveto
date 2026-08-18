@@ -77,7 +77,6 @@ public class TransferServiceImpl implements TransferService {
     destinationAccount.validateIsActive(TR_CREATE_ACTION);
 
     sourceAccount.validateUserPermission(userSid, MembershipRole::canCreateTransaction, TR_CREATE_ACTION);
-    destinationAccount.validateUserPermission(userSid, MembershipRole::canCreateTransaction, TR_CREATE_ACTION);
 
     sourceAccount.updateBalance(amount, TransactionType.TRANSFER_OUT);
     destinationAccount.updateBalance(amount, TransactionType.TRANSFER_IN);
