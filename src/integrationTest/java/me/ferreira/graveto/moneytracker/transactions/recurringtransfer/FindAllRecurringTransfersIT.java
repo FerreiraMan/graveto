@@ -43,6 +43,7 @@ public class FindAllRecurringTransfersIT extends MoneyTrackerBaseIntegrationTest
     // Act & Assert
     given()
         .header("Authorization", "Bearer " + userSid)
+        .queryParam("accountSid", sourceAccount.getSid().toString())
         .when()
         .get("/recurring-transfers")
         .then()
@@ -54,11 +55,12 @@ public class FindAllRecurringTransfersIT extends MoneyTrackerBaseIntegrationTest
   void shouldReturnEmptyListWhenUserHasNoRecurringTransfers() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
-    setupAccount(userSid, "BCP");
+    final Account account = setupAccount(userSid, "BCP");
 
     // Act & Assert
     given()
         .header("Authorization", "Bearer " + userSid)
+        .queryParam("accountSid", account.getSid().toString())
         .when()
         .get("/recurring-transfers")
         .then()
@@ -93,6 +95,7 @@ public class FindAllRecurringTransfersIT extends MoneyTrackerBaseIntegrationTest
     // Act
     given()
         .header("Authorization", "Bearer " + userSid)
+        .queryParam("accountSid", sourceAccount.getSid().toString())
         .queryParam("status", "ACTIVE")
         .when()
         .get("/recurring-transfers")
@@ -118,7 +121,7 @@ public class FindAllRecurringTransfersIT extends MoneyTrackerBaseIntegrationTest
     // Act
     given()
         .header("Authorization", "Bearer " + userSid)
-        .queryParam("sourceAccountSid", sourceAccount.getSid().toString())
+        .queryParam("accountSid", sourceAccount.getSid().toString())
         .when()
         .get("/recurring-transfers")
         .then()
@@ -143,6 +146,7 @@ public class FindAllRecurringTransfersIT extends MoneyTrackerBaseIntegrationTest
     // Act
     given()
         .header("Authorization", "Bearer " + userSid)
+        .queryParam("accountSid", sourceAccount.getSid().toString())
         .queryParam("destinationAccountSid", destinationAccount.getSid().toString())
         .when()
         .get("/recurring-transfers")
@@ -153,30 +157,50 @@ public class FindAllRecurringTransfersIT extends MoneyTrackerBaseIntegrationTest
   }
 
   @Test
-  void shouldNotReturnRecurringTransfersFromOtherUsers() {
+  void shouldNotReturnRecurringTransfersFromOtherAccounts() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
-    final UUID otherUserSid = UUID.randomUUID();
     final Account sourceAccount = setupAccount(userSid, "Santander");
     final Account destinationAccount = setupAccount(userSid, "BCP");
-    final Account otherSourceAccount = setupAccount(otherUserSid, "BPI");
-    final Account otherDestinationAccount = setupAccount(otherUserSid, "BPI");
+    final Account otherSourceAccount = setupAccount(userSid, "BPI");
 
     createRecurringTransfer(userSid, sourceAccount, destinationAccount, "Insurance", new BigDecimal("50"),
         LocalDate.now().plusDays(10));
-    createRecurringTransfer(otherUserSid, otherSourceAccount, otherDestinationAccount, "Other Insurance",
+    createRecurringTransfer(userSid, otherSourceAccount, destinationAccount, "Other Insurance",
         new BigDecimal("60"),
         LocalDate.now().plusDays(10));
 
     // Act
     given()
         .header("Authorization", "Bearer " + userSid)
+        .queryParam("accountSid", sourceAccount.getSid().toString())
         .when()
         .get("/recurring-transfers")
         .then()
         .statusCode(200)
         .body("$", hasSize(1))
         .body("[0].sourceAccount.sid", not(hasItem(sourceAccount.getSid().toString())));
+  }
+
+  @Test
+  void shouldNotReturnRecurringTransferWhenAccountIsOnlyTheDestination() {
+    // Arrange
+    final UUID userSid = UUID.randomUUID();
+    final Account sourceAccount = setupAccount(userSid, "Santander");
+    final Account destinationAccount = setupAccount(userSid, "BCP");
+
+    createRecurringTransfer(userSid, sourceAccount, destinationAccount, "Insurance", new BigDecimal("50"),
+        LocalDate.now().plusDays(10));
+
+    // Act & Assert
+    given()
+        .header("Authorization", "Bearer " + userSid)
+        .queryParam("accountSid", destinationAccount.getSid().toString())
+        .when()
+        .get("/recurring-transfers")
+        .then()
+        .statusCode(200)
+        .body("$", hasSize(0));
   }
 
   @Test
@@ -193,6 +217,7 @@ public class FindAllRecurringTransfersIT extends MoneyTrackerBaseIntegrationTest
     // Act
     final List<String> descriptions = given()
         .header("Authorization", "Bearer " + userSid)
+        .queryParam("accountSid", sourceAccount.getSid().toString())
         .when()
         .get("/recurring-transfers")
         .then()

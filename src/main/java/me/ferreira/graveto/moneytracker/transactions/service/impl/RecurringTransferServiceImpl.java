@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 @AllArgsConstructor
 public class RecurringTransferServiceImpl implements RecurringTransferService {
 
+  private static final String RECURRING_TR_READ_ACTION = "read recurring transfers";
   private static final String RECURRING_TR_CREATE_ACTION = "create recurring transfers";
   private static final String RECURRING_TR_UPDATE_ACTION = "update recurring transfers";
   private static final String RECURRING_TR_CANCEL_ACTION = "cancel recurring transfers";
@@ -118,6 +119,9 @@ public class RecurringTransferServiceImpl implements RecurringTransferService {
   @Override
   @Transactional(readOnly = true)
   public List<RecurringTransfer> fetchAllRecurringTransfers(final FindAllRecurringTransfersCommand command) {
+
+    accountService.fetchAccountEntity(command.accountSid())
+        .validateUserPermission(command.userSid(), MembershipRole::canReadTransaction, RECURRING_TR_READ_ACTION);
 
     return recurringTransferRepository.findAll(command);
   }
