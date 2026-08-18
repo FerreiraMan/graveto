@@ -28,6 +28,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
@@ -50,6 +51,7 @@ public class FindAllRecurringTransfersControllerTest {
   void shouldFetchAllRecurringTransfersSuccessfully() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
+    final UUID accountSid = UUID.randomUUID();
     final RecurringTransfer rt = buildMockRecurringTransfer();
 
     final ArgumentCaptor<FindAllRecurringTransfersCommand> commandCaptor =
@@ -57,8 +59,10 @@ public class FindAllRecurringTransfersControllerTest {
     when(service.fetchAllRecurringTransfers(commandCaptor.capture())).thenReturn(List.of(rt));
 
     // Act
-    final MvcTestResult result =
-        mvc.get().uri("/recurring-transfers").with(authentication(AuthUtils.mockAuth(userSid))).exchange();
+    final MvcTestResult result = mvc.get()
+        .uri("/recurring-transfers")
+        .param("accountSid", accountSid.toString())
+        .with(authentication(AuthUtils.mockAuth(userSid))).exchange();
 
     // Assert
     assertThat(result).hasStatus(HttpStatus.OK);
@@ -66,7 +70,7 @@ public class FindAllRecurringTransfersControllerTest {
     final FindAllRecurringTransfersCommand captured = commandCaptor.getValue();
     assertThat(captured.userSid()).isEqualTo(userSid);
     assertThat(captured.status()).isNull();
-    assertThat(captured.sourceAccountSid()).isNull();
+    assertThat(captured.accountSid()).isEqualTo(accountSid);
     assertThat(captured.destinationAccountSid()).isNull();
 
     RecurringTransferDtoAssertions.assertListResponse(result, rt, 0);
@@ -76,13 +80,17 @@ public class FindAllRecurringTransfersControllerTest {
   void shouldPassStatusFilterToCommand() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
+    final UUID accountSid = UUID.randomUUID();
 
     final ArgumentCaptor<FindAllRecurringTransfersCommand> commandCaptor =
         ArgumentCaptor.forClass(FindAllRecurringTransfersCommand.class);
     when(service.fetchAllRecurringTransfers(commandCaptor.capture())).thenReturn(List.of());
 
     // Act
-    final MvcTestResult result = mvc.get().uri("/recurring-transfers").param("status", "ACTIVE")
+    final MvcTestResult result = mvc.get()
+        .uri("/recurring-transfers")
+        .param("accountSid", accountSid.toString())
+        .param("status", "ACTIVE")
         .with(authentication(AuthUtils.mockAuth(userSid))).exchange();
 
     // Assert
@@ -102,14 +110,15 @@ public class FindAllRecurringTransfersControllerTest {
     when(service.fetchAllRecurringTransfers(commandCaptor.capture())).thenReturn(List.of());
 
     // Act
-    final MvcTestResult result =
-        mvc.get().uri("/recurring-transfers").param("sourceAccountSid", sourceAccountSid.toString())
-            .param("destinationAccountSid", destinationAccountSid.toString())
-            .with(authentication(AuthUtils.mockAuth(userSid))).exchange();
+    final MvcTestResult result = mvc.get()
+        .uri("/recurring-transfers")
+        .param("accountSid", sourceAccountSid.toString())
+        .param("destinationAccountSid", destinationAccountSid.toString())
+        .with(authentication(AuthUtils.mockAuth(userSid))).exchange();
 
     // Assert
     assertThat(result).hasStatus(HttpStatus.OK);
-    assertThat(commandCaptor.getValue().sourceAccountSid()).isEqualTo(sourceAccountSid);
+    assertThat(commandCaptor.getValue().accountSid()).isEqualTo(sourceAccountSid);
     assertThat(commandCaptor.getValue().destinationAccountSid()).isEqualTo(destinationAccountSid);
   }
 
@@ -117,15 +126,34 @@ public class FindAllRecurringTransfersControllerTest {
   void shouldReturnEmptyListWhenNoRecurringTransfersExist() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
+    final UUID accountSid = UUID.randomUUID();
     when(service.fetchAllRecurringTransfers(org.mockito.ArgumentMatchers.any())).thenReturn(List.of());
 
     // Act
-    final MvcTestResult result =
-        mvc.get().uri("/recurring-transfers").with(authentication(AuthUtils.mockAuth(userSid))).exchange();
+    final MvcTestResult result = mvc.get()
+        .uri("/recurring-transfers")
+        .param("accountSid", accountSid.toString())
+        .with(authentication(AuthUtils.mockAuth(userSid))).exchange();
 
     // Assert
     assertThat(result).hasStatus(HttpStatus.OK);
     assertThat(result).bodyJson().extractingPath("$").asInstanceOf(InstanceOfAssertFactories.LIST).isEmpty();
+  }
+
+  @Test
+  void shouldReturnBadRequestWhenAccountSidIsMissing() {
+    // Act
+    final MvcTestResult testResult = mvc.get()
+        .uri("/recurring-transfers")
+        .with(authentication(AuthUtils.mockAuth(UUID.randomUUID())))
+        .accept(MediaType.APPLICATION_JSON)
+        .exchange();
+
+    // Assert
+    assertThat(testResult)
+        .hasStatus(HttpStatus.BAD_REQUEST)
+        .bodyJson()
+        .hasPath("$.invalid_params.accountSid");
   }
 
   private RecurringTransfer buildMockRecurringTransfer() {

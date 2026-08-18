@@ -103,8 +103,8 @@ public class RecurringTransactionController {
 
     final FindAllRecurringTransactionsCommand command = new FindAllRecurringTransactionsCommand(
         userSid,
-        requestDto.status(),
-        requestDto.accountSid()
+        requestDto.accountSid(),
+        requestDto.status()
     );
 
     final List<RecurringTransaction> recurringTransactions =

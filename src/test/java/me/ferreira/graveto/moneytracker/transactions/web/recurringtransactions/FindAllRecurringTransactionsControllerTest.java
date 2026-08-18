@@ -30,6 +30,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
@@ -52,6 +53,7 @@ public class FindAllRecurringTransactionsControllerTest {
   void shouldFetchAllRecurringTransactionsSuccessfully() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
+    final UUID accountSid = UUID.randomUUID();
     final RecurringTransaction rt = buildMockRecurringTransaction();
 
     final ArgumentCaptor<FindAllRecurringTransactionsCommand> commandCaptor =
@@ -61,6 +63,7 @@ public class FindAllRecurringTransactionsControllerTest {
     // Act
     final MvcTestResult result = mvc.get()
         .uri("/recurring-transactions")
+        .param("accountSid", accountSid.toString())
         .with(authentication(AuthUtils.mockAuth(userSid)))
         .exchange();
 
@@ -70,7 +73,7 @@ public class FindAllRecurringTransactionsControllerTest {
     final FindAllRecurringTransactionsCommand captured = commandCaptor.getValue();
     assertThat(captured.userSid()).isEqualTo(userSid);
     assertThat(captured.status()).isNull();
-    assertThat(captured.accountSid()).isNull();
+    assertThat(captured.accountSid()).isEqualTo(accountSid);
 
     RecurringTransactionDtoAssertions.assertListResponse(result, rt, 0);
   }
@@ -87,6 +90,7 @@ public class FindAllRecurringTransactionsControllerTest {
     // Act
     final MvcTestResult result = mvc.get()
         .uri("/recurring-transactions")
+        .param("accountSid", UUID.randomUUID().toString())
         .param("status", "ACTIVE")
         .with(authentication(AuthUtils.mockAuth(userSid)))
         .exchange();
@@ -94,28 +98,6 @@ public class FindAllRecurringTransactionsControllerTest {
     // Assert
     assertThat(result).hasStatus(HttpStatus.OK);
     assertThat(commandCaptor.getValue().status()).isEqualTo(RecurringOperationStatus.ACTIVE);
-  }
-
-  @Test
-  void shouldPassAccountSidFilterToCommand() {
-    // Arrange
-    final UUID userSid = UUID.randomUUID();
-    final UUID accountSid = UUID.randomUUID();
-
-    final ArgumentCaptor<FindAllRecurringTransactionsCommand> commandCaptor =
-        ArgumentCaptor.forClass(FindAllRecurringTransactionsCommand.class);
-    when(service.fetchAllRecurringTransactions(commandCaptor.capture())).thenReturn(List.of());
-
-    // Act
-    final MvcTestResult result = mvc.get()
-        .uri("/recurring-transactions")
-        .param("accountSid", accountSid.toString())
-        .with(authentication(AuthUtils.mockAuth(userSid)))
-        .exchange();
-
-    // Assert
-    assertThat(result).hasStatus(HttpStatus.OK);
-    assertThat(commandCaptor.getValue().accountSid()).isEqualTo(accountSid);
   }
 
   @Test
@@ -127,12 +109,29 @@ public class FindAllRecurringTransactionsControllerTest {
     // Act
     final MvcTestResult result = mvc.get()
         .uri("/recurring-transactions")
+        .param("accountSid", UUID.randomUUID().toString())
         .with(authentication(AuthUtils.mockAuth(userSid)))
         .exchange();
 
     // Assert
     assertThat(result).hasStatus(HttpStatus.OK);
     assertThat(result).bodyJson().extractingPath("$").asInstanceOf(InstanceOfAssertFactories.LIST).isEmpty();
+  }
+
+  @Test
+  void shouldReturnBadRequestWhenAccountSidIsMissing() {
+    // Act
+    final MvcTestResult testResult = mvc.get()
+        .uri("/recurring-transactions")
+        .with(authentication(AuthUtils.mockAuth(UUID.randomUUID())))
+        .accept(MediaType.APPLICATION_JSON)
+        .exchange();
+
+    // Assert
+    assertThat(testResult)
+        .hasStatus(HttpStatus.BAD_REQUEST)
+        .bodyJson()
+        .hasPath("$.invalid_params.accountSid");
   }
 
   private RecurringTransaction buildMockRecurringTransaction() {

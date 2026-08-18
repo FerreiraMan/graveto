@@ -28,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 @AllArgsConstructor
 public class RecurringTransactionServiceImpl implements RecurringTransactionService {
 
+  private static final String RECURRING_TX_READ_ACTION = "read recurring transactions";
   private static final String RECURRING_TX_CREATE_ACTION = "create recurring transactions";
   private static final String RECURRING_TX_UPDATE_ACTION = "update recurring transactions";
   private static final String RECURRING_TX_CANCEL_ACTION = "cancel recurring transactions";
@@ -117,6 +118,9 @@ public class RecurringTransactionServiceImpl implements RecurringTransactionServ
   @Override
   @Transactional(readOnly = true)
   public List<RecurringTransaction> fetchAllRecurringTransactions(final FindAllRecurringTransactionsCommand command) {
+
+    accountService.fetchAccountEntity(command.accountSid())
+        .validateUserPermission(command.userSid(), MembershipRole::canReadTransaction, RECURRING_TX_READ_ACTION);
 
     return recurringTransactionRepository.findAll(command);
   }

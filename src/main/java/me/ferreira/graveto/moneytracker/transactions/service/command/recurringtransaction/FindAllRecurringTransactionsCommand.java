@@ -5,7 +5,7 @@ import me.ferreira.graveto.common.domain.RecurringOperationStatus;
 
 public record FindAllRecurringTransactionsCommand(
     UUID userSid,
-    RecurringOperationStatus status,
-    UUID accountSid
+    UUID accountSid,
+    RecurringOperationStatus status
 ) {
 }

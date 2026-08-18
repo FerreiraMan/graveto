@@ -13,42 +13,19 @@ public class RecurringTransfersSpecs {
   public static PredicateSpecification<RecurringTransfer> buildFromCommand(
       final FindAllRecurringTransfersCommand command) {
 
-    return isFromUser(command.userSid())
-        .and(hasStatus(command.status()))
-        .and(hasSourceAccount(command.sourceAccountSid()))
-        .and(hasDestinationAccount(command.destinationAccountSid()));
+    return isFromAccount(command.accountSid())
+        .and(hasDestinationAccount(command.destinationAccountSid()))
+        .and(hasStatus(command.status()));
   }
 
-  private static PredicateSpecification<RecurringTransfer> isFromUser(final UUID userSid) {
+  private static PredicateSpecification<RecurringTransfer> isFromAccount(final UUID accountSid) {
 
-    if (userSid == null) {
-      throw new IllegalArgumentException("User SID is strictly required to view recurring transfers.");
+    if (accountSid == null) {
+      throw new IllegalArgumentException("Account SID is strictly required to view recurring transfers.");
     }
 
     return (from, builder) ->
-        builder.equal(from.get(RecurringTransfer_.userSid), userSid
-        );
-  }
-
-  private static PredicateSpecification<RecurringTransfer> hasStatus(final RecurringOperationStatus status) {
-
-    if (status == null) {
-      return PredicateSpecification.unrestricted();
-    }
-
-    return (from, builder) ->
-        builder.equal(from.get(RecurringTransfer_.status), status
-        );
-  }
-
-  private static PredicateSpecification<RecurringTransfer> hasSourceAccount(final UUID sourceAccountSid) {
-
-    if (sourceAccountSid == null) {
-      return PredicateSpecification.unrestricted();
-    }
-
-    return (from, builder) ->
-        builder.equal(from.join(RecurringTransfer_.sourceAccount).get(Account_.sid), sourceAccountSid
+        builder.equal(from.join(RecurringTransfer_.sourceAccount).get(Account_.sid), accountSid
         );
   }
 
@@ -60,6 +37,17 @@ public class RecurringTransfersSpecs {
 
     return (from, builder) ->
         builder.equal(from.join(RecurringTransfer_.destinationAccount).get(Account_.sid), destinationAccountSid
+        );
+  }
+
+  private static PredicateSpecification<RecurringTransfer> hasStatus(final RecurringOperationStatus status) {
+
+    if (status == null) {
+      return PredicateSpecification.unrestricted();
+    }
+
+    return (from, builder) ->
+        builder.equal(from.get(RecurringTransfer_.status), status
         );
   }
   

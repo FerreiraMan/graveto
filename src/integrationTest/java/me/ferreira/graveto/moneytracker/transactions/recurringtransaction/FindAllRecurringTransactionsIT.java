@@ -35,7 +35,7 @@ public class FindAllRecurringTransactionsIT extends MoneyTrackerBaseIntegrationT
   private CategoryRepository categoryRepository;
 
   @Test
-  void shouldReturnAllRecurringTransactionsForUser() {
+  void shouldReturnAllRecurringTransactionsForAccount() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
     final Account account = setupAccount(userSid);
@@ -45,6 +45,7 @@ public class FindAllRecurringTransactionsIT extends MoneyTrackerBaseIntegrationT
     // Act & Assert
     given()
         .header("Authorization", "Bearer " + userSid)
+        .queryParam("accountSid", account.getSid().toString())
         .when()
         .get("/recurring-transactions")
         .then()
@@ -53,14 +54,15 @@ public class FindAllRecurringTransactionsIT extends MoneyTrackerBaseIntegrationT
   }
 
   @Test
-  void shouldReturnEmptyListWhenUserHasNoRecurringTransactions() {
+  void shouldReturnEmptyListWhenAccountHasNoRecurringTransactions() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
-    setupAccount(userSid);
+    final Account account = setupAccount(userSid);
 
     // Act & Assert
     given()
         .header("Authorization", "Bearer " + userSid)
+        .queryParam("accountSid", account.getSid().toString())
         .when()
         .get("/recurring-transactions")
         .then()
@@ -92,6 +94,7 @@ public class FindAllRecurringTransactionsIT extends MoneyTrackerBaseIntegrationT
     // Act
     given()
         .header("Authorization", "Bearer " + userSid)
+        .queryParam("accountSid", account.getSid().toString())
         .queryParam("status", "ACTIVE")
         .when()
         .get("/recurring-transactions")
@@ -124,20 +127,20 @@ public class FindAllRecurringTransactionsIT extends MoneyTrackerBaseIntegrationT
   }
 
   @Test
-  void shouldNotReturnRecurringTransactionsFromOtherUsers() {
+  void shouldNotReturnRecurringTransactionsFromOtherAccounts() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
-    final UUID otherUserSid = UUID.randomUUID();
     final Account account = setupAccount(userSid);
-    final Account otherAccount = setupAccount(otherUserSid);
+    final Account otherAccount = setupAccount(userSid);
 
     createRecurringTransaction(userSid, account, "Insurance", new BigDecimal("50"), LocalDate.now().plusDays(10));
-    createRecurringTransaction(otherUserSid, otherAccount, "Other Insurance", new BigDecimal("60"),
+    createRecurringTransaction(userSid, otherAccount, "Other Insurance", new BigDecimal("60"),
         LocalDate.now().plusDays(10));
 
     // Act
     given()
         .header("Authorization", "Bearer " + userSid)
+        .queryParam("accountSid", otherAccount.getSid().toString())
         .when()
         .get("/recurring-transactions")
         .then()
@@ -157,6 +160,7 @@ public class FindAllRecurringTransactionsIT extends MoneyTrackerBaseIntegrationT
     // Act
     final List<String> descriptions = given()
         .header("Authorization", "Bearer " + userSid)
+        .queryParam("accountSid", account.getSid().toString())
         .when()
         .get("/recurring-transactions")
         .then()

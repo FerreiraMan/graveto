@@ -5,8 +5,8 @@ import me.ferreira.graveto.common.domain.RecurringOperationStatus;
 
 public record FindAllRecurringTransfersCommand(
     UUID userSid,
-    RecurringOperationStatus status,
-    UUID sourceAccountSid,
-    UUID destinationAccountSid
+    UUID accountSid,
+    UUID destinationAccountSid,
+    RecurringOperationStatus status
 ) {
 }

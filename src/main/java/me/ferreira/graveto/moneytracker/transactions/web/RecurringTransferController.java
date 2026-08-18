@@ -102,9 +102,9 @@ public class RecurringTransferController {
 
     final FindAllRecurringTransfersCommand command = new FindAllRecurringTransfersCommand(
         userSid,
-        requestDto.status(),
-        requestDto.sourceAccountSid(),
-        requestDto.destinationAccountSid()
+        requestDto.accountSid(),
+        requestDto.destinationAccountSid(),
+        requestDto.status()
     );
 
     final List<RecurringTransfer> recurringTransfers =
