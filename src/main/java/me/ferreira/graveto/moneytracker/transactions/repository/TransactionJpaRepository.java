@@ -39,14 +39,13 @@ public interface TransactionJpaRepository
   Optional<Transaction> findBySid(final UUID sid);
 
   @Query(value =
-      "SELECT EXTRACT(MONTH FROM t.occurredAt) AS month, t.type AS type, SUM(t.amount) AS totalAmount " +
+      "SELECT EXTRACT(YEAR FROM t.occurredAt) AS year, EXTRACT(MONTH FROM t.occurredAt) AS month, " +
+          "t.type AS type, SUM(t.amount) AS totalAmount " +
           "FROM Transaction t " +
-          "WHERE EXTRACT(YEAR FROM t.occurredAt) = ?1 " +
-          "AND t.account.sid = ?2 " +
-          "AND t.status = ?3 " +
-          "GROUP BY EXTRACT(MONTH FROM t.occurredAt), t.type")
-  List<MonthlyAggregateProjection> calculateMonthlyAggregates(final int year, final UUID accountSid,
-                                                              final TransactionStatus status);
+          "WHERE t.account.sid = ?1 " +
+          "AND t.status = ?2 " +
+          "GROUP BY year, month, t.type")
+  List<MonthlyAggregateProjection> calculateMonthlyAggregates(final UUID accountSid, final TransactionStatus status);
 
   @Query(value = "SELECT EXTRACT(MONTH FROM t.occurredAt) AS month, " +
       "c.sid AS categorySid, " +

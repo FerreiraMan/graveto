@@ -7,12 +7,15 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.Year;
 import java.util.List;
 import java.util.UUID;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.repository.AccountRepository;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
+import me.ferreira.graveto.moneytracker.categories.domain.SystemCategory;
 import me.ferreira.graveto.moneytracker.categories.repository.CategoryRepository;
+import me.ferreira.graveto.moneytracker.categories.service.CategoryService;
 import me.ferreira.graveto.moneytracker.categories.service.command.FindAllCategoriesCommand;
 import me.ferreira.graveto.moneytracker.config.MoneyTrackerBaseIntegrationTest;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
@@ -34,25 +37,26 @@ public class FetchCashFlowReportIT extends MoneyTrackerBaseIntegrationTest {
   private AccountRepository accountRepository;
   @Autowired
   private CategoryRepository categoryRepository;
+  @Autowired
+  private CategoryService categoryService;
 
   @Test
   void shouldFetchCashFlowReportWithAccurateAggregations() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
+    final BigDecimal openingBalance = BigDecimal.valueOf(5000);
     final Account account =
-        AccountTestFactory.createAccountWithOwner(userSid, "Main Checking", BigDecimal.valueOf(5000));
+        AccountTestFactory.createAccountWithOwner(userSid, "Main Checking", openingBalance);
     accountRepository.save(account);
 
-    final Category incomeCategory =
-        categoryRepository.findAll(new FindAllCategoriesCommand(userSid, null, null, null, null)).stream()
-            .filter(c -> c.getTransactionType() == TransactionType.INCOME)
-            .findFirst().get();
-    final Category expenseCategory =
-        categoryRepository.findAll(new FindAllCategoriesCommand(userSid, null, null, null, null)).stream()
-            .filter(c -> c.getTransactionType() == TransactionType.EXPENSE)
-            .findFirst().get();
+    final Category incomeCategory = fetchCategory(userSid, TransactionType.INCOME);
+    final Category expenseCategory = fetchCategory(userSid, TransactionType.EXPENSE);
+    final Category openingBalanceCategory = fetchOpeningBalanceCategory();
 
     final int targetYear = 2026;
+
+    final Transaction openingTx = TransactionTestFactory.createOpeningBalanceTransaction(
+        account, openingBalanceCategory, openingBalance, LocalDate.of(targetYear, 1, 1));
 
     // Income
     final Transaction txJanIncome =
@@ -75,18 +79,20 @@ public class FetchCashFlowReportIT extends MoneyTrackerBaseIntegrationTest {
         TransactionTestFactory.createTransaction(account, expenseCategory, TransactionType.EXPENSE,
             BigDecimal.valueOf(9999), TransactionStatus.DELETED, LocalDate.of(targetYear, 1, 12));
 
-    // Wrong year - should be ignored
-    final Transaction txWrongYear =
+    // Prior year - contributes to balanceAtEndOfYear/balanceAtEndOfMonth carry-forward, but
+    // must not leak into this year's yearlyIncome/monthlyCashFlow figures.
+    final Transaction txPriorYear =
         TransactionTestFactory.createTransaction(account, incomeCategory, TransactionType.INCOME,
-            BigDecimal.valueOf(50000), TransactionStatus.ACTIVE, LocalDate.of(2025, 12, 31));
+            BigDecimal.valueOf(300), TransactionStatus.ACTIVE, LocalDate.of(targetYear - 1, 12, 31));
 
     transactionRepository.saveAll(
-        List.of(txJanIncome, txJanSecondIncome, txFebIncome, txJanExpense, txDeleted, txWrongYear));
+        List.of(openingTx, txJanIncome, txJanSecondIncome, txFebIncome, txJanExpense, txDeleted, txPriorYear));
 
-    // Expected Math for 2026:
-    // Jan: Income = 1230, Expense = 200, Net = 1030
-    // Feb: Income = 500, Expense = 0, Net = 500
-    // Total: Income = 1730, Expense = 200, Net = 1530
+    // Expected Math:
+    // Opening balance: 5000. Prior year (2025) closing balance: 5000 + 300 = 5300.
+    // Jan 2026: Income = 1230, Expense = 200, Net = 1030. Balance = 5300 + 1030 = 6330.
+    // Feb 2026: Income = 500, Expense = 0, Net = 500. Balance = 6330 + 500 = 6830.
+    // Total 2026: Income = 1730, Expense = 200, Net = 1530. balanceAtEndOfYear = 6830.
 
     // Act
     final Response response = given()
@@ -105,6 +111,7 @@ public class FetchCashFlowReportIT extends MoneyTrackerBaseIntegrationTest {
         .body("yearlyIncome", is(1730.0f))
         .body("yearlyExpense", is(200.0f))
         .body("yearlyNetFlow", is(1530.0f))
+        .body("balanceAtEndOfYear", is(6830.0f))
 
         .body("monthlyCashFlow.size()", is(12))
 
@@ -112,21 +119,172 @@ public class FetchCashFlowReportIT extends MoneyTrackerBaseIntegrationTest {
         .body("monthlyCashFlow[0].income", is(1230.0f))
         .body("monthlyCashFlow[0].expense", is(200.0f))
         .body("monthlyCashFlow[0].netFlow", is(1030.0f))
+        .body("monthlyCashFlow[0].balanceAtEndOfMonth", is(6330.0f))
 
         .body("monthlyCashFlow[1].month", is(2))
         .body("monthlyCashFlow[1].income", is(500.0f))
         .body("monthlyCashFlow[1].expense", is(0))
         .body("monthlyCashFlow[1].netFlow", is(500.0f))
+        .body("monthlyCashFlow[1].balanceAtEndOfMonth", is(6830.0f))
 
         .body("monthlyCashFlow[2].month", is(3))
         .body("monthlyCashFlow[2].income", is(0))
         .body("monthlyCashFlow[2].expense", is(0))
         .body("monthlyCashFlow[2].netFlow", is(0))
+        .body("monthlyCashFlow[2].balanceAtEndOfMonth", is(6830.0f))
 
         .body("monthlyCashFlow[3].month", is(4))
         .body("monthlyCashFlow[3].income", is(0))
         .body("monthlyCashFlow[3].expense", is(0))
         .body("monthlyCashFlow[3].netFlow", is(0));
+  }
+
+  @Test
+  void shouldReturnEmptyReportForBrandNewAccountWithNoActivityYet() {
+    // Arrange
+    final UUID userSid = UUID.randomUUID();
+    final BigDecimal openingBalance = BigDecimal.valueOf(1000);
+    final Account account =
+        AccountTestFactory.createAccountWithOwner(userSid, "Fresh Account", openingBalance);
+    accountRepository.save(account);
+
+    final Category openingBalanceCategory = fetchOpeningBalanceCategory();
+    final int targetYear = Year.now().getValue();
+
+    final Transaction openingTx = TransactionTestFactory.createOpeningBalanceTransaction(
+        account, openingBalanceCategory, openingBalance, LocalDate.of(targetYear, 1, 1));
+    transactionRepository.save(openingTx);
+
+    // Act
+    final Response response = given()
+        .header("Authorization", "Bearer " + userSid)
+        .pathParam("accountSid", account.getSid())
+        .queryParam("year", targetYear)
+        .contentType(ContentType.JSON)
+        .when()
+        .get("/analytics/{accountSid}/cash-flow");
+
+    // Assert
+    response.then()
+        .log().ifValidationFails()
+        .statusCode(200)
+        .body("year", is(targetYear))
+        .body("yearlyIncome", is(0))
+        .body("yearlyExpense", is(0))
+        .body("yearlyNetFlow", is(0))
+        .body("balanceAtEndOfYear", is(1000.0f))
+        .body("yearsWithCashFlows.size()", is(0))
+        .body("monthlyCashFlow.size()", is(12))
+        .body("monthlyCashFlow[0].balanceAtEndOfMonth", is(1000.0f))
+        .body("monthlyCashFlow[11].balanceAtEndOfMonth", is(1000.0f));
+  }
+
+  @Test
+  void shouldRejectRequestForYearBeforeAccountExisted() {
+    // Arrange
+    final UUID userSid = UUID.randomUUID();
+    final BigDecimal openingBalance = BigDecimal.valueOf(1000);
+    final Account account =
+        AccountTestFactory.createAccountWithOwner(userSid, "Main Checking", openingBalance);
+    accountRepository.save(account);
+
+    final Category openingBalanceCategory = fetchOpeningBalanceCategory();
+    final int accountOpeningYear = 2024;
+
+    final Transaction openingTx = TransactionTestFactory.createOpeningBalanceTransaction(
+        account, openingBalanceCategory, openingBalance, LocalDate.of(accountOpeningYear, 1, 1));
+    transactionRepository.save(openingTx);
+
+    // Act
+    final Response response = given()
+        .header("Authorization", "Bearer " + userSid)
+        .pathParam("accountSid", account.getSid())
+        .queryParam("year", accountOpeningYear - 1)
+        .contentType(ContentType.JSON)
+        .when()
+        .get("/analytics/{accountSid}/cash-flow");
+
+    // Assert
+    response.then()
+        .log().ifValidationFails()
+        .statusCode(400);
+  }
+
+  @Test
+  void shouldRejectRequestForFutureYear() {
+    // Arrange
+    final UUID userSid = UUID.randomUUID();
+    final Account account =
+        AccountTestFactory.createAccountWithOwner(userSid, "Main Checking", BigDecimal.valueOf(1000));
+    accountRepository.save(account);
+
+    // Act
+    final Response response = given()
+        .header("Authorization", "Bearer " + userSid)
+        .pathParam("accountSid", account.getSid())
+        .queryParam("year", Year.now().getValue() + 1)
+        .contentType(ContentType.JSON)
+        .when()
+        .get("/analytics/{accountSid}/cash-flow");
+
+    // Assert
+    response.then()
+        .log().ifValidationFails()
+        .statusCode(400);
+  }
+
+  @Test
+  void shouldCarryBalanceForwardThroughGapYearWithNoActivity() {
+    // Arrange - opening balance + income in 2023, nothing in 2024, income in 2025.
+    // Requesting 2025 must carry the 2023 closing balance forward through the 2024 gap.
+    final UUID userSid = UUID.randomUUID();
+    final BigDecimal openingBalance = BigDecimal.valueOf(1000);
+    final Account account =
+        AccountTestFactory.createAccountWithOwner(userSid, "Main Checking", openingBalance);
+    accountRepository.save(account);
+
+    final Category incomeCategory = fetchCategory(userSid, TransactionType.INCOME);
+    final Category openingBalanceCategory = fetchOpeningBalanceCategory();
+
+    final Transaction openingTx = TransactionTestFactory.createOpeningBalanceTransaction(
+        account, openingBalanceCategory, openingBalance, LocalDate.of(2023, 1, 1));
+    final Transaction tx2023Income =
+        TransactionTestFactory.createTransaction(account, incomeCategory, TransactionType.INCOME,
+            BigDecimal.valueOf(300), TransactionStatus.ACTIVE, LocalDate.of(2023, 6, 1));
+    final Transaction tx2025Income =
+        TransactionTestFactory.createTransaction(account, incomeCategory, TransactionType.INCOME,
+            BigDecimal.valueOf(500), TransactionStatus.ACTIVE, LocalDate.of(2025, 1, 10));
+
+    transactionRepository.saveAll(List.of(openingTx, tx2023Income, tx2025Income));
+
+    // 2023 closing balance = 1000 + 300 = 1300. 2024 has no activity.
+    // January 2025 closing balance = 1300 + 500 = 1800.
+
+    // Act
+    final Response response = given()
+        .header("Authorization", "Bearer " + userSid)
+        .pathParam("accountSid", account.getSid())
+        .queryParam("year", 2025)
+        .contentType(ContentType.JSON)
+        .when()
+        .get("/analytics/{accountSid}/cash-flow");
+
+    // Assert
+    response.then()
+        .log().ifValidationFails()
+        .statusCode(200)
+        .body("balanceAtEndOfYear", is(1800.0f))
+        .body("monthlyCashFlow[0].balanceAtEndOfMonth", is(1800.0f));
+  }
+
+  private Category fetchCategory(final UUID userSid, final TransactionType type) {
+    return categoryRepository.findAll(new FindAllCategoriesCommand(userSid, null, null, null, null)).stream()
+        .filter(c -> c.getTransactionType() == type)
+        .findFirst().get();
+  }
+
+  private Category fetchOpeningBalanceCategory() {
+    return categoryService.fetchInternalCategory(SystemCategory.INITIAL_BALANCE.getSid());
   }
 
 }

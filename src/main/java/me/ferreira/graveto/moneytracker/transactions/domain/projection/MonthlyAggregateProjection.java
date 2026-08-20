@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 
 public interface MonthlyAggregateProjection {
+  int getYear();
+
   int getMonth();
 
   TransactionType getType();

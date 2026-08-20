@@ -173,8 +173,7 @@ public class TransactionServiceImpl implements TransactionService {
   @Transactional(readOnly = true)
   public List<MonthlyAggregateProjection> generateMonthlyAggregates(final GenerateMonthlyAggregateCommand command) {
 
-    return transactionRepository.calculateMonthlyAggregates(command.year(), command.accountSid(),
-        TransactionStatus.ACTIVE);
+    return transactionRepository.calculateMonthlyAggregates(command.accountSid(), TransactionStatus.ACTIVE);
   }
 
   @Override

@@ -1,12 +1,17 @@
 package me.ferreira.graveto.moneytracker.analytics.service.impl;
 
 import java.math.BigDecimal;
+import java.time.Year;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
+import me.ferreira.graveto.common.web.exception.moneytracker.AccountWithInvalidOpeningBalanceException;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
 import me.ferreira.graveto.moneytracker.analytics.service.AnalyticService;
@@ -38,18 +43,27 @@ public class AnalyticServiceImpl implements AnalyticService {
   @Transactional(readOnly = true)
   public CashFlowResult generateCashFlowReport(final CashFlowCommand command) {
 
+    if (Year.now().getValue() < command.year()) {
+      throw new IllegalArgumentException("Requested year must be present or past occurrence.");
+    }
+
     accountService
         .fetchAccountEntity(command.accountSid())
         .validateUserPermission(command.userSid(), MembershipRole::canRequestReport, "request cash flow report");
 
-    final GenerateMonthlyAggregateCommand aggregateCommand = new GenerateMonthlyAggregateCommand(
-        command.year(),
-        command.accountSid()
-    );
+    final GenerateMonthlyAggregateCommand aggregateCommand = new GenerateMonthlyAggregateCommand(command.accountSid());
 
     final List<MonthlyAggregateProjection> projections = transactionService.generateMonthlyAggregates(aggregateCommand);
 
-    return mapToCashFlowResult(command.year(), projections);
+    final MonthlyAggregateProjection openingBalanceProjection = projections.stream()
+        .filter(p -> TransactionType.OPENING_BALANCE.equals(p.getType()))
+        .reduce((t1, t2) -> {
+          throw new AccountWithInvalidOpeningBalanceException(command.accountSid(), "DUPLICATE");
+        })
+        .orElseThrow(() -> new AccountWithInvalidOpeningBalanceException(command.accountSid(), "NONEXISTENT"));
+
+    return mapToCashFlowResult(command.year(), openingBalanceProjection.getTotalAmount(),
+        openingBalanceProjection.getYear(), projections);
   }
 
   @Override
@@ -76,43 +90,111 @@ public class AnalyticServiceImpl implements AnalyticService {
     return mapToCategorySpendingResult(command.year(), projections, accountAvailableCategories);
   }
 
-  private CashFlowResult mapToCashFlowResult(final int year, final List<MonthlyAggregateProjection> projections) {
+  private CashFlowResult mapToCashFlowResult(final int year, final BigDecimal accountOpeningBalance,
+                                             final int yearAccountWasCreated,
+                                             final List<MonthlyAggregateProjection> projections) {
 
+    if (year < yearAccountWasCreated) {
+      throw new IllegalArgumentException("Account has no movements yet to report.");
+    }
+
+    final TreeSet<Integer> yearsWithCashFlows = projections.stream()
+        .filter(p -> TransactionType.INCOME.equals(p.getType()) || TransactionType.EXPENSE.equals(p.getType()))
+        .map(MonthlyAggregateProjection::getYear)
+        .collect(Collectors.toCollection(TreeSet::new));
+
+    if (yearsWithCashFlows.isEmpty()) {
+
+      final List<CashFlowResult.MonthlyCashFlow> emptyMonthlyPayload = new ArrayList<>();
+
+      for (int month = 1; month <= 12; month++) {
+        emptyMonthlyPayload.add(
+            new CashFlowResult.MonthlyCashFlow(month, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                accountOpeningBalance));
+      }
+
+      return new CashFlowResult(
+          yearsWithCashFlows,
+          year,
+          BigDecimal.ZERO,
+          BigDecimal.ZERO,
+          BigDecimal.ZERO,
+          accountOpeningBalance,
+          emptyMonthlyPayload
+      );
+    }
+
+    final TreeMap<Integer, BigDecimal> yearlyIncomeMap = new TreeMap<>();
+    final TreeMap<Integer, BigDecimal> yearlyExpenseMap = new TreeMap<>();
     final HashMap<Integer, BigDecimal> monthlyIncomeMap = new HashMap<>();
     final HashMap<Integer, BigDecimal> monthlyExpenseMap = new HashMap<>();
 
     for (final MonthlyAggregateProjection p : projections) {
 
       if (p.getType() == TransactionType.INCOME) {
-        monthlyIncomeMap.merge(p.getMonth(), p.getTotalAmount(), BigDecimal::add);
+
+        yearlyIncomeMap.merge(p.getYear(), p.getTotalAmount(), BigDecimal::add);
+        if (p.getYear() == year) {
+          monthlyIncomeMap.merge(p.getMonth(), p.getTotalAmount(), BigDecimal::add);
+        }
+
       } else if (p.getType() == TransactionType.EXPENSE) {
-        monthlyExpenseMap.merge(p.getMonth(), p.getTotalAmount(), BigDecimal::add);
+
+        yearlyExpenseMap.merge(p.getYear(), p.getTotalAmount(), BigDecimal::add);
+        if (p.getYear() == year) {
+          monthlyExpenseMap.merge(p.getMonth(), p.getTotalAmount(), BigDecimal::add);
+        }
+
       }
     }
+
+    final TreeMap<Integer, BigDecimal> balanceHistoryAtEndOfYear = new TreeMap<>();
+
+    yearsWithCashFlows.forEach(aggregateYear -> {
+
+      final Integer priorYear = balanceHistoryAtEndOfYear.floorKey(aggregateYear - 1);
+      BigDecimal accountBalanceAtEndOfYear =
+          priorYear != null ? balanceHistoryAtEndOfYear.get(priorYear) : accountOpeningBalance;
+
+      accountBalanceAtEndOfYear = accountBalanceAtEndOfYear
+          .add(yearlyIncomeMap.getOrDefault(aggregateYear, BigDecimal.ZERO))
+          .subtract(yearlyExpenseMap.getOrDefault(aggregateYear, BigDecimal.ZERO));
+
+      balanceHistoryAtEndOfYear.put(aggregateYear, accountBalanceAtEndOfYear);
+
+    });
 
     BigDecimal yearlyIncome = BigDecimal.ZERO;
     BigDecimal yearlyExpense = BigDecimal.ZERO;
     final List<CashFlowResult.MonthlyCashFlow> monthlyCashFlows = new ArrayList<>(12);
-
+    final Integer priorYearForRequestedYear = balanceHistoryAtEndOfYear.floorKey(year - 1);
+    BigDecimal monthlyStartingBalance =
+        priorYearForRequestedYear != null ? balanceHistoryAtEndOfYear.get(priorYearForRequestedYear)
+            : accountOpeningBalance;
     for (int month = 1; month <= 12; month++) {
 
       final BigDecimal income = monthlyIncomeMap.getOrDefault(month, BigDecimal.ZERO);
       final BigDecimal expense = monthlyExpenseMap.getOrDefault(month, BigDecimal.ZERO);
       final BigDecimal netFlow = income.subtract(expense);
 
+      final BigDecimal balanceAtEndOfMonth = monthlyStartingBalance.add(income).subtract(expense);
+      monthlyStartingBalance = balanceAtEndOfMonth;
+
       yearlyIncome = yearlyIncome.add(income);
       yearlyExpense = yearlyExpense.add(expense);
 
-      monthlyCashFlows.add(new CashFlowResult.MonthlyCashFlow(month, income, expense, netFlow));
+      monthlyCashFlows.add(new CashFlowResult.MonthlyCashFlow(month, income, expense, netFlow, balanceAtEndOfMonth));
     }
 
     final BigDecimal yearlyNetFlow = yearlyIncome.subtract(yearlyExpense);
 
     return new CashFlowResult(
+        yearsWithCashFlows,
         year,
         yearlyIncome,
         yearlyExpense,
         yearlyNetFlow,
+        monthlyStartingBalance,
         monthlyCashFlows
     );
   }

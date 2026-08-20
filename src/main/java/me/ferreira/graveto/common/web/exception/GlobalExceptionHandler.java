@@ -12,6 +12,7 @@ import me.ferreira.graveto.common.web.exception.common.TooManyRequestsException;
 import me.ferreira.graveto.common.web.exception.identity.TokenAuthenticationException;
 import me.ferreira.graveto.common.web.exception.identity.UserAlreadyExistsException;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
+import me.ferreira.graveto.common.web.exception.moneytracker.AccountWithInvalidOpeningBalanceException;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryAlreadyExistsException;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.IllegalCategoryHierarchyException;
@@ -149,6 +150,15 @@ public class GlobalExceptionHandler {
 
     log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
     return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+  }
+
+  @ExceptionHandler(AccountWithInvalidOpeningBalanceException.class)
+  public ProblemDetail handleAccountWithInvalidOpeningBalanceException(
+      final AccountWithInvalidOpeningBalanceException ex,
+      final HttpServletRequest request) {
+
+    log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
+    return createBaseProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request);
   }
 
   @ExceptionHandler(RecurringTransactionNotFoundException.class)
