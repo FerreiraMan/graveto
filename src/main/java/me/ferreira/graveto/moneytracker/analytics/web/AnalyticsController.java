@@ -42,25 +42,7 @@ public class AnalyticsController {
 
     final CashFlowResult cashFlowResult = analyticService.generateCashFlowReport(command);
 
-    final List<CashFlowReportResponseDto.MonthlyCashFlowDto> mappedMonthlyFlows =
-        cashFlowResult.monthlyCashFlow().stream()
-            .map(m -> new CashFlowReportResponseDto.MonthlyCashFlowDto(
-                m.month(),
-                m.income(),
-                m.expense(),
-                m.netFlow()
-            ))
-            .toList();
-
-    final CashFlowReportResponseDto response = new CashFlowReportResponseDto(
-        cashFlowResult.year(),
-        cashFlowResult.yearlyIncome(),
-        cashFlowResult.yearlyExpense(),
-        cashFlowResult.yearlyNetFlow(),
-        mappedMonthlyFlows
-    );
-
-    return ResponseEntity.ok().body(response);
+    return ResponseEntity.ok().body(CashFlowReportResponseDto.from(cashFlowResult));
   }
 
   @GetMapping(path = ACCOUNT_SID_PATH + CATEGORY_SPENDING, produces = "application/json")

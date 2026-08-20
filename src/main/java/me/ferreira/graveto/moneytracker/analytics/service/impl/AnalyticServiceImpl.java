@@ -1,10 +1,12 @@
 package me.ferreira.graveto.moneytracker.analytics.service.impl;
 
 import java.math.BigDecimal;
+import java.time.Year;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
@@ -17,7 +19,6 @@ import me.ferreira.graveto.moneytracker.analytics.service.payload.CategorySpendi
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.service.CategoryService;
 import me.ferreira.graveto.moneytracker.categories.service.command.FindAllCategoriesCommand;
-import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.domain.projection.CategoryAggregateProjection;
 import me.ferreira.graveto.moneytracker.transactions.domain.projection.MonthlyAggregateProjection;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
@@ -38,18 +39,22 @@ public class AnalyticServiceImpl implements AnalyticService {
   @Transactional(readOnly = true)
   public CashFlowResult generateCashFlowReport(final CashFlowCommand command) {
 
+    if (Year.now().getValue() < command.year()) {
+      throw new IllegalArgumentException("Requested year must be present or past occurrence.");
+    }
+
     accountService
         .fetchAccountEntity(command.accountSid())
         .validateUserPermission(command.userSid(), MembershipRole::canRequestReport, "request cash flow report");
 
-    final GenerateMonthlyAggregateCommand aggregateCommand = new GenerateMonthlyAggregateCommand(
-        command.year(),
-        command.accountSid()
-    );
+    final List<MonthlyAggregateProjection> projections =
+        transactionService.generateMonthlyAggregates(new GenerateMonthlyAggregateCommand(command.accountSid()));
 
-    final List<MonthlyAggregateProjection> projections = transactionService.generateMonthlyAggregates(aggregateCommand);
+    final MonthlyAggregateProjection openingBalanceProjection =
+        MonthlyAggregateProjectionHelper.resolveOpeningBalanceProjection(command.accountSid(), projections);
 
-    return mapToCashFlowResult(command.year(), projections);
+    return mapToCashFlowResult(command.year(), openingBalanceProjection.getTotalAmount(),
+        openingBalanceProjection.getYear(), projections);
   }
 
   @Override
@@ -76,43 +81,64 @@ public class AnalyticServiceImpl implements AnalyticService {
     return mapToCategorySpendingResult(command.year(), projections, accountAvailableCategories);
   }
 
-  private CashFlowResult mapToCashFlowResult(final int year, final List<MonthlyAggregateProjection> projections) {
+  private CashFlowResult mapToCashFlowResult(final int year, final BigDecimal accountOpeningBalance,
+                                             final int yearAccountWasCreated,
+                                             final List<MonthlyAggregateProjection> projections) {
 
-    final HashMap<Integer, BigDecimal> monthlyIncomeMap = new HashMap<>();
-    final HashMap<Integer, BigDecimal> monthlyExpenseMap = new HashMap<>();
-
-    for (final MonthlyAggregateProjection p : projections) {
-
-      if (p.getType() == TransactionType.INCOME) {
-        monthlyIncomeMap.merge(p.getMonth(), p.getTotalAmount(), BigDecimal::add);
-      } else if (p.getType() == TransactionType.EXPENSE) {
-        monthlyExpenseMap.merge(p.getMonth(), p.getTotalAmount(), BigDecimal::add);
-      }
+    if (year < yearAccountWasCreated) {
+      throw new IllegalArgumentException("Account has no movements yet to report.");
     }
+
+    final TreeSet<Integer> yearsWithCashFlows = MonthlyAggregateProjectionHelper.resolveYearsWithCashFlows(projections);
+
+    if (yearsWithCashFlows.isEmpty()) {
+      return CashFlowResult.empty(year, accountOpeningBalance);
+    }
+
+    final AccountBalanceHistory accountBalanceHistory = new AccountBalanceHistory();
+    final MonthlyAggregateAccumulator accumulator = new MonthlyAggregateAccumulator(projections, year);
+
+    yearsWithCashFlows.forEach(aggregateYear -> {
+
+      final BigDecimal startingBalance =
+          accountBalanceHistory.closingBalanceBefore(aggregateYear).orElse(accountOpeningBalance);
+
+      final BigDecimal accountBalanceAtEndOfYear = startingBalance
+          .add(accumulator.incomeForYear(aggregateYear))
+          .subtract(accumulator.expenseForYear(aggregateYear));
+
+      accountBalanceHistory.recordClosingBalance(aggregateYear, accountBalanceAtEndOfYear);
+    });
 
     BigDecimal yearlyIncome = BigDecimal.ZERO;
     BigDecimal yearlyExpense = BigDecimal.ZERO;
     final List<CashFlowResult.MonthlyCashFlow> monthlyCashFlows = new ArrayList<>(12);
+    BigDecimal monthlyStartingBalance = accountBalanceHistory.closingBalanceBefore(year).orElse(accountOpeningBalance);
 
     for (int month = 1; month <= 12; month++) {
 
-      final BigDecimal income = monthlyIncomeMap.getOrDefault(month, BigDecimal.ZERO);
-      final BigDecimal expense = monthlyExpenseMap.getOrDefault(month, BigDecimal.ZERO);
+      final BigDecimal income = accumulator.incomeForMonth(month);
+      final BigDecimal expense = accumulator.expenseForMonth(month);
       final BigDecimal netFlow = income.subtract(expense);
+
+      final BigDecimal balanceAtEndOfMonth = monthlyStartingBalance.add(income).subtract(expense);
+      monthlyStartingBalance = balanceAtEndOfMonth;
 
       yearlyIncome = yearlyIncome.add(income);
       yearlyExpense = yearlyExpense.add(expense);
 
-      monthlyCashFlows.add(new CashFlowResult.MonthlyCashFlow(month, income, expense, netFlow));
+      monthlyCashFlows.add(new CashFlowResult.MonthlyCashFlow(month, income, expense, netFlow, balanceAtEndOfMonth));
     }
 
     final BigDecimal yearlyNetFlow = yearlyIncome.subtract(yearlyExpense);
 
     return new CashFlowResult(
+        yearsWithCashFlows,
         year,
         yearlyIncome,
         yearlyExpense,
         yearlyNetFlow,
+        monthlyStartingBalance,
         monthlyCashFlows
     );
   }

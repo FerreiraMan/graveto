@@ -30,4 +30,10 @@ public class TransactionTestFactory {
     return tx;
   }
 
+  public static Transaction createOpeningBalanceTransaction(final Account account, final Category category,
+                                                             final BigDecimal amount, final LocalDate date) {
+    return createTransaction(account, category, TransactionType.OPENING_BALANCE, amount, TransactionStatus.ACTIVE,
+        date);
+  }
+
 }

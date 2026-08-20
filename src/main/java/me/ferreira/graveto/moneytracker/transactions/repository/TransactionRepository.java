@@ -29,7 +29,7 @@ public interface TransactionRepository {
 
   Page<Transaction> findAll(FindAllTransactionsCommand command);
 
-  List<MonthlyAggregateProjection> calculateMonthlyAggregates(int year, UUID accountSid, TransactionStatus status);
+  List<MonthlyAggregateProjection> calculateMonthlyAggregates(UUID accountSid, TransactionStatus status);
 
   List<CategoryAggregateProjection> calculateCategoryAggregates(int year, UUID accountSid, TransactionStatus status,
                                                                 TransactionType type);
