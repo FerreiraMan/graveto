@@ -52,14 +52,18 @@ public class FetchCashFlowReportControllerTest {
 
     final BigDecimal yearlyIncome = BigDecimal.valueOf(5000);
     final BigDecimal yearlyExpense = BigDecimal.valueOf(3000);
-    final BigDecimal yearlyNetFlow = BigDecimal.valueOf(2000);
-    final BigDecimal balanceAtEndOfYear = BigDecimal.valueOf(7000);
+    final BigDecimal yearlyTransfersIn = BigDecimal.valueOf(1000);
+    final BigDecimal yearlyTransfersOut = BigDecimal.valueOf(400);
+    final BigDecimal yearlyNetIncomeExpense = BigDecimal.valueOf(2000);
+    final BigDecimal balanceAtEndOfYear = BigDecimal.valueOf(7600);
 
     final CashFlowResult.MonthlyCashFlow januaryFlow = new CashFlowResult.MonthlyCashFlow(
-        1, BigDecimal.valueOf(5000), BigDecimal.valueOf(3000), BigDecimal.valueOf(2000), BigDecimal.valueOf(7000)
+        1, BigDecimal.valueOf(5000), BigDecimal.valueOf(3000), BigDecimal.valueOf(1000), BigDecimal.valueOf(400),
+        BigDecimal.valueOf(2000), BigDecimal.valueOf(7600)
     );
     final CashFlowResult.MonthlyCashFlow februaryFlow = new CashFlowResult.MonthlyCashFlow(
-        2, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.valueOf(7000)
+        2, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+        BigDecimal.valueOf(7600)
     );
 
     final CashFlowResult mockResult = new CashFlowResult(
@@ -67,7 +71,9 @@ public class FetchCashFlowReportControllerTest {
         targetYear,
         yearlyIncome,
         yearlyExpense,
-        yearlyNetFlow,
+        yearlyTransfersIn,
+        yearlyTransfersOut,
+        yearlyNetIncomeExpense,
         balanceAtEndOfYear,
         List.of(januaryFlow, februaryFlow)
     );
@@ -97,7 +103,11 @@ public class FetchCashFlowReportControllerTest {
     assertThat(testResult).bodyJson()
         .extractingPath("$.yearlyExpense").asNumber().isEqualTo(yearlyExpense.intValue());
     assertThat(testResult).bodyJson()
-        .extractingPath("$.yearlyNetFlow").asNumber().isEqualTo(yearlyNetFlow.intValue());
+        .extractingPath("$.yearlyTransfersIn").asNumber().isEqualTo(yearlyTransfersIn.intValue());
+    assertThat(testResult).bodyJson()
+        .extractingPath("$.yearlyTransfersOut").asNumber().isEqualTo(yearlyTransfersOut.intValue());
+    assertThat(testResult).bodyJson()
+        .extractingPath("$.yearlyNetIncomeExpense").asNumber().isEqualTo(yearlyNetIncomeExpense.intValue());
     assertThat(testResult).bodyJson()
         .extractingPath("$.balanceAtEndOfYear").asNumber().isEqualTo(balanceAtEndOfYear.intValue());
     assertThat(testResult).bodyJson()
@@ -108,13 +118,17 @@ public class FetchCashFlowReportControllerTest {
     assertThat(testResult).bodyJson()
         .extractingPath("$.monthlyCashFlow[0].income").asNumber().isEqualTo(5000);
     assertThat(testResult).bodyJson()
-        .extractingPath("$.monthlyCashFlow[0].balanceAtEndOfMonth").asNumber().isEqualTo(7000);
+        .extractingPath("$.monthlyCashFlow[0].transfersIn").asNumber().isEqualTo(1000);
+    assertThat(testResult).bodyJson()
+        .extractingPath("$.monthlyCashFlow[0].transfersOut").asNumber().isEqualTo(400);
+    assertThat(testResult).bodyJson()
+        .extractingPath("$.monthlyCashFlow[0].balanceAtEndOfMonth").asNumber().isEqualTo(7600);
     assertThat(testResult).bodyJson()
         .extractingPath("$.monthlyCashFlow[1].month").asNumber().isEqualTo(2);
     assertThat(testResult).bodyJson()
         .extractingPath("$.monthlyCashFlow[1].income").asNumber().isEqualTo(0);
     assertThat(testResult).bodyJson()
-        .extractingPath("$.monthlyCashFlow[1].balanceAtEndOfMonth").asNumber().isEqualTo(7000);
+        .extractingPath("$.monthlyCashFlow[1].balanceAtEndOfMonth").asNumber().isEqualTo(7600);
   }
 
   @Test
@@ -125,7 +139,8 @@ public class FetchCashFlowReportControllerTest {
     final int expectedDefaultYear = Year.now().getValue();
 
     final CashFlowResult mockResult = new CashFlowResult(
-        Set.of(), expectedDefaultYear, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, List.of()
+        Set.of(), expectedDefaultYear, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+        BigDecimal.ZERO, BigDecimal.ZERO, List.of()
     );
 
     final ArgumentCaptor<CashFlowCommand> commandCaptor = ArgumentCaptor.forClass(CashFlowCommand.class);

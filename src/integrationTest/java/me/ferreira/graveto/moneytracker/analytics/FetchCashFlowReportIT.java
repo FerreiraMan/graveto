@@ -7,6 +7,7 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Year;
 import java.util.List;
 import java.util.UUID;
@@ -22,6 +23,8 @@ import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.repository.TransactionRepository;
+import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.CreateTransferCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.transfer.TransferService;
 import me.ferreira.graveto.moneytracker.utils.AccountTestFactory;
 import me.ferreira.graveto.moneytracker.utils.TransactionTestFactory;
 import org.junit.jupiter.api.Test;
@@ -39,6 +42,8 @@ public class FetchCashFlowReportIT extends MoneyTrackerBaseIntegrationTest {
   private CategoryRepository categoryRepository;
   @Autowired
   private CategoryService categoryService;
+  @Autowired
+  private TransferService transferService;
 
   @Test
   void shouldFetchCashFlowReportWithAccurateAggregations() {
@@ -110,7 +115,9 @@ public class FetchCashFlowReportIT extends MoneyTrackerBaseIntegrationTest {
         .body("year", is(targetYear))
         .body("yearlyIncome", is(1730.0f))
         .body("yearlyExpense", is(200.0f))
-        .body("yearlyNetFlow", is(1530.0f))
+        .body("yearlyTransfersIn", is(0))
+        .body("yearlyTransfersOut", is(0))
+        .body("yearlyNetIncomeExpense", is(1530.0f))
         .body("balanceAtEndOfYear", is(6830.0f))
 
         .body("monthlyCashFlow.size()", is(12))
@@ -118,25 +125,25 @@ public class FetchCashFlowReportIT extends MoneyTrackerBaseIntegrationTest {
         .body("monthlyCashFlow[0].month", is(1))
         .body("monthlyCashFlow[0].income", is(1230.0f))
         .body("monthlyCashFlow[0].expense", is(200.0f))
-        .body("monthlyCashFlow[0].netFlow", is(1030.0f))
+        .body("monthlyCashFlow[0].monthlyNetIncomeExpense", is(1030.0f))
         .body("monthlyCashFlow[0].balanceAtEndOfMonth", is(6330.0f))
 
         .body("monthlyCashFlow[1].month", is(2))
         .body("monthlyCashFlow[1].income", is(500.0f))
         .body("monthlyCashFlow[1].expense", is(0))
-        .body("monthlyCashFlow[1].netFlow", is(500.0f))
+        .body("monthlyCashFlow[1].monthlyNetIncomeExpense", is(500.0f))
         .body("monthlyCashFlow[1].balanceAtEndOfMonth", is(6830.0f))
 
         .body("monthlyCashFlow[2].month", is(3))
         .body("monthlyCashFlow[2].income", is(0))
         .body("monthlyCashFlow[2].expense", is(0))
-        .body("monthlyCashFlow[2].netFlow", is(0))
+        .body("monthlyCashFlow[2].monthlyNetIncomeExpense", is(0))
         .body("monthlyCashFlow[2].balanceAtEndOfMonth", is(6830.0f))
 
         .body("monthlyCashFlow[3].month", is(4))
         .body("monthlyCashFlow[3].income", is(0))
         .body("monthlyCashFlow[3].expense", is(0))
-        .body("monthlyCashFlow[3].netFlow", is(0));
+        .body("monthlyCashFlow[3].monthlyNetIncomeExpense", is(0));
   }
 
   @Test
@@ -171,7 +178,7 @@ public class FetchCashFlowReportIT extends MoneyTrackerBaseIntegrationTest {
         .body("year", is(targetYear))
         .body("yearlyIncome", is(0))
         .body("yearlyExpense", is(0))
-        .body("yearlyNetFlow", is(0))
+        .body("yearlyNetIncomeExpense", is(0))
         .body("balanceAtEndOfYear", is(1000.0f))
         .body("yearsWithCashFlows.size()", is(0))
         .body("monthlyCashFlow.size()", is(12))
@@ -231,6 +238,134 @@ public class FetchCashFlowReportIT extends MoneyTrackerBaseIntegrationTest {
     response.then()
         .log().ifValidationFails()
         .statusCode(400);
+  }
+
+  @Test
+  void shouldIncludeTransfersInBalanceButKeepThemOutOfIncomeAndExpense() {
+    // Arrange - a transfer in and a transfer out during the target year. The balance must
+    // reflect both, exactly like the real account balance would, while income/expense stay
+    // untouched.
+    final UUID userSid = UUID.randomUUID();
+    final BigDecimal openingBalance = BigDecimal.valueOf(1000);
+    final Account account =
+        AccountTestFactory.createAccountWithOwner(userSid, "Main Checking", openingBalance);
+    accountRepository.save(account);
+
+    final Category openingBalanceCategory = fetchOpeningBalanceCategory();
+    final Category transferInCategory = categoryService.fetchInternalCategory(SystemCategory.TRANSFER_IN.getSid());
+    final Category transferOutCategory = categoryService.fetchInternalCategory(SystemCategory.TRANSFER_OUT.getSid());
+
+    final int targetYear = 2026;
+
+    final Transaction openingTx = TransactionTestFactory.createOpeningBalanceTransaction(
+        account, openingBalanceCategory, openingBalance, LocalDate.of(targetYear, 1, 1));
+
+    final Transaction txJanTransferIn =
+        TransactionTestFactory.createTransaction(account, transferInCategory, TransactionType.TRANSFER_IN,
+            BigDecimal.valueOf(500), TransactionStatus.ACTIVE, LocalDate.of(targetYear, 1, 20));
+    final Transaction txMarTransferOut =
+        TransactionTestFactory.createTransaction(account, transferOutCategory, TransactionType.TRANSFER_OUT,
+            BigDecimal.valueOf(200), TransactionStatus.ACTIVE, LocalDate.of(targetYear, 3, 5));
+
+    transactionRepository.saveAll(List.of(openingTx, txJanTransferIn, txMarTransferOut));
+
+    // Opening balance: 1000. Jan: +500 transfer in -> 1500. Feb: flat -> 1500.
+    // Mar: -200 transfer out -> 1300. balanceAtEndOfYear = 1300.
+
+    // Act
+    final Response response = given()
+        .header("Authorization", "Bearer " + userSid)
+        .pathParam("accountSid", account.getSid())
+        .queryParam("year", targetYear)
+        .contentType(ContentType.JSON)
+        .when()
+        .get("/analytics/{accountSid}/cash-flow");
+
+    // Assert
+    response.then()
+        .log().ifValidationFails()
+        .statusCode(200)
+        .body("yearlyIncome", is(0))
+        .body("yearlyExpense", is(0))
+        .body("yearlyNetIncomeExpense", is(0))
+        .body("yearlyTransfersIn", is(500.0f))
+        .body("yearlyTransfersOut", is(200.0f))
+        .body("balanceAtEndOfYear", is(1300.0f))
+
+        .body("monthlyCashFlow[0].transfersIn", is(500.0f))
+        .body("monthlyCashFlow[0].transfersOut", is(0))
+        .body("monthlyCashFlow[0].income", is(0))
+        .body("monthlyCashFlow[0].balanceAtEndOfMonth", is(1500.0f))
+
+        .body("monthlyCashFlow[1].balanceAtEndOfMonth", is(1500.0f))
+
+        .body("monthlyCashFlow[2].transfersOut", is(200.0f))
+        .body("monthlyCashFlow[2].balanceAtEndOfMonth", is(1300.0f));
+  }
+
+  @Test
+  void shouldReflectRealTransferBetweenTwoOwnedAccountsInBothCashFlowReports() {
+    // Arrange - a real Transfer (via TransferService) between two of the same user's
+    // accounts. Both accounts' cash flow reports must reflect the movement in their balance.
+    final UUID userSid = UUID.randomUUID();
+    final BigDecimal sourceOpeningBalance = BigDecimal.valueOf(2000);
+    final BigDecimal destinationOpeningBalance = BigDecimal.valueOf(500);
+
+    final Account sourceAccount =
+        AccountTestFactory.createAccountWithOwner(userSid, "Checking", sourceOpeningBalance);
+    final Account destinationAccount =
+        AccountTestFactory.createAccountWithOwner(userSid, "Savings", destinationOpeningBalance);
+    accountRepository.save(sourceAccount);
+    accountRepository.save(destinationAccount);
+
+    final Category openingBalanceCategory = fetchOpeningBalanceCategory();
+    final int targetYear = 2026;
+
+    final Transaction sourceOpeningTx = TransactionTestFactory.createOpeningBalanceTransaction(
+        sourceAccount, openingBalanceCategory, sourceOpeningBalance, LocalDate.of(targetYear, 1, 1));
+    final Transaction destinationOpeningTx = TransactionTestFactory.createOpeningBalanceTransaction(
+        destinationAccount, openingBalanceCategory, destinationOpeningBalance, LocalDate.of(targetYear, 1, 1));
+    transactionRepository.saveAll(List.of(sourceOpeningTx, destinationOpeningTx));
+
+    transferService.createTransfer(new CreateTransferCommand(
+        userSid, sourceAccount.getSid(), destinationAccount.getSid(),
+        BigDecimal.valueOf(300), "Move to savings", LocalDateTime.of(targetYear, 2, 1, 12, 0)));
+
+    // Source: 2000 - 300 = 1700. Destination: 500 + 300 = 800.
+
+    // Act
+    final Response sourceResponse = given()
+        .header("Authorization", "Bearer " + userSid)
+        .pathParam("accountSid", sourceAccount.getSid())
+        .queryParam("year", targetYear)
+        .contentType(ContentType.JSON)
+        .when()
+        .get("/analytics/{accountSid}/cash-flow");
+
+    final Response destinationResponse = given()
+        .header("Authorization", "Bearer " + userSid)
+        .pathParam("accountSid", destinationAccount.getSid())
+        .queryParam("year", targetYear)
+        .contentType(ContentType.JSON)
+        .when()
+        .get("/analytics/{accountSid}/cash-flow");
+
+    // Assert
+    sourceResponse.then()
+        .log().ifValidationFails()
+        .statusCode(200)
+        .body("yearlyTransfersOut", is(300.0f))
+        .body("yearlyTransfersIn", is(0))
+        .body("balanceAtEndOfYear", is(1700.0f))
+        .body("monthlyCashFlow[1].balanceAtEndOfMonth", is(1700.0f));
+
+    destinationResponse.then()
+        .log().ifValidationFails()
+        .statusCode(200)
+        .body("yearlyTransfersIn", is(300.0f))
+        .body("yearlyTransfersOut", is(0))
+        .body("balanceAtEndOfYear", is(800.0f))
+        .body("monthlyCashFlow[1].balanceAtEndOfMonth", is(800.0f));
   }
 
   @Test

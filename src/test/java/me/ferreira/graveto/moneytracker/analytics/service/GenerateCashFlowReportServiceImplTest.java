@@ -164,14 +164,14 @@ public class GenerateCashFlowReportServiceImplTest {
     assertThat(result.yearsWithCashFlows()).isEmpty();
     assertThat(result.yearlyIncome()).isEqualByComparingTo("0.00");
     assertThat(result.yearlyExpense()).isEqualByComparingTo("0.00");
-    assertThat(result.yearlyNetFlow()).isEqualByComparingTo("0.00");
+    assertThat(result.yearlyNetIncomeExpense()).isEqualByComparingTo("0.00");
     assertThat(result.balanceAtEndOfYear()).isEqualByComparingTo("1000.00");
 
     assertThat(result.monthlyCashFlow()).hasSize(12);
     result.monthlyCashFlow().forEach(m -> {
       assertThat(m.income()).isEqualByComparingTo("0.00");
       assertThat(m.expense()).isEqualByComparingTo("0.00");
-      assertThat(m.netFlow()).isEqualByComparingTo("0.00");
+      assertThat(m.monthlyNetIncomeExpense()).isEqualByComparingTo("0.00");
       assertThat(m.balanceAtEndOfMonth()).isEqualByComparingTo("1000.00");
     });
   }
@@ -208,7 +208,7 @@ public class GenerateCashFlowReportServiceImplTest {
     assertThat(cashFlowResult.year()).isEqualTo(year);
     assertThat(cashFlowResult.yearlyIncome()).isEqualByComparingTo("5150.00");
     assertThat(cashFlowResult.yearlyExpense()).isEqualByComparingTo("2500.00");
-    assertThat(cashFlowResult.yearlyNetFlow()).isEqualByComparingTo("2650.00");
+    assertThat(cashFlowResult.yearlyNetIncomeExpense()).isEqualByComparingTo("2650.00");
     assertThat(cashFlowResult.balanceAtEndOfYear()).isEqualByComparingTo("2650.00");
 
     assertThat(cashFlowResult.monthlyCashFlow()).hasSize(12);
@@ -217,21 +217,21 @@ public class GenerateCashFlowReportServiceImplTest {
     assertThat(january.month()).isEqualTo(1);
     assertThat(january.income()).isEqualByComparingTo("5100.00");
     assertThat(january.expense()).isEqualByComparingTo("2000.00");
-    assertThat(january.netFlow()).isEqualByComparingTo("3100.00");
+    assertThat(january.monthlyNetIncomeExpense()).isEqualByComparingTo("3100.00");
     assertThat(january.balanceAtEndOfMonth()).isEqualByComparingTo("3100.00");
 
     final CashFlowResult.MonthlyCashFlow february = cashFlowResult.monthlyCashFlow().get(1);
     assertThat(february.month()).isEqualTo(2);
     assertThat(february.income()).isEqualByComparingTo("0.00");
     assertThat(february.expense()).isEqualByComparingTo("0.00");
-    assertThat(february.netFlow()).isEqualByComparingTo("0.00");
+    assertThat(february.monthlyNetIncomeExpense()).isEqualByComparingTo("0.00");
     assertThat(february.balanceAtEndOfMonth()).isEqualByComparingTo("3100.00");
 
     final CashFlowResult.MonthlyCashFlow march = cashFlowResult.monthlyCashFlow().get(2);
     assertThat(march.month()).isEqualTo(3);
     assertThat(march.income()).isEqualByComparingTo("50.00");
     assertThat(march.expense()).isEqualByComparingTo("500.00");
-    assertThat(march.netFlow()).isEqualByComparingTo("-450.00");
+    assertThat(march.monthlyNetIncomeExpense()).isEqualByComparingTo("-450.00");
     assertThat(march.balanceAtEndOfMonth()).isEqualByComparingTo("2650.00");
 
     final CashFlowResult.MonthlyCashFlow december = cashFlowResult.monthlyCashFlow().get(11);
@@ -239,8 +239,10 @@ public class GenerateCashFlowReportServiceImplTest {
   }
 
   @Test
-  void shouldDiscardTransfersDuringCashFlowResult() {
-    // Arrange
+  void shouldIncludeTransfersInBalanceButNotInIncomeOrExpense() {
+    // Arrange - transfers must move the balance (they are real money movements) but must
+    // never be counted as income/expense/netIncomeExpense, which are reserved for true
+    // earning/spending activity.
     final UUID userSid = UUID.randomUUID();
     final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, MembershipRole.OWNER);
     final int year = 2026;
@@ -248,9 +250,9 @@ public class GenerateCashFlowReportServiceImplTest {
     final CashFlowCommand command = new CashFlowCommand(userSid, account.getSid(), year);
 
     final List<MonthlyAggregateProjection> projections = List.of(
-        openingBalance(year, "0.00"),
-        new MockProjection(year, 1, TransactionType.TRANSFER_IN, new BigDecimal("5000.00")),
-        new MockProjection(year, 3, TransactionType.TRANSFER_OUT, new BigDecimal("50.00"))
+        openingBalance(year, "1000.00"),
+        new MockProjection(year, 1, TransactionType.TRANSFER_IN, new BigDecimal("500.00")),
+        new MockProjection(year, 3, TransactionType.TRANSFER_OUT, new BigDecimal("200.00"))
     );
 
     when(accountService.fetchAccountEntity(any())).thenReturn(account);
@@ -260,26 +262,68 @@ public class GenerateCashFlowReportServiceImplTest {
     final CashFlowResult cashFlowResult = service.generateCashFlowReport(command);
 
     // Assert
-    assertThat(cashFlowResult.year()).isEqualTo(year);
+    // Transfers must still register as "activity" for the year, otherwise a transfer-only
+    // account would incorrectly be treated as having no cash flow at all.
+    assertThat(cashFlowResult.yearsWithCashFlows()).containsExactly(year);
+
+    // Income/expense/netIncomeExpense stay untouched by transfers.
     assertThat(cashFlowResult.yearlyIncome()).isEqualByComparingTo("0.00");
     assertThat(cashFlowResult.yearlyExpense()).isEqualByComparingTo("0.00");
-    assertThat(cashFlowResult.yearlyNetFlow()).isEqualByComparingTo("0.00");
+    assertThat(cashFlowResult.yearlyNetIncomeExpense()).isEqualByComparingTo("0.00");
 
-    assertThat(cashFlowResult.yearsWithCashFlows()).isEmpty();
+    // Transfers are surfaced separately.
+    assertThat(cashFlowResult.yearlyTransfersIn()).isEqualByComparingTo("500.00");
+    assertThat(cashFlowResult.yearlyTransfersOut()).isEqualByComparingTo("200.00");
 
-    assertThat(cashFlowResult.monthlyCashFlow()).hasSize(12);
+    // Balance is 1000 (opening) + 500 (transfer in) - 200 (transfer out) = 1300.
+    assertThat(cashFlowResult.balanceAtEndOfYear()).isEqualByComparingTo("1300.00");
 
     final CashFlowResult.MonthlyCashFlow january = cashFlowResult.monthlyCashFlow().get(0);
-    assertThat(january.month()).isEqualTo(1);
+    assertThat(january.transfersIn()).isEqualByComparingTo("500.00");
+    assertThat(january.transfersOut()).isEqualByComparingTo("0.00");
     assertThat(january.income()).isEqualByComparingTo("0.00");
     assertThat(january.expense()).isEqualByComparingTo("0.00");
-    assertThat(january.netFlow()).isEqualByComparingTo("0.00");
+    assertThat(january.monthlyNetIncomeExpense()).isEqualByComparingTo("0.00");
+    assertThat(january.balanceAtEndOfMonth()).isEqualByComparingTo("1500.00");
 
     final CashFlowResult.MonthlyCashFlow march = cashFlowResult.monthlyCashFlow().get(2);
-    assertThat(march.month()).isEqualTo(3);
-    assertThat(march.income()).isEqualByComparingTo("0.00");
-    assertThat(march.expense()).isEqualByComparingTo("0.00");
-    assertThat(march.netFlow()).isEqualByComparingTo("0.00");
+    assertThat(march.transfersIn()).isEqualByComparingTo("0.00");
+    assertThat(march.transfersOut()).isEqualByComparingTo("200.00");
+    assertThat(march.balanceAtEndOfMonth()).isEqualByComparingTo("1300.00");
+
+    final CashFlowResult.MonthlyCashFlow december = cashFlowResult.monthlyCashFlow().get(11);
+    assertThat(december.balanceAtEndOfMonth()).isEqualByComparingTo("1300.00");
+  }
+
+  @Test
+  void shouldCarryTransferAffectedBalanceForwardThroughGapYear() {
+    // Arrange - opening balance in 2023, a transfer-out in 2024 (no income/expense that
+    // year), income in 2025. The 2024 transfer must still reduce the balance carried into
+    // 2025, proving the balance-history walk-back picks up transfer-only years too.
+    final UUID userSid = UUID.randomUUID();
+    final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, MembershipRole.OWNER);
+    final int year = 2025;
+
+    final CashFlowCommand command = new CashFlowCommand(userSid, account.getSid(), year);
+
+    final List<MonthlyAggregateProjection> projections = List.of(
+        openingBalance(2023, "1000.00"),
+        new MockProjection(2024, 6, TransactionType.TRANSFER_OUT, new BigDecimal("300.00")),
+        new MockProjection(year, 1, TransactionType.INCOME, new BigDecimal("500.00"))
+    );
+
+    when(accountService.fetchAccountEntity(any())).thenReturn(account);
+    when(transactionService.generateMonthlyAggregates(any())).thenReturn(projections);
+
+    // Act
+    final CashFlowResult cashFlowResult = service.generateCashFlowReport(command);
+
+    // Assert
+    // 2024 closing balance = 1000 (opening) - 300 (transfer out) = 700.
+    // January 2025 closing balance = 700 + 500 (income) = 1200.
+    final CashFlowResult.MonthlyCashFlow january = cashFlowResult.monthlyCashFlow().get(0);
+    assertThat(january.balanceAtEndOfMonth()).isEqualByComparingTo("1200.00");
+    assertThat(cashFlowResult.balanceAtEndOfYear()).isEqualByComparingTo("1200.00");
   }
 
   @Test

@@ -105,13 +105,17 @@ public class AnalyticServiceImpl implements AnalyticService {
 
       final BigDecimal accountBalanceAtEndOfYear = startingBalance
           .add(accumulator.incomeForYear(aggregateYear))
-          .subtract(accumulator.expenseForYear(aggregateYear));
+          .add(accumulator.transfersInForYear(aggregateYear))
+          .subtract(accumulator.expenseForYear(aggregateYear))
+          .subtract(accumulator.transfersOutForYear(aggregateYear));
 
       accountBalanceHistory.recordClosingBalance(aggregateYear, accountBalanceAtEndOfYear);
     });
 
     BigDecimal yearlyIncome = BigDecimal.ZERO;
     BigDecimal yearlyExpense = BigDecimal.ZERO;
+    BigDecimal yearlyTransfersIn = BigDecimal.ZERO;
+    BigDecimal yearlyTransfersOut = BigDecimal.ZERO;
     final List<CashFlowResult.MonthlyCashFlow> monthlyCashFlows = new ArrayList<>(12);
     BigDecimal monthlyStartingBalance = accountBalanceHistory.closingBalanceBefore(year).orElse(accountOpeningBalance);
 
@@ -119,25 +123,35 @@ public class AnalyticServiceImpl implements AnalyticService {
 
       final BigDecimal income = accumulator.incomeForMonth(month);
       final BigDecimal expense = accumulator.expenseForMonth(month);
-      final BigDecimal netFlow = income.subtract(expense);
+      final BigDecimal transfersIn = accumulator.transfersInForMonth(month);
+      final BigDecimal transfersOut = accumulator.transfersOutForMonth(month);
+      final BigDecimal balanceAtEndOfMonth =
+          monthlyStartingBalance.add(income).add(transfersIn).subtract(expense).subtract(transfersOut);
+      final BigDecimal monthlyNetIncomeExpense = income.subtract(expense);
 
-      final BigDecimal balanceAtEndOfMonth = monthlyStartingBalance.add(income).subtract(expense);
       monthlyStartingBalance = balanceAtEndOfMonth;
 
       yearlyIncome = yearlyIncome.add(income);
       yearlyExpense = yearlyExpense.add(expense);
+      yearlyTransfersIn = yearlyTransfersIn.add(transfersIn);
+      yearlyTransfersOut = yearlyTransfersOut.add(transfersOut);
 
-      monthlyCashFlows.add(new CashFlowResult.MonthlyCashFlow(month, income, expense, netFlow, balanceAtEndOfMonth));
+      monthlyCashFlows.add(
+          new CashFlowResult.MonthlyCashFlow(
+              month, income, expense, transfersIn, transfersOut, monthlyNetIncomeExpense, balanceAtEndOfMonth)
+      );
     }
 
-    final BigDecimal yearlyNetFlow = yearlyIncome.subtract(yearlyExpense);
+    final BigDecimal yearlyNetIncomeExpense = yearlyIncome.subtract(yearlyExpense);
 
     return new CashFlowResult(
         yearsWithCashFlows,
         year,
         yearlyIncome,
         yearlyExpense,
-        yearlyNetFlow,
+        yearlyTransfersIn,
+        yearlyTransfersOut,
+        yearlyNetIncomeExpense,
         monthlyStartingBalance,
         monthlyCashFlows
     );
