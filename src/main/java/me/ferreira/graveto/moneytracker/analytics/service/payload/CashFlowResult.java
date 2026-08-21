@@ -10,7 +10,9 @@ public record CashFlowResult(
     int year,
     BigDecimal yearlyIncome,
     BigDecimal yearlyExpense,
-    BigDecimal yearlyNetFlow,
+    BigDecimal yearlyTransfersIn,
+    BigDecimal yearlyTransfersOut,
+    BigDecimal yearlyNetIncomeExpense,
     BigDecimal balanceAtEndOfYear,
     List<MonthlyCashFlow> monthlyCashFlow
 ) {
@@ -18,7 +20,9 @@ public record CashFlowResult(
       int month,
       BigDecimal income,
       BigDecimal expense,
-      BigDecimal netFlow,
+      BigDecimal transfersIn,
+      BigDecimal transfersOut,
+      BigDecimal monthlyNetIncomeExpense,
       BigDecimal balanceAtEndOfMonth
   ) {
   }
@@ -29,13 +33,16 @@ public record CashFlowResult(
 
     for (int month = 1; month <= 12; month++) {
       emptyMonthlyPayload.add(
-          new CashFlowResult.MonthlyCashFlow(month, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+          new CashFlowResult.MonthlyCashFlow(month,
+              BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
               accountOpeningBalance));
     }
 
     return new CashFlowResult(
         Set.of(),
         year,
+        BigDecimal.ZERO,
+        BigDecimal.ZERO,
         BigDecimal.ZERO,
         BigDecimal.ZERO,
         BigDecimal.ZERO,

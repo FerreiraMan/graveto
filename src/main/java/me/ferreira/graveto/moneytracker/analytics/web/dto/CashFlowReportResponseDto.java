@@ -10,7 +10,9 @@ public record CashFlowReportResponseDto(
     int year,
     BigDecimal yearlyIncome,
     BigDecimal yearlyExpense,
-    BigDecimal yearlyNetFlow,
+    BigDecimal yearlyTransfersIn,
+    BigDecimal yearlyTransfersOut,
+    BigDecimal yearlyNetIncomeExpense,
     BigDecimal balanceAtEndOfYear,
     List<MonthlyCashFlowDto> monthlyCashFlow
 ) {
@@ -18,7 +20,9 @@ public record CashFlowReportResponseDto(
       int month,
       BigDecimal income,
       BigDecimal expense,
-      BigDecimal netFlow,
+      BigDecimal transfersIn,
+      BigDecimal transfersOut,
+      BigDecimal monthlyNetIncomeExpense,
       BigDecimal balanceAtEndOfMonth
   ) {
   }
@@ -30,7 +34,9 @@ public record CashFlowReportResponseDto(
         cashFlowResult.year(),
         cashFlowResult.yearlyIncome(),
         cashFlowResult.yearlyExpense(),
-        cashFlowResult.yearlyNetFlow(),
+        cashFlowResult.yearlyTransfersIn(),
+        cashFlowResult.yearlyTransfersOut(),
+        cashFlowResult.yearlyNetIncomeExpense(),
         cashFlowResult.balanceAtEndOfYear(),
         from(cashFlowResult.monthlyCashFlow())
     );
@@ -43,7 +49,9 @@ public record CashFlowReportResponseDto(
             m.month(),
             m.income(),
             m.expense(),
-            m.netFlow(),
+            m.transfersIn(),
+            m.transfersOut(),
+            m.monthlyNetIncomeExpense(),
             m.balanceAtEndOfMonth()
         ))
         .toList();

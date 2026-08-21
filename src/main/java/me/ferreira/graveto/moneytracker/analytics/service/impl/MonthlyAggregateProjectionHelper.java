@@ -24,7 +24,7 @@ class MonthlyAggregateProjectionHelper {
   static TreeSet<Integer> resolveYearsWithCashFlows(final List<MonthlyAggregateProjection> projections) {
 
     return projections.stream()
-        .filter(p -> TransactionType.INCOME.equals(p.getType()) || TransactionType.EXPENSE.equals(p.getType()))
+        .filter(p -> p.getType().isValidCashFlow())
         .map(MonthlyAggregateProjection::getYear)
         .collect(Collectors.toCollection(TreeSet::new));
   }
