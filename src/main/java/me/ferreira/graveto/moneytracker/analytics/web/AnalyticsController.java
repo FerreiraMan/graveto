@@ -1,7 +1,6 @@
 package me.ferreira.graveto.moneytracker.analytics.web;
 
 import java.time.Year;
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import me.ferreira.graveto.moneytracker.analytics.service.AnalyticService;
@@ -57,33 +56,7 @@ public class AnalyticsController {
 
     final CategorySpendingResult categorySpendingResult = analyticService.generateCategorySpendingReport(command);
 
-    final List<CategorySpendingReportResponseDto.CategoryAggregateResponseDto> mappedCategoryAggr =
-        categorySpendingResult.categories().stream()
-            .map(this::mapCategoryAggregate)
-            .toList();
-
-    final CategorySpendingReportResponseDto response = new CategorySpendingReportResponseDto(
-        categorySpendingResult.year(),
-        mappedCategoryAggr
-    );
-
-    return ResponseEntity.ok().body(response);
-  }
-
-  private CategorySpendingReportResponseDto.CategoryAggregateResponseDto mapCategoryAggregate(
-      final CategorySpendingResult.CategoryAggregate aggregate) {
-
-    final List<CategorySpendingReportResponseDto.CategoryAggregateResponseDto> mappedChildren =
-        aggregate.childCategories() != null ? aggregate.childCategories().stream()
-                                              .map(this::mapCategoryAggregate).toList() : List.of();
-
-    return new CategorySpendingReportResponseDto.CategoryAggregateResponseDto(
-        aggregate.categorySid(),
-        aggregate.categoryName(),
-        aggregate.yearlyTotal(),
-        aggregate.monthlyTotals(),
-        mappedChildren
-    );
+    return ResponseEntity.ok().body(CategorySpendingReportResponseDto.from(categorySpendingResult));
   }
 
 }

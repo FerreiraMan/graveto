@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.time.Year;
 import java.util.List;
 import java.util.UUID;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
@@ -41,6 +42,20 @@ public class GenerateCategorySpendingReportServiceImplTest {
   private TransactionService transactionService;
   @Mock
   private CategoryService categoryService;
+
+  @Test
+  void shouldThrowIfRequestedYearIsInTheFuture() {
+    // Arrange
+    final UUID userSid = UUID.randomUUID();
+    final Account account = AccountUtils.createAccount(UUID.randomUUID(), userSid, MembershipRole.OWNER);
+    final int futureYear = Year.now().getValue() + 1;
+    final CategorySpendingCommand command = new CategorySpendingCommand(userSid, account.getSid(), futureYear);
+
+    // Act & Assert
+    assertThatThrownBy(() -> service.generateCategorySpendingReport(command))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Requested year must be present or past occurrence.");
+  }
 
   @Test
   void shouldThrowIfAccountIsNotFoundDuringCategorySpendingGeneration() {

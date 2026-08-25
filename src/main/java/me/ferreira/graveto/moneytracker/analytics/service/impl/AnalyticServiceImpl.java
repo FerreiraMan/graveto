@@ -61,6 +61,10 @@ public class AnalyticServiceImpl implements AnalyticService {
   @Transactional(readOnly = true)
   public CategorySpendingResult generateCategorySpendingReport(final CategorySpendingCommand command) {
 
+    if (Year.now().getValue() < command.year()) {
+      throw new IllegalArgumentException("Requested year must be present or past occurrence.");
+    }
+
     accountService
         .fetchAccountEntity(command.accountSid())
         .validateUserPermission(command.userSid(), MembershipRole::canRequestReport,
