@@ -79,8 +79,9 @@ graveto/
 - List categories filtered by display name, account, parent, and transaction type
 
 ### Analytics
-- **Cash flow report**: monthly income, expense, and net flow for a given year
-- **Category spending report**: yearly and monthly totals per category (with subcategory breakdown)
+- **Cash flow report**: monthly and yearly income, expense, and net income/expense for a given year, plus the resulting account balance at the end of each month/year
+- Transfers (`TRANSFER_IN`/`TRANSFER_OUT`) are included in the balance calculation but reported separately (`transfersIn`/`transfersOut`) from income/expense, so they never distort net income/expense figures
+- **Category spending report**: yearly and monthly totals per category (with subcategory breakdown), expense transactions only
 
 ### Brokers
 - Create investment platform accounts (e.g. DEGIRO, Trading 212)
@@ -157,9 +158,15 @@ cp .env.example .env
 | `GRAVETO_MIGRATOR_USER` | `graveto_migrator_user` | Flyway migrations user (DDL) |
 | `GRAVETO_MIGRATOR_PASSWORD` | `graveto_migrator_password` | Flyway migrations password |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost:3000` | Comma-separated list of allowed CORS origins |
-| `jwt.signing-secret` | `jwt_graveto_secret` | JWT signing secret — **change in production** |
-| `jwt.expiration-ms` | `3600000` | JWT expiry in milliseconds (default: 1h) |
 | `YFINANCE_API_KEY` | `yfinance_api_key` | Yahoo Finance API key |
+
+> **Note:** all variables above are wired through `docker-compose.yml` into the `backend` and `postgres`
+> containers, and are also read directly by Spring from the process environment for `./gradlew bootRun`
+> (`application.yml`).
+
+JWT signing secret and expiration (`jwt.signing-secret`, `jwt.expiration-ms` in `application.yml`) are
+currently hardcoded, not environment-driven — **change them directly in `application.yml` before any
+production deployment.**
 
 ### Database Security
 
@@ -226,8 +233,8 @@ All endpoints are prefixed with `/api`. Protected endpoints require `Authorizati
 |---|---|---|---|
 | GET | `/api/categories` | ✓ | List categories (filter by display name, account, parent, type) |
 | POST | `/api/categories` | ✓ | Create category |
-| GET | `/api/analytics/{accountSid}/cash-flow` | ✓ | Cash flow report |
-| GET | `/api/analytics/{accountSid}/category-spending` | ✓ | Category spending report |
+| GET | `/api/analytics/{accountSid}/cash-flow?year=` | ✓ | Cash flow report (`year` optional, defaults to current year) |
+| GET | `/api/analytics/{accountSid}/category-spending?year=` | ✓ | Category spending report (`year` optional, defaults to current year) |
 
 ### Portfolio
 
