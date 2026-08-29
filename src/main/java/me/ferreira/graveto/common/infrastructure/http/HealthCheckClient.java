@@ -9,7 +9,7 @@ import java.net.http.HttpResponse;
 public class HealthCheckClient {
 
   public static void main(final String[] args) throws InterruptedException, IOException {
-    if(args.length == 0) {
+    if (args.length == 0) {
       System.out.println("Please append the App's port. Example: java HealthCheckClient.java 8081");
       throw new RuntimeException("Argument port missing");
     }
