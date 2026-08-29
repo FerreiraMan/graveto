@@ -29,6 +29,15 @@ logging:
         max-length: 1024
   level:
     org.springframework.web: INFO
+management:
+  context-path: /actuator
+  server:
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health
+        exclude: prometheus,env,heapdump,beans,loggers,threaddump,shutdown
 
 jwt:
   signing-secret: jwt_graveto_secret
