@@ -49,7 +49,7 @@ public class SecurityConfiguration {
         .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterAfter(new MdcLoggingFilter(), JwtAuthenticationFilter.class)
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/auth/**", "/error").permitAll()
+            .requestMatchers("/auth/**", "/error", "/actuator/**").permitAll()
             .anyRequest().authenticated()
         );
     return http.build();

@@ -104,6 +104,7 @@ dependencies {
 	implementation 'org.springframework.modulith:spring-modulith-starter-core'
 	implementation'org.springframework.boot:spring-boot-starter-validation'
 	implementation "org.springframework.boot:spring-boot-starter-security"
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'com.auth0:java-jwt:4.5.2'
 	implementation 'org.apache.commons:commons-lang3:3.18.0'
 	compileOnly 'org.projectlombok:lombok'

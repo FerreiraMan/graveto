@@ -150,9 +150,9 @@ cp .env.example .env
 
 | Variable | Default | Description |
 |---|---|---|
-| `GRAVETO_POSTGRES_DB` | `graveto_db` | Database name |
-| `GRAVETO_POSTGRES_USER` | `graveto_user` | PostgreSQL admin user (container bootstrap) |
-| `GRAVETO_POSTGRES_PASSWORD` | `graveto_password` | PostgreSQL admin password |
+| `POSTGRES_DB` | `graveto_db` | Database name |
+| `POSTGRES_USER` | `graveto_user` | PostgreSQL admin user (container bootstrap) |
+| `POSTGRES_PASSWORD` | `graveto_password` | PostgreSQL admin password |
 | `GRAVETO_APP_USER` | `graveto_app_user` | App runtime user (CRUD only) |
 | `GRAVETO_APP_PASSWORD` | `graveto_app_password` | App runtime password |
 | `GRAVETO_MIGRATOR_USER` | `graveto_migrator_user` | Flyway migrations user (DDL) |
