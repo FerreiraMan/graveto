@@ -1,6 +1,5 @@
 package me.ferreira.graveto.identity.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -23,7 +22,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 
 @ExtendWith(MockitoExtension.class)
-public class ForgotPasswordServiceImplTest{
+public class ForgotPasswordServiceImplTest {
 
   @InjectMocks
   private AuthServiceImpl service;

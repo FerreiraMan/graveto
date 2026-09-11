@@ -70,7 +70,8 @@ public class CreateAssetServiceImplTest {
     assertThat(savedAsset.getCurrency()).isEqualTo(Currency.EUR);
     assertThat(savedAsset.getStockExchange()).isEqualTo(stockExchange);
     assertThat(result).isEqualTo(savedAsset);
-    verify(eventPublisher, times(1)).publishEvent(new AssetCreatedEvent(userSid, savedAsset, stockExchange.getSuffix()));
+    verify(eventPublisher, times(1)).publishEvent(
+        new AssetCreatedEvent(userSid, savedAsset, stockExchange.getSuffix()));
   }
 
   @Test
