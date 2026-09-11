@@ -15,6 +15,20 @@ spring:
       - classpath:db/migration/moneytracker
       - classpath:db/migration/identity
       - classpath:db/migration/portfolio
+  mail:
+    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:email_username}
+    password: ${SPRING_MAIL_PASSWORD:email_password}
+    properties:
+      mail:
+        transport:
+          protocol: smtp
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+        debug: false
 
 server:
   servlet:
@@ -39,10 +53,15 @@ management:
         include: health
         exclude: prometheus,env,heapdump,beans,loggers,threaddump,shutdown
 
+security:
+  forgot-password:
+    token-bytes: 32
+    token-expiration: 1800000 # time unit in millisecond
+
 jwt:
   signing-secret: jwt_graveto_secret
-  expiration-ms: 3600000
-  issuer: >
+  expiration: 3600000 # time unit in millisecond
+  issuers: >
     graveto-api
 
 http:

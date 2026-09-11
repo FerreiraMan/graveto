@@ -36,7 +36,7 @@ public class AddMemberToAccountServiceImplTest {
   @InjectMocks
   private AccountServiceImpl service;
   @Mock
-  private ApplicationEventPublisher publisher;
+  private ApplicationEventPublisher eventPublisher;
   @Mock
   private AccountRepository accountRepository;
   @Mock

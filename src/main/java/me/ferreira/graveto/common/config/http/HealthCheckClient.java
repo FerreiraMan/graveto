@@ -1,4 +1,4 @@
-package me.ferreira.graveto.common.infrastructure.http;
+package me.ferreira.graveto.common.config.http;
 
 import java.io.IOException;
 import java.net.URI;

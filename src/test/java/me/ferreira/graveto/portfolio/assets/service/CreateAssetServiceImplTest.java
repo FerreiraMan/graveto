@@ -39,7 +39,7 @@ public class CreateAssetServiceImplTest {
   @Mock
   private AssetRepository assetRepository;
   @Mock
-  private ApplicationEventPublisher publisher;
+  private ApplicationEventPublisher eventPublisher;
 
   @Test
   void shouldCreateAssetWhenItDoesNotExist() {
@@ -70,7 +70,7 @@ public class CreateAssetServiceImplTest {
     assertThat(savedAsset.getCurrency()).isEqualTo(Currency.EUR);
     assertThat(savedAsset.getStockExchange()).isEqualTo(stockExchange);
     assertThat(result).isEqualTo(savedAsset);
-    verify(publisher, times(1)).publishEvent(new AssetCreatedEvent(userSid, savedAsset, stockExchange.getSuffix()));
+    verify(eventPublisher, times(1)).publishEvent(new AssetCreatedEvent(userSid, savedAsset, stockExchange.getSuffix()));
   }
 
   @Test
@@ -94,7 +94,7 @@ public class CreateAssetServiceImplTest {
     // Assert
     verify(assetRepository, never()).save(any());
     assertThat(result).isEqualTo(existingAsset);
-    verify(publisher, times(0)).publishEvent(any());
+    verify(eventPublisher, times(0)).publishEvent(any());
   }
 
   @Test

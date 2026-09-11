@@ -1,4 +1,4 @@
-package me.ferreira.graveto.common.infrastructure;
+package me.ferreira.graveto.common.config;
 
 import java.time.Clock;
 import java.time.ZoneId;

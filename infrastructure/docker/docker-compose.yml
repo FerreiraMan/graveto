@@ -13,11 +13,15 @@ services:
       - GRAVETO_POSTGRES_HOST=postgres
       - POSTGRES_DB=${POSTGRES_DB:-graveto_db}
       - POSTGRES_APP_USER=${GRAVETO_APP_USER:-graveto_app_user}
-      - POSTGRES_APP_PASSWORD=${GRAVETO_APP_USER:-graveto_app_password}
+      - POSTGRES_APP_PASSWORD=${GRAVETO_APP_PASSWORD:-graveto_app_password}
       - POSTGRES_MIGRATOR_USER=${GRAVETO_MIGRATOR_USER:-graveto_migrator_user}
       - POSTGRES_MIGRATOR_PASSWORD=${GRAVETO_MIGRATOR_PASSWORD:-graveto_migrator_password}
       - YFINANCE_API_KEY=${YFINANCE_API_KEY:-yfinance_api_key}
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
+      - SPRING_MAIL_HOST=${SPRING_MAIL_HOST:-smtp.gmail.com}
+      - SPRING_MAIL_PORT=${SPRING_MAIL_PORT:-587}
+      - SPRING_MAIL_USERNAME=${SPRING_MAIL_USERNAME:-email_username}
+      - SPRING_MAIL_PASSWORD=${SPRING_MAIL_PASSWORD:-email_password}
 
   postgres:
     image: graveto-postgres

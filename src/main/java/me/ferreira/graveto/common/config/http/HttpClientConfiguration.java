@@ -1,4 +1,4 @@
-package me.ferreira.graveto.common.infrastructure.http;
+package me.ferreira.graveto.common.config.http;
 
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
