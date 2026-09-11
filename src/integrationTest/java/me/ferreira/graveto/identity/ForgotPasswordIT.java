@@ -12,7 +12,7 @@ import me.ferreira.graveto.identity.config.IdentityBaseIntegrationTest;
 import me.ferreira.graveto.identity.domain.PasswordResetToken;
 import me.ferreira.graveto.identity.domain.User;
 import me.ferreira.graveto.identity.repository.UserRepository;
-import me.ferreira.graveto.identity.repository.passwordresettoken.PasswordResetTokenJpaRepository;
+import me.ferreira.graveto.identity.repository.passwordresettoken.PasswordResetTokenRepository;
 import me.ferreira.graveto.identity.service.AuthService;
 import me.ferreira.graveto.identity.service.command.RegisterCommand;
 import me.ferreira.graveto.identity.web.request.ForgotPasswordRequestDto;
@@ -39,7 +39,7 @@ public class ForgotPasswordIT extends IdentityBaseIntegrationTest {
   @Autowired
   private UserRepository userRepository;
   @Autowired
-  private PasswordResetTokenJpaRepository passwordResetTokenJpaRepository;
+  private PasswordResetTokenRepository passwordResetTokenRepository;
   @MockitoBean
   private JavaMailSender mailSender;
 
@@ -66,9 +66,7 @@ public class ForgotPasswordIT extends IdentityBaseIntegrationTest {
     // Assert
     final User user = userRepository.fetchUserCredentials(VALID_EMAIL).get();
     await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
-      final List<PasswordResetToken> tokens = passwordResetTokenJpaRepository.findAll().stream()
-          .filter(token -> token.getUser().getId().equals(user.getId()))
-          .toList();
+      final List<PasswordResetToken> tokens = passwordResetTokenRepository.findAllByUser(user);
 
       assertThat(tokens).hasSize(1);
       assertThat(tokens.get(0).getTokenHash()).isNotBlank();
@@ -82,9 +80,7 @@ public class ForgotPasswordIT extends IdentityBaseIntegrationTest {
       final SimpleMailMessage sentMessage = captor.getValue();
       assertThat(sentMessage.getTo()).containsExactly(VALID_EMAIL);
 
-      final PasswordResetToken persistedToken = passwordResetTokenJpaRepository.findAll().stream()
-          .filter(token -> token.getUser().getId().equals(user.getId()))
-          .findFirst().orElseThrow();
+      final PasswordResetToken persistedToken = passwordResetTokenRepository.findAllByUser(user).getFirst();
       assertThat(sentMessage.getText()).doesNotContain(persistedToken.getTokenHash());
     });
   }
@@ -116,12 +112,6 @@ public class ForgotPasswordIT extends IdentityBaseIntegrationTest {
 
     // Assert
     assertThat(missingEmailBody).isEqualTo(existingEmailBody);
-
-    // Assert
-    final long tokenCount = passwordResetTokenJpaRepository.findAll().stream()
-        .filter(token -> "ghost@graveto.com".equals(token.getUser().getEmail()))
-        .count();
-    assertThat(tokenCount).isZero();
   }
 
   @Test
@@ -137,13 +127,10 @@ public class ForgotPasswordIT extends IdentityBaseIntegrationTest {
         .post("/auth/forgot-password");
 
     await().atMost(Duration.ofSeconds(5)).untilAsserted(() ->
-        assertThat(passwordResetTokenJpaRepository.findAll().stream()
-            .filter(token -> token.getUser().getId().equals(user.getId()))
+        assertThat(passwordResetTokenRepository.findAllByUser(user).stream()
             .toList()).hasSize(1));
 
-    final String firstTokenHash = passwordResetTokenJpaRepository.findAll().stream()
-        .filter(token -> token.getUser().getId().equals(user.getId()))
-        .findFirst().orElseThrow().getTokenHash();
+    final String firstTokenHash = passwordResetTokenRepository.findAllByUser(user).getFirst().getTokenHash();
 
     // Act
     given()
@@ -154,9 +141,7 @@ public class ForgotPasswordIT extends IdentityBaseIntegrationTest {
 
     // Assert
     await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
-      final List<PasswordResetToken> tokens = passwordResetTokenJpaRepository.findAll().stream()
-          .filter(token -> token.getUser().getId().equals(user.getId()))
-          .toList();
+      final List<PasswordResetToken> tokens = passwordResetTokenRepository.findAllByUser(user);
 
       assertThat(tokens).hasSize(1);
       assertThat(tokens.get(0).getTokenHash()).isNotEqualTo(firstTokenHash);

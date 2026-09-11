@@ -10,6 +10,7 @@ import org.springframework.modulith.test.ApplicationModuleTest;
 @ApplicationModuleTest(
     module = "identity",
     mode = ApplicationModuleTest.BootstrapMode.STANDALONE,
+    extraIncludes = "common",
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 @Import(IdentityIntegrationTestConfiguration.class)
