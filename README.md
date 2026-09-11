@@ -44,6 +44,8 @@ graveto/
 ### Identity
 - User registration and login
 - JWT-based authentication (1h expiry)
+- Password reset request: single-use, time-limited token (SHA-256 hashed at rest) delivered by email;
+  the endpoint returns the same generic response whether or not the account exists
 
 ### Accounts
 - Create accounts with currency, initial balance, and institution
@@ -159,14 +161,21 @@ cp .env.example .env
 | `GRAVETO_MIGRATOR_PASSWORD` | `graveto_migrator_password` | Flyway migrations password |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost:3000` | Comma-separated list of allowed CORS origins |
 | `YFINANCE_API_KEY` | `yfinance_api_key` | Yahoo Finance API key |
+| `SPRING_MAIL_HOST` | `smtp.gmail.com` | SMTP host used for outbound email |
+| `SPRING_MAIL_PORT` | `587` | SMTP port (STARTTLS) |
+| `SPRING_MAIL_USERNAME` | `email_username` | SMTP account username |
+| `SPRING_MAIL_PASSWORD` | `email_password` | SMTP account password / app password |
 
 > **Note:** all variables above are wired through `docker-compose.yml` into the `backend` and `postgres`
 > containers, and are also read directly by Spring from the process environment for `./gradlew bootRun`
 > (`application.yml`).
 
-JWT signing secret and expiration (`jwt.signing-secret`, `jwt.expiration-ms` in `application.yml`) are
+JWT signing secret and expiration (`jwt.signing-secret`, `jwt.expiration` in `application.yml`) are
 currently hardcoded, not environment-driven — **change them directly in `application.yml` before any
 production deployment.**
+
+Password reset token settings (`security.forgot-password.token-bytes`, `security.forgot-password.token-expiration`
+in `application.yml`) control token entropy and lifetime. Defaults are 32 random bytes and 30 minutes.
 
 ### Database Security
 
@@ -190,6 +199,7 @@ All endpoints are prefixed with `/api`. Protected endpoints require `Authorizati
 |---|---|---|---|
 | POST | `/api/auth/register` | ✗ | Register user |
 | POST | `/api/auth/login` | ✗ | Login, returns JWT |
+| POST | `/api/auth/forgot-password` | ✗ | Request a password reset token (emailed; generic response either way) |
 
 ### Accounts
 

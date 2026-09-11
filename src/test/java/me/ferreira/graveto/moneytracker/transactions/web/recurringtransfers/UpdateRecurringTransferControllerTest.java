@@ -105,7 +105,7 @@ public class UpdateRecurringTransferControllerTest {
 
     final UpdateRecurringTransferRequestDto request = new UpdateRecurringTransferRequestDto(
         "Updated Insurance", new BigDecimal("75"), Frequency.WEEKLY, null, 3, false,
-        RecurringOperationStatus.ACTIVE, LocalDate.of(2026, 9, 1), LocalDate.of(2027, 9, 1));
+        RecurringOperationStatus.ACTIVE, LocalDate.now().plusDays(5), LocalDate.now().plusYears(1));
 
     final RecurringTransfer mockRt = buildMockRecurringTransfer(rtSid, accountSid, userSid);
     mockRt.setDescription("Updated Insurance");
@@ -113,7 +113,7 @@ public class UpdateRecurringTransferControllerTest {
     mockRt.setFrequency(Frequency.WEEKLY);
     mockRt.setDayOfTheWeek(3);
     mockRt.setAdjustToBusinessDay(false);
-    mockRt.setNextExecutionDate(LocalDate.of(2026, 9, 1));
+    mockRt.setNextExecutionDate(LocalDate.now().plusDays(5));
 
     final ArgumentCaptor<UpdateRecurringTransferCommand> commandCaptor =
         ArgumentCaptor.forClass(UpdateRecurringTransferCommand.class);
@@ -139,8 +139,8 @@ public class UpdateRecurringTransferControllerTest {
     assertThat(captured.dayOfWeek()).isEqualTo(3);
     assertThat(captured.adjustToBusinessDay()).isFalse();
     assertThat(captured.status()).isEqualTo(RecurringOperationStatus.ACTIVE);
-    assertThat(captured.nextExecutionDate()).isEqualTo(LocalDate.of(2026, 9, 1));
-    assertThat(captured.endDate()).isEqualTo(LocalDate.of(2027, 9, 1));
+    assertThat(captured.nextExecutionDate()).isEqualTo(LocalDate.now().plusDays(5));
+    assertThat(captured.endDate()).isEqualTo(LocalDate.now().plusYears(1));
 
     RecurringTransferDtoAssertions.assertSingleResponse(result, mockRt);
   }

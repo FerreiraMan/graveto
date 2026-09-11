@@ -55,7 +55,7 @@ public class LoginIT extends IdentityBaseIntegrationTest {
         .when()
         .post("/auth/login")
         .then()
-        .statusCode(403);
+        .statusCode(401);
   }
 
   @Test
@@ -70,7 +70,7 @@ public class LoginIT extends IdentityBaseIntegrationTest {
         .when()
         .post("/auth/login")
         .then()
-        .statusCode(403);
+        .statusCode(401);
   }
 
 }

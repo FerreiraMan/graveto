@@ -17,12 +17,12 @@ public class UserRepositoryImpl implements UserRepository {
   private final UserJpaRepository repository;
 
   @Override
-  public User save(User user) {
+  public User save(final User user) {
     return repository.save(user);
   }
 
   @Override
-  public List<User> saveAll(List<User> users) {
+  public List<User> saveAll(final List<User> users) {
     return repository.saveAll(users);
   }
 

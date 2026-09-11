@@ -34,7 +34,7 @@ public class CloseAccountServiceImplTest {
   @InjectMocks
   private AccountServiceImpl service;
   @Mock
-  private ApplicationEventPublisher publisher;
+  private ApplicationEventPublisher eventPublisher;
   @Mock
   private AccountRepository accountRepository;
 
@@ -121,7 +121,7 @@ public class CloseAccountServiceImplTest {
 
     // Assert
     assertThat(closedAccount.getStatus()).isEqualTo(AccountStatus.CLOSED);
-    verify(publisher, times(1)).publishEvent(new AccountClosedEvent(closedAccount));
+    verify(eventPublisher, times(1)).publishEvent(new AccountClosedEvent(closedAccount));
   }
 
 }
