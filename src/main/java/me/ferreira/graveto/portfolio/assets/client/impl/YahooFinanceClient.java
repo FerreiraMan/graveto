@@ -7,9 +7,9 @@ import me.ferreira.graveto.common.web.exception.common.ExternalApiUnavailableExc
 import me.ferreira.graveto.common.web.exception.portfolio.client.AssetInvalidRequestException;
 import me.ferreira.graveto.common.web.exception.portfolio.client.QuoteDataInvalidRequestException;
 import me.ferreira.graveto.portfolio.assets.client.MarketDataClient;
-import me.ferreira.graveto.portfolio.assets.client.impl.config.YahooFinanceProperties;
 import me.ferreira.graveto.portfolio.assets.client.impl.dto.response.QuoteDataResponseDto;
 import me.ferreira.graveto.portfolio.assets.client.impl.dto.response.SearchAssetResponseDto;
+import me.ferreira.graveto.portfolio.assets.client.impl.properties.YahooFinanceProperties;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;

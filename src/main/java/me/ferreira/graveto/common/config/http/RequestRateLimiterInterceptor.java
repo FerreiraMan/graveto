@@ -6,8 +6,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
+import me.ferreira.graveto.common.config.properties.HttpProperties;
 import me.ferreira.graveto.common.web.exception.common.TooManyRequestsException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
@@ -22,15 +22,11 @@ public class RequestRateLimiterInterceptor implements ClientHttpRequestIntercept
   }
 
   private static final Map<UUID, RequestState> USER_REQUESTS_MAP = new ConcurrentHashMap<>();
-  private final Integer maxRequests;
-  private final Long requestCooldown;
 
-  public RequestRateLimiterInterceptor(
-      final @Value("${http.client.max-requests}") Integer maxRequests,
-      final @Value("${http.client.request-cooldown-ms}") Long requestCooldown) {
+  private final HttpProperties httpProperties;
 
-    this.maxRequests = maxRequests;
-    this.requestCooldown = requestCooldown;
+  public RequestRateLimiterInterceptor(final HttpProperties httpProperties) {
+    this.httpProperties = httpProperties;
   }
 
   // Burst window approach. Example: User can only send a certain amount of requests on a given time window.
@@ -50,10 +46,10 @@ public class RequestRateLimiterInterceptor implements ClientHttpRequestIntercept
 
     USER_REQUESTS_MAP.compute(userSid, (k, v) -> {
       final Instant now = Instant.now();
-      if (v == null || now.isAfter(v.timestamp.plusMillis(requestCooldown))) {
+      if (v == null || now.isAfter(v.timestamp.plusMillis(httpProperties.client().requestCooldown()))) {
         return new RequestState(1, now);
       }
-      if (v.count < maxRequests) {
+      if (v.count < httpProperties.client().maxRequests()) {
         return new RequestState(v.count + 1, now);
       }
       throw new TooManyRequestsException();

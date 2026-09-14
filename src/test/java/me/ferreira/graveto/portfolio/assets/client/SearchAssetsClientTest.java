@@ -12,7 +12,7 @@ import java.util.UUID;
 import me.ferreira.graveto.common.web.exception.common.ExternalApiUnavailableException;
 import me.ferreira.graveto.common.web.exception.portfolio.client.AssetInvalidRequestException;
 import me.ferreira.graveto.portfolio.assets.client.impl.YahooFinanceClient;
-import me.ferreira.graveto.portfolio.assets.client.impl.config.YahooFinanceProperties;
+import me.ferreira.graveto.portfolio.assets.client.impl.properties.YahooFinanceProperties;
 import me.ferreira.graveto.portfolio.assets.client.impl.dto.response.SearchAssetResponseDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

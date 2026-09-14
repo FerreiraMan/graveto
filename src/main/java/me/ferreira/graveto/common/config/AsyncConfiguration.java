@@ -2,6 +2,7 @@ package me.ferreira.graveto.common.config;
 
 import java.util.concurrent.Executor;
 import lombok.extern.slf4j.Slf4j;
+import me.ferreira.graveto.common.config.properties.ThreadPoolExecutorProperties;
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +14,12 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @Configuration
 @EnableAsync
 public class AsyncConfiguration implements AsyncConfigurer {
+
+  private final ThreadPoolExecutorProperties executorProperties;
+
+  public AsyncConfiguration(final ThreadPoolExecutorProperties executorProperties) {
+    this.executorProperties = executorProperties;
+  }
 
   @Override
   public Executor getAsyncExecutor() {
@@ -28,13 +35,13 @@ public class AsyncConfiguration implements AsyncConfigurer {
   @Bean(name = "taskExecutor")
   public Executor taskExecutor() {
     final ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-    executor.setCorePoolSize(5);
-    executor.setMaxPoolSize(10);
-    executor.setKeepAliveSeconds(30);
-    executor.setQueueCapacity(100);
+    executor.setCorePoolSize(executorProperties.poolSize());
+    executor.setMaxPoolSize(executorProperties.maxPoolSize());
+    executor.setKeepAliveSeconds(executorProperties.keepAliveSeconds());
+    executor.setQueueCapacity(executorProperties.queueCapacity());
     executor.setThreadNamePrefix("async-task-");
     executor.setWaitForTasksToCompleteOnShutdown(true);
-    executor.setAwaitTerminationSeconds(60);
+    executor.setAwaitTerminationSeconds(executorProperties.awaitTerminationSeconds());
     executor.initialize();
     return executor;
   }
