@@ -71,7 +71,7 @@ http:
     connect-timeout: 10000
     read-timeout: 10000
     max-requests: 5
-    request-cooldown-ms: 60000
+    request-cooldown: 60000 # time unit in millisecond
     yahoo:
       api-key: ${YFINANCE_API_KEY:yfinance_api_key}
       base-url: https://yfapi.net/
@@ -80,6 +80,13 @@ http:
       quote:
         path: v6/finance/quote
         batch-limit: 10
+
+async-executor:
+  pool-size: 5
+  max-pool-size: 10
+  keep-alive-seconds: 30
+  queue-capacity: 100
+  await-termination-seconds: 60
 
 scheduled:
   cron:

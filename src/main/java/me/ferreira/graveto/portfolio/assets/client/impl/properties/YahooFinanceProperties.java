@@ -1,4 +1,4 @@
-package me.ferreira.graveto.portfolio.assets.client.impl.config;
+package me.ferreira.graveto.portfolio.assets.client.impl.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

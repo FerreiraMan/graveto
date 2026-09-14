@@ -3,8 +3,8 @@ package me.ferreira.graveto.identity.security;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import me.ferreira.graveto.common.config.properties.HttpProperties;
 import me.ferreira.graveto.common.logging.MdcLoggingFilter;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,14 +26,13 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 public class SecurityConfiguration {
 
-  @Value("${http.cors.allowed-origins}")
-  private List<String> allowedOrigins;
-
+  private final HttpProperties httpProperties;
   private final JwtAuthenticationFilter jwtAuthFilter;
   private final ExceptionHandlerFilter exceptionHandlerFilter;
 
-  public SecurityConfiguration(final JwtAuthenticationFilter filter,
+  public SecurityConfiguration(final HttpProperties httpProperties, final JwtAuthenticationFilter filter,
                                final ExceptionHandlerFilter exceptionHandlerFilter) {
+    this.httpProperties = httpProperties;
     this.jwtAuthFilter = filter;
     this.exceptionHandlerFilter = exceptionHandlerFilter;
   }
@@ -59,7 +58,7 @@ public class SecurityConfiguration {
   public CorsConfigurationSource corsConfigurationSource() {
 
     final CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(allowedOrigins);
+    configuration.setAllowedOrigins(httpProperties.cors().allowedOrigins());
     configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(List.of("Content-Type", "Authorization"));
     configuration.setMaxAge(Duration.ofMinutes(10));
