@@ -88,7 +88,13 @@ public class CategoryServiceImpl implements CategoryService {
 
       if (Objects.nonNull(parentCategory.getAccountSid()) && !parentCategory.getAccountSid()
           .equals(command.accountSid())) {
-        throw new IllegalCategoryHierarchyException();
+        throw new IllegalCategoryHierarchyException("Cannot use another account's category as a parent.");
+      }
+
+      if (!command.transactionType().equals(parentCategory.getTransactionType())) {
+        throw new IllegalCategoryHierarchyException(
+            "Category transaction type [%s] must match parent's transaction type [%s].".formatted(
+                command.transactionType().name(), parentCategory.getTransactionType().name()));
       }
     }
 
