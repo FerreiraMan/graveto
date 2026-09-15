@@ -361,6 +361,30 @@ public class CreateCategoryServiceImplTest {
   }
 
   @Test
+  void shouldThrowIfTransactionTypeDoesNotMatchParentTransactionType() {
+    // Arrange
+    final UUID userSid = UUID.randomUUID();
+    final String name = "Videogames";
+    final UUID parentSid = UUID.randomUUID();
+    final UUID accountSid = UUID.randomUUID();
+    final Account account = AccountUtils.createAccount(accountSid, userSid, MembershipRole.OWNER);
+    final Category parentCategory =
+        CategoryUtils.createCategory("Leisure", accountSid, null, false, TransactionType.EXPENSE);
+    final CreateCategoryCommand command =
+        new CreateCategoryCommand(userSid, name, accountSid, parentSid, TransactionType.INCOME);
+
+    when(categoryRepository.existsByNameForAccountOrSystem(any(), any())).thenReturn(false);
+    when(categoryRepository.findBySid(parentSid)).thenReturn(Optional.of(parentCategory));
+    when(accountService.fetchAccountEntity(accountSid)).thenReturn(account);
+
+    // Act & Assert
+    assertThatThrownBy(() -> {
+      service.createCategory(command);
+    }).isInstanceOf(IllegalCategoryHierarchyException.class)
+        .hasMessage("Category transaction type [INCOME] must match parent's transaction type [EXPENSE].");
+  }
+
+  @Test
   void shouldThrowIfUserIsNotMemberOfAccount() {
     // Arrange
     final UUID userSid = UUID.randomUUID();
