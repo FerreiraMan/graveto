@@ -1,7 +1,9 @@
 package me.ferreira.graveto.identity.service.impl;
 
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import me.ferreira.graveto.common.mail.domain.event.PasswordResetEmailEvent;
+import me.ferreira.graveto.common.web.exception.identity.InvalidResetPasswordTokenException;
 import me.ferreira.graveto.common.web.exception.identity.UserAlreadyExistsException;
 import me.ferreira.graveto.identity.domain.AuthUser;
 import me.ferreira.graveto.identity.domain.User;
@@ -12,6 +14,7 @@ import me.ferreira.graveto.identity.service.PasswordResetTokenService;
 import me.ferreira.graveto.identity.service.command.ForgotPasswordCommand;
 import me.ferreira.graveto.identity.service.command.LoginCommand;
 import me.ferreira.graveto.identity.service.command.RegisterCommand;
+import me.ferreira.graveto.identity.service.command.ResetPasswordCommand;
 import me.ferreira.graveto.identity.service.payload.ForgotPasswordTokenDetails;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -21,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -68,6 +72,20 @@ public class AuthServiceImpl implements AuthService {
           eventPublisher.publishEvent(
               new PasswordResetEmailEvent(user.getEmail(), tokenDetails.token(), tokenDetails.expiresIn()));
         });
+  }
+
+  @Override
+  @Transactional
+  public void resetPassword(final ResetPasswordCommand command) {
+
+    final User user = passwordResetTokenService.validateToken(command.token())
+        .orElseThrow(() -> new InvalidResetPasswordTokenException("Unable to process password reset request."));
+
+    final String newPasswordHash = passwordEncoder.encode(command.newPassword());
+    user.updatePassword(newPasswordHash);
+    passwordResetTokenService.invalidateToken(user);
+    userRepository.save(user);
+    log.info("Password reset completed for user [{}].", user.getSid());
   }
 
 }
