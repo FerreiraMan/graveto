@@ -1,6 +1,7 @@
 package me.ferreira.graveto.identity.repository.passwordresettoken.impl;
 
 import java.util.List;
+import java.util.Optional;
 import lombok.AllArgsConstructor;
 import me.ferreira.graveto.identity.domain.PasswordResetToken;
 import me.ferreira.graveto.identity.domain.User;
@@ -17,6 +18,11 @@ public class PasswordResetTokenRepositoryImpl implements PasswordResetTokenRepos
   @Override
   public PasswordResetToken save(final PasswordResetToken passwordResetToken) {
     return repository.save(passwordResetToken);
+  }
+
+  @Override
+  public Optional<PasswordResetToken> findByTokenHash(final String tokenHash) {
+    return repository.findByTokenHash(tokenHash);
   }
 
   @Override

@@ -26,7 +26,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class PasswordResetTokenServiceImplTest {
+public class GeneratePasswordResetTokenServiceImplTest {
 
   private static final long THIRTY_MINUTES_MILLIS = 1_800_000L;
 

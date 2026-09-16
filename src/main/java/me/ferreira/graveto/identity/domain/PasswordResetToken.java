@@ -64,4 +64,8 @@ public class PasswordResetToken extends BaseEntity {
     return passwordResetToken;
   }
 
+  public boolean isExpired() {
+    return LocalDateTime.now(ZoneId.of(LOCAL_ZONE_ID)).isAfter(this.expiresAt);
+  }
+
 }

@@ -9,6 +9,7 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import me.ferreira.graveto.common.web.exception.common.ExternalApiUnavailableException;
 import me.ferreira.graveto.common.web.exception.common.TooManyRequestsException;
+import me.ferreira.graveto.common.web.exception.identity.InvalidResetPasswordTokenException;
 import me.ferreira.graveto.common.web.exception.identity.TokenAuthenticationException;
 import me.ferreira.graveto.common.web.exception.identity.UserAlreadyExistsException;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
@@ -331,6 +332,14 @@ public class GlobalExceptionHandler {
                                                                    final HttpServletRequest request) {
 
     log.error("Error with Jwt verification.", ex);
+    return createBaseProblemDetail(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
+  }
+
+  @ExceptionHandler(InvalidResetPasswordTokenException.class)
+  public ProblemDetail handleInvalidResetPasswordTokenException(final InvalidResetPasswordTokenException ex,
+                                                                final HttpServletRequest request) {
+
+    log.warn("Password reset attempt with invalid or expired token.", ex);
     return createBaseProblemDetail(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
   }
 

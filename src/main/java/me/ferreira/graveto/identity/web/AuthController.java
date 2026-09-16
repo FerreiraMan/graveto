@@ -8,13 +8,16 @@ import me.ferreira.graveto.identity.service.AuthService;
 import me.ferreira.graveto.identity.service.command.ForgotPasswordCommand;
 import me.ferreira.graveto.identity.service.command.LoginCommand;
 import me.ferreira.graveto.identity.service.command.RegisterCommand;
+import me.ferreira.graveto.identity.service.command.ResetPasswordCommand;
 import me.ferreira.graveto.identity.web.request.ForgotPasswordRequestDto;
 import me.ferreira.graveto.identity.web.request.LoginRequestDto;
 import me.ferreira.graveto.identity.web.request.RegisterRequestDto;
+import me.ferreira.graveto.identity.web.request.ResetPasswordRequestDto;
 import me.ferreira.graveto.identity.web.response.ForgotPasswordResponseDto;
 import me.ferreira.graveto.identity.web.response.LoginResponseDto;
-import me.ferreira.graveto.identity.web.response.RegisterResponseDto;
+import me.ferreira.graveto.identity.web.response.UserResponseDto;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,6 +32,7 @@ public class AuthController {
   private static final String LOGIN = "/login";
   private static final String REGISTER = "/register";
   private static final String FORGOT_PASSWORD_PATH = "/forgot-password";
+  private static final String RESET_PASSWORD_PATH = "/reset-password";
   private static final String USER_SID_PATH = "/{sid}";
 
   private final AuthService authService;
@@ -47,7 +51,7 @@ public class AuthController {
   }
 
   @PostMapping(path = REGISTER, produces = "application/json")
-  public ResponseEntity<RegisterResponseDto> register(@Valid @RequestBody final RegisterRequestDto requestDto) {
+  public ResponseEntity<UserResponseDto> register(@Valid @RequestBody final RegisterRequestDto requestDto) {
 
     final RegisterCommand command = new RegisterCommand(
         requestDto.email().trim().toLowerCase(),
@@ -62,7 +66,7 @@ public class AuthController {
         .buildAndExpand(registeredUser.getSid())
         .toUri();
 
-    return ResponseEntity.created(location).body(RegisterResponseDto.from(registeredUser));
+    return ResponseEntity.created(location).body(UserResponseDto.from(registeredUser));
   }
 
   @PostMapping(path = FORGOT_PASSWORD_PATH, produces = "application/json")
@@ -79,6 +83,19 @@ public class AuthController {
         .body(new ForgotPasswordResponseDto(
             "If an account exists for that email address, a password reset code has been sent.")
         );
+  }
+
+  @PatchMapping(path = RESET_PASSWORD_PATH)
+  public ResponseEntity<Void> resetPassword(@Valid @RequestBody final ResetPasswordRequestDto requestDto) {
+
+    final ResetPasswordCommand command = new ResetPasswordCommand(
+        requestDto.token(),
+        requestDto.newPassword()
+    );
+
+    authService.resetPassword(command);
+
+    return ResponseEntity.noContent().build();
   }
 
 }

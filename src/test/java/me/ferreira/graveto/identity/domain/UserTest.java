@@ -22,4 +22,18 @@ public class UserTest {
     assertThat(user.getRole()).isEqualTo(Role.USER);
   }
 
+  @Test
+  void shouldUpdatePassword() {
+    // Arrange
+    final String email = "email@test.com";
+    final String newPassword = "newPassword";
+    final User user = User.create(email, "password");
+
+    // Act
+    user.updatePassword(newPassword);
+
+    // Assert
+    assertThat(user.getPassword()).isEqualTo(newPassword);
+  }
+
 }

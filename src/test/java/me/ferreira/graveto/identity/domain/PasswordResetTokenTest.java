@@ -7,6 +7,8 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class PasswordResetTokenTest {
 
@@ -30,6 +32,24 @@ public class PasswordResetTokenTest {
     assertThat(passwordResetToken.getTokenHash()).isEqualTo(tokenHash);
     assertThat(passwordResetToken.getExpiresAt().truncatedTo(ChronoUnit.MINUTES)).isEqualTo(
         now.plus(expirationTimeMs, ChronoUnit.MILLIS).truncatedTo(ChronoUnit.MINUTES));
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void shouldReturnExpiredStatus(final boolean isExpiredToken) {
+    // Arrange
+    final PasswordResetToken passwordResetToken = new PasswordResetToken();
+    if (isExpiredToken) {
+      passwordResetToken.setExpiresAt(LocalDateTime.now().minusDays(5));
+    } else {
+      passwordResetToken.setExpiresAt(LocalDateTime.now().plusDays(5));
+    }
+
+    // Act
+    final boolean result = passwordResetToken.isExpired();
+
+    // Assert
+    assertThat(result).isEqualTo(isExpiredToken);
   }
 
 }
