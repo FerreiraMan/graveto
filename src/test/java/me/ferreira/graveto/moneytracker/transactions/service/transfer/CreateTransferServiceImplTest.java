@@ -2,6 +2,7 @@ package me.ferreira.graveto.moneytracker.transactions.service.transfer;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -9,6 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
@@ -26,12 +28,14 @@ import me.ferreira.graveto.moneytracker.transactions.service.impl.TransferServic
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.payload.TransferResult;
 import me.ferreira.graveto.moneytracker.utils.AccountUtils;
 import me.ferreira.graveto.moneytracker.utils.CategoryUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class CreateTransferServiceImplTest {
@@ -78,12 +82,16 @@ public class CreateTransferServiceImplTest {
         userSid, sourceSid, destSid, BigDecimal.TEN, "Test", LocalDateTime.now()
     );
 
-    when(accountService.fetchAccountEntity(sourceSid)).thenThrow(new AccountNotFoundException(sourceSid));
+    when(accountService.fetchAccountEntity(sourceSid)).thenThrow(new AccountNotFoundException(any()));
 
     // Act & Assert
     assertThatThrownBy(() -> service.createTransfer(command))
         .isInstanceOf(AccountNotFoundException.class)
-        .hasMessage("Account with SID [" + sourceSid + "] was not found or you do not have permission to view it.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo("The specified account was not found.");
+        });
   }
 
   @Test

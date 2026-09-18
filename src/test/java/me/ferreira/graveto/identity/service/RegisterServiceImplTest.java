@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
 import me.ferreira.graveto.common.web.exception.identity.UserAlreadyExistsException;
 import me.ferreira.graveto.identity.domain.User;
 import me.ferreira.graveto.identity.repository.UserRepository;
@@ -20,6 +21,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
@@ -68,7 +70,12 @@ public class RegisterServiceImplTest {
 
     // Act & Assert
     assertThatThrownBy(() -> service.register(command))
-        .isInstanceOf(UserAlreadyExistsException.class);
+        .isInstanceOf(UserAlreadyExistsException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          assertThat(ae.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+          assertThat(ae.getSafeMessage()).isEqualTo("An account with this email already exists.");
+        });
     verify(passwordEncoder, never()).encode(any());
     verify(userRepository, never()).save(any());
   }

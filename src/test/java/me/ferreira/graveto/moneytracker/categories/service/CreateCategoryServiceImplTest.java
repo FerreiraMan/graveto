@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryAlreadyExistsException;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.IllegalCategoryHierarchyException;
@@ -29,6 +30,7 @@ import me.ferreira.graveto.moneytracker.categories.service.impl.CategoryServiceI
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.utils.AccountUtils;
 import me.ferreira.graveto.moneytracker.utils.CategoryUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -38,6 +40,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class CreateCategoryServiceImplTest {
@@ -246,7 +249,11 @@ public class CreateCategoryServiceImplTest {
     assertThatThrownBy(() -> {
       service.createCategory(command);
     }).isInstanceOf(CategoryAlreadyExistsException.class)
-        .hasMessage("Category with name [" + name + "] already exists.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo("A category with this name already exists.");
+        });
   }
 
   @Test
@@ -268,7 +275,11 @@ public class CreateCategoryServiceImplTest {
     assertThatThrownBy(() -> {
       service.createCategory(command);
     }).isInstanceOf(CategoryNotFoundException.class)
-        .hasMessage("Category with SID [" + parentSid + "] was not found or does not belong to the account.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo("The category account was not found.");
+        });
   }
 
   @Test
@@ -298,7 +309,12 @@ public class CreateCategoryServiceImplTest {
     assertThatThrownBy(() -> {
       service.createCategory(command);
     }).isInstanceOf(MaxCategoryDepthExceededException.class)
-        .hasMessage("Maximum category depth exceeded. Cannot create categories deeper than level 3.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo("Category depth must be kept at 3 levels maximum.");
+        });
   }
 
   @Test
@@ -356,8 +372,12 @@ public class CreateCategoryServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.createCategory(command);
-    }).isInstanceOf(IllegalCategoryHierarchyException.class)
-        .hasMessage("Cannot use another account's category as a parent.");
+    }).isInstanceOf(CategoryNotFoundException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo("The category account was not found.");
+        });
   }
 
   @Test
@@ -381,7 +401,12 @@ public class CreateCategoryServiceImplTest {
     assertThatThrownBy(() -> {
       service.createCategory(command);
     }).isInstanceOf(IllegalCategoryHierarchyException.class)
-        .hasMessage("Category transaction type [INCOME] must match parent's transaction type [EXPENSE].");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo("Category transaction type must match the parent category's transaction type.");
+        });
   }
 
   @Test

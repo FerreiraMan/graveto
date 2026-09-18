@@ -7,18 +7,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import me.ferreira.graveto.common.web.exception.common.ExternalApiUnavailableException;
-import me.ferreira.graveto.common.web.exception.common.TooManyRequestsException;
-import me.ferreira.graveto.common.web.exception.identity.InvalidResetPasswordTokenException;
-import me.ferreira.graveto.common.web.exception.identity.TokenAuthenticationException;
-import me.ferreira.graveto.common.web.exception.identity.UserAlreadyExistsException;
-import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
-import me.ferreira.graveto.common.web.exception.moneytracker.AccountWithInvalidOpeningBalanceException;
-import me.ferreira.graveto.common.web.exception.moneytracker.CategoryAlreadyExistsException;
-import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundException;
-import me.ferreira.graveto.common.web.exception.moneytracker.IllegalCategoryHierarchyException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
-import me.ferreira.graveto.common.web.exception.moneytracker.MaxCategoryDepthExceededException;
 import me.ferreira.graveto.common.web.exception.moneytracker.MemberNotRegisteredException;
 import me.ferreira.graveto.common.web.exception.moneytracker.RecurringTransactionNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.RecurringTransferNotFoundException;
@@ -55,6 +44,15 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 public class GlobalExceptionHandler {
 
   private static final String DEFAULT_TYPE = "about:blank";
+
+  @ExceptionHandler(ApplicationException.class)
+  public ProblemDetail handleApplicationException(final ApplicationException ex,
+                                                  final HttpServletRequest request) {
+
+
+    log.atLevel(ex.getLogLevel()).log(ex.getMessage());
+    return createBaseProblemDetail(ex.getStatus(), ex.getSafeMessage(), request);
+  }
 
   @ExceptionHandler(MissingRequestHeaderException.class)
   public ProblemDetail handleMissingRequestHeaderException(final MissingRequestHeaderException ex,
@@ -137,29 +135,12 @@ public class GlobalExceptionHandler {
     return createBaseProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request);
   }
 
-  @ExceptionHandler(AccountNotFoundException.class)
-  public ProblemDetail handleAccountNotFoundException(final AccountNotFoundException ex,
-                                                      final HttpServletRequest request) {
-
-    log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
-    return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
-  }
-
   @ExceptionHandler(TransactionNotFoundException.class)
   public ProblemDetail handleTransactionNotFoundException(final TransactionNotFoundException ex,
                                                           final HttpServletRequest request) {
 
     log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
     return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
-  }
-
-  @ExceptionHandler(AccountWithInvalidOpeningBalanceException.class)
-  public ProblemDetail handleAccountWithInvalidOpeningBalanceException(
-      final AccountWithInvalidOpeningBalanceException ex,
-      final HttpServletRequest request) {
-
-    log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
-    return createBaseProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request);
   }
 
   @ExceptionHandler(RecurringTransactionNotFoundException.class)
@@ -176,38 +157,6 @@ public class GlobalExceptionHandler {
 
     log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
     return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
-  }
-
-  @ExceptionHandler(CategoryAlreadyExistsException.class)
-  public ProblemDetail handleCategoryAlreadyExistsException(final CategoryAlreadyExistsException ex,
-                                                            final HttpServletRequest request) {
-
-    log.warn("Business rule violation: Category already exists. Message: {}", ex.getMessage());
-    return createBaseProblemDetail(HttpStatus.CONFLICT, ex.getMessage(), request);
-  }
-
-  @ExceptionHandler(CategoryNotFoundException.class)
-  public ProblemDetail handleCategoryNotFoundException(final CategoryNotFoundException ex,
-                                                       final HttpServletRequest request) {
-
-    log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
-    return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
-  }
-
-  @ExceptionHandler(MaxCategoryDepthExceededException.class)
-  public ProblemDetail handleMaxCategoryDepthExceededException(final MaxCategoryDepthExceededException ex,
-                                                               final HttpServletRequest request) {
-
-    log.warn("Business rule violation: Max depth of categories is 3. Message: {}", ex.getMessage());
-    return createBaseProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request);
-  }
-
-  @ExceptionHandler(IllegalCategoryHierarchyException.class)
-  public ProblemDetail handleIllegalCategoryHierarchyException(final IllegalCategoryHierarchyException ex,
-                                                               final HttpServletRequest request) {
-
-    log.warn("Business rule violation: Parent category does not belong to user. Message: {}", ex.getMessage());
-    return createBaseProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request);
   }
 
   @ExceptionHandler(InsufficientPermissionsOnAccountException.class)
@@ -305,14 +254,6 @@ public class GlobalExceptionHandler {
     return createBaseProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request);
   }
 
-  @ExceptionHandler(UserAlreadyExistsException.class)
-  public ProblemDetail handleUserAlreadyExistsException(final UserAlreadyExistsException ex,
-                                                        final HttpServletRequest request) {
-
-    log.warn("Business rule violation: User already exists. Message: {}", ex.getMessage());
-    return createBaseProblemDetail(HttpStatus.CONFLICT, ex.getMessage(), request);
-  }
-
   @ExceptionHandler(UsernameNotFoundException.class)
   public ProblemDetail handleUsernameNotFoundException(final UsernameNotFoundException ex,
                                                        final HttpServletRequest request) {
@@ -325,22 +266,6 @@ public class GlobalExceptionHandler {
   public ProblemDetail handleBadCredentialsExceptionException(final HttpServletRequest request) {
 
     return createBaseProblemDetail(HttpStatus.UNAUTHORIZED, "Invalid email or password", request);
-  }
-
-  @ExceptionHandler(TokenAuthenticationException.class)
-  public ProblemDetail handleTokenAuthenticationExceptionException(final TokenAuthenticationException ex,
-                                                                   final HttpServletRequest request) {
-
-    log.error("Error with Jwt verification.", ex);
-    return createBaseProblemDetail(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
-  }
-
-  @ExceptionHandler(InvalidResetPasswordTokenException.class)
-  public ProblemDetail handleInvalidResetPasswordTokenException(final InvalidResetPasswordTokenException ex,
-                                                                final HttpServletRequest request) {
-
-    log.warn("Password reset attempt with invalid or expired token.", ex);
-    return createBaseProblemDetail(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
   }
 
   @ExceptionHandler(AssetInvalidRequestException.class)
@@ -357,22 +282,6 @@ public class GlobalExceptionHandler {
 
     log.error("Error with request to external API.", ex);
     return createBaseProblemDetail(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
-  }
-
-  @ExceptionHandler(ExternalApiUnavailableException.class)
-  public ProblemDetail handleExternalApiUnavailableException(final ExternalApiUnavailableException ex,
-                                                             final HttpServletRequest request) {
-
-    log.error("Error when reaching external API.", ex);
-    return createBaseProblemDetail(HttpStatus.BAD_GATEWAY, ex.getMessage(), request);
-  }
-
-  @ExceptionHandler(TooManyRequestsException.class)
-  public ProblemDetail handleTooManyRequestsException(final TooManyRequestsException ex,
-                                                      final HttpServletRequest request) {
-
-    log.error("Too many requests.", ex);
-    return createBaseProblemDetail(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage(), request);
   }
 
   @ExceptionHandler(ResourceAccessException.class)

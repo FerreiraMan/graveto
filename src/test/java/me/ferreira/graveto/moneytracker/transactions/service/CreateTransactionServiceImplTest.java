@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
@@ -27,6 +28,7 @@ import me.ferreira.graveto.moneytracker.transactions.service.command.CreateTrans
 import me.ferreira.graveto.moneytracker.transactions.service.impl.TransactionServiceImpl;
 import me.ferreira.graveto.moneytracker.utils.AccountUtils;
 import me.ferreira.graveto.moneytracker.utils.CategoryUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -34,6 +36,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class CreateTransactionServiceImplTest {
@@ -52,28 +55,34 @@ public class CreateTransactionServiceImplTest {
     // Arrange
     final UUID categorySid = UUID.randomUUID();
 
-    when(categoryService.fetchCategory(any())).thenThrow(new CategoryNotFoundException(categorySid));
+    when(categoryService.fetchCategory(any())).thenThrow(new CategoryNotFoundException("loggableMessage"));
 
     // Act & Assert
     assertThatThrownBy(() -> {
       service.createTransaction(Mockito.mock(CreateTransactionCommand.class));
     }).isInstanceOf(CategoryNotFoundException.class)
-        .hasMessage("Category with SID [" + categorySid + "] was not found or does not belong to the account.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo("The category account was not found.");
+        });
   }
 
   @Test
   void shouldThrowIfAccountIsNotFoundDuringTransactionCreation() {
     // Arrange
-    final UUID accountSid = UUID.randomUUID();
-
     when(categoryService.fetchCategory(any())).thenReturn(Mockito.mock(Category.class));
-    when(accountService.fetchAccountEntity(any())).thenThrow(new AccountNotFoundException(accountSid));
+    when(accountService.fetchAccountEntity(any())).thenThrow(new AccountNotFoundException("loggableMessage"));
 
     // Act & Assert
     assertThatThrownBy(() -> {
       service.createTransaction(Mockito.mock(CreateTransactionCommand.class));
     }).isInstanceOf(AccountNotFoundException.class)
-        .hasMessage("Account with SID [" + accountSid + "] was not found or you do not have permission to view it.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+          assertThat(ae.getSafeMessage()).isEqualTo("The specified account was not found.");
+        });
   }
 
   @Test

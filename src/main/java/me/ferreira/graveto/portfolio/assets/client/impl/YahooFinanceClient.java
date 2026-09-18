@@ -44,7 +44,9 @@ public class YahooFinanceClient implements MarketDataClient {
           throw new AssetInvalidRequestException(keyword, res.getStatusCode().value());
         })
         .onStatus(HttpStatusCode::is5xxServerError, (req, res) -> {
-          throw new ExternalApiUnavailableException(res.getStatusCode().value());
+          throw new ExternalApiUnavailableException(
+              "Upstream server [%s] is currently unavailable. HTTP status code: [%d]".formatted(
+                  yahooFinanceProperties.name(), res.getStatusCode().value()));
         })
         .body(SearchAssetResponseDto.class);
 
@@ -79,7 +81,9 @@ public class YahooFinanceClient implements MarketDataClient {
             throw new QuoteDataInvalidRequestException(concatenatedSymbols, res.getStatusCode().value());
           })
           .onStatus(HttpStatusCode::is5xxServerError, (req, res) -> {
-            throw new ExternalApiUnavailableException(res.getStatusCode().value());
+            throw new ExternalApiUnavailableException(
+                "Upstream server [%s] is currently unavailable. HTTP status code: [%d]".formatted(
+                    yahooFinanceProperties.name(), res.getStatusCode().value()));
           })
           .body(QuoteDataResponseDto.class);
 

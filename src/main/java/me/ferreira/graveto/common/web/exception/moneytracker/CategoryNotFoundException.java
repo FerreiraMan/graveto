@@ -1,9 +1,11 @@
 package me.ferreira.graveto.common.web.exception.moneytracker;
 
-import java.util.UUID;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
+import org.slf4j.event.Level;
+import org.springframework.http.HttpStatus;
 
-public class CategoryNotFoundException extends RuntimeException {
-  public CategoryNotFoundException(final UUID categorySid) {
-    super("Category with SID [" + categorySid + "] was not found or does not belong to the account.");
+public class CategoryNotFoundException extends ApplicationException {
+  public CategoryNotFoundException(final String loggableMessage) {
+    super(loggableMessage, HttpStatus.NOT_FOUND, "The category account was not found.", Level.ERROR);
   }
 }

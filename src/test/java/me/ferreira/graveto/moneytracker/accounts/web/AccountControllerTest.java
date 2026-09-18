@@ -201,7 +201,7 @@ public class AccountControllerTest {
 
     final UUID accountSid = UUID.randomUUID();
 
-    when(service.fetchAccount(any())).thenThrow(new AccountNotFoundException(accountSid));
+    when(service.fetchAccount(any())).thenThrow(new AccountNotFoundException(any()));
 
     final MvcTestResult testResult = mvc.get()
         .uri("/accounts/{accountSid}", accountSid)
@@ -212,7 +212,7 @@ public class AccountControllerTest {
         .hasStatus(HttpStatus.NOT_FOUND)
         .bodyJson()
         .extractingPath("$.detail").asString()
-        .isEqualTo("Account with SID [%s] was not found or you do not have permission to view it.", accountSid);
+        .isEqualTo("The specified account was not found.", accountSid);
   }
 
   @Test
