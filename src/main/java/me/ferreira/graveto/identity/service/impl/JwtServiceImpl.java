@@ -57,7 +57,7 @@ public class JwtServiceImpl implements JwtService {
 
       return new JwtPayload(UUID.fromString(subjectSid), role);
     } catch (final JWTVerificationException exception) {
-      throw new TokenAuthenticationException("Invalid JWT token.");
+      throw new TokenAuthenticationException("Invalid JWT token [%s]".formatted(token));
     }
   }
 

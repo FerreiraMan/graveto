@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.time.Year;
 import java.util.List;
 import java.util.UUID;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountWithInvalidOpeningBalanceException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
@@ -22,11 +23,13 @@ import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.domain.projection.MonthlyAggregateProjection;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
 import me.ferreira.graveto.moneytracker.utils.AccountUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class GenerateCashFlowReportServiceImplTest {
@@ -58,12 +61,18 @@ public class GenerateCashFlowReportServiceImplTest {
     final UUID accountSid = UUID.randomUUID();
     final CashFlowCommand command = new CashFlowCommand(UUID.randomUUID(), accountSid, Year.now().getValue());
 
-    when(accountService.fetchAccountEntity(any())).thenThrow(new AccountNotFoundException(accountSid));
+    when(accountService.fetchAccountEntity(any())).thenThrow(new AccountNotFoundException(any()));
 
     // Act & Assert
     assertThatThrownBy(() -> service.generateCashFlowReport(command))
         .isInstanceOf(AccountNotFoundException.class)
-        .hasMessage("Account with SID [" + accountSid + "] was not found or you do not have permission to view it.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+          assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified account is no longer available. " +
+                  "It may have been removed, or you may not have access to it.");
+        });
   }
 
   @Test
@@ -97,9 +106,14 @@ public class GenerateCashFlowReportServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> service.generateCashFlowReport(command))
         .isInstanceOf(AccountWithInvalidOpeningBalanceException.class)
-        .hasMessage(
-            "Account with SID [" + account.getSid() + "] with invalid amount of opening balance transactions: "
-                + "NONEXISTENT");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo(
+                  "Something went wrong while processing the cash flow report. " +
+                      "Please try again later or contact support.");
+        });
   }
 
   @Test
@@ -119,9 +133,14 @@ public class GenerateCashFlowReportServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> service.generateCashFlowReport(command))
         .isInstanceOf(AccountWithInvalidOpeningBalanceException.class)
-        .hasMessage(
-            "Account with SID [" + account.getSid() + "] with invalid amount of opening balance transactions: "
-                + "DUPLICATE");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo(
+                  "Something went wrong while processing the cash flow report. " +
+                      "Please try again later or contact support.");
+        });
   }
 
   @Test

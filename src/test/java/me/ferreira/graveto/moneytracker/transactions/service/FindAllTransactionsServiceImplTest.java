@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.util.UUID;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
@@ -27,6 +28,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class FindAllTransactionsServiceImplTest {
@@ -43,15 +45,19 @@ public class FindAllTransactionsServiceImplTest {
   @Test
   void shouldThrowIfAccountIsNotFoundDuringFindAllTransactions() {
     // Arrange
-    final UUID accountSid = UUID.randomUUID();
-
-    when(accountService.fetchAccountEntity(any())).thenThrow(new AccountNotFoundException(accountSid));
+    when(accountService.fetchAccountEntity(any())).thenThrow(new AccountNotFoundException("loggableMessage"));
 
     // Act & Assert
     assertThatThrownBy(() -> {
       service.findAll(mock(FindAllTransactionsCommand.class));
     }).isInstanceOf(AccountNotFoundException.class)
-        .hasMessage("Account with SID [" + accountSid + "] was not found or you do not have permission to view it.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+          assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified account is no longer available. " +
+                  "It may have been removed, or you may not have access to it.");
+        });
   }
 
   @Test

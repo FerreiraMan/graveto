@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import java.util.UUID;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
 import me.ferreira.graveto.common.web.exception.identity.TokenAuthenticationException;
 import me.ferreira.graveto.identity.config.properties.JwtProperties;
 import me.ferreira.graveto.identity.domain.AuthUser;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class JwtServiceImplTest {
@@ -49,7 +51,11 @@ public class JwtServiceImplTest {
     assertThatThrownBy(() -> {
       service.verifyJwtToken(tamperedToken);
     }).isInstanceOf(TokenAuthenticationException.class)
-        .hasMessage("Invalid JWT token.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED);
+          assertThat(ae.getSafeMessage()).isEqualTo("User not authorized to perform the requested action.");
+        });
   }
 
   @Test
@@ -64,7 +70,11 @@ public class JwtServiceImplTest {
     assertThatThrownBy(() -> {
       diffIssuerService.verifyJwtToken(token);
     }).isInstanceOf(TokenAuthenticationException.class)
-        .hasMessage("Invalid JWT token.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED);
+          assertThat(ae.getSafeMessage()).isEqualTo("User not authorized to perform the requested action.");
+        });
   }
 
 }

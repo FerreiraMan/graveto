@@ -50,7 +50,9 @@ public class CategoryServiceImpl implements CategoryService {
   public Category fetchCategory(final FetchCategoryCommand command) {
 
     return categoryRepository.findBySidOrAccountSid(command.categorySid(), command.accountSid())
-        .orElseThrow(() -> new CategoryNotFoundException(command.categorySid()));
+        .orElseThrow(() -> new CategoryNotFoundException(
+            "Category [%s] was not found or does not belong to the account [%s]".formatted(command.categorySid(),
+                command.accountSid())));
   }
 
   @Override
@@ -72,7 +74,9 @@ public class CategoryServiceImpl implements CategoryService {
     final String sanitizedName = validateAndSanitizeName(command.name());
 
     if (categoryRepository.existsByNameForAccountOrSystem(sanitizedName, command.accountSid())) {
-      throw new CategoryAlreadyExistsException(command.name());
+      throw new CategoryAlreadyExistsException(
+          "Duplicate category creation on account [%s]. Name [%s] and sanitized name [%s].".formatted(
+              command.accountSid(), command.name(), sanitizedName));
     }
 
     Category parentCategory = null;
@@ -80,15 +84,21 @@ public class CategoryServiceImpl implements CategoryService {
     if (command.parentSid() != null) {
 
       parentCategory = categoryRepository.findBySid(command.parentSid())
-          .orElseThrow(() -> new CategoryNotFoundException(command.parentSid()));
+          .orElseThrow(() -> new CategoryNotFoundException(
+              "Category [%s] was not found or does not belong to the account [%s]".formatted(command.parentSid(),
+                  command.accountSid())));
 
       if (parentCategory.getParent() != null && parentCategory.getParent().getParent() != null) {
-        throw new MaxCategoryDepthExceededException();
+        throw new MaxCategoryDepthExceededException(
+            ("Category exceeds maximum depth level due to parent category [%s] already being a 3 level " +
+                "deep category on account [%s]").formatted(parentCategory.getSid(), command.accountSid()));
       }
 
       if (Objects.nonNull(parentCategory.getAccountSid()) && !parentCategory.getAccountSid()
           .equals(command.accountSid())) {
-        throw new IllegalCategoryHierarchyException("Cannot use another account's category as a parent.");
+        throw new CategoryNotFoundException(
+            "Parent category [%s] was not found or does not belong to the account [%s]".formatted(
+                parentCategory.getSid(), command.accountSid()));
       }
 
       if (!command.transactionType().equals(parentCategory.getTransactionType())) {

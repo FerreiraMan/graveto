@@ -86,7 +86,8 @@ public class TransactionServiceImpl implements TransactionService {
   public Transaction deleteTransaction(final DeleteTransactionCommand command) {
 
     final Transaction transaction = transactionRepository.findBySid(command.transactionSid())
-        .orElseThrow(() -> new TransactionNotFoundException(command.transactionSid()));
+        .orElseThrow(() -> new TransactionNotFoundException(
+            "Transaction [%s] not found for user [%s].".formatted(command.transactionSid(), command.userSid())));
 
     final Account account = transaction.getAccount();
     account.validateIsActive(TX_DELETE_ACTION);
@@ -115,7 +116,8 @@ public class TransactionServiceImpl implements TransactionService {
   public Transaction updateTransaction(final UpdateTransactionCommand command) {
 
     final Transaction transaction = transactionRepository.findBySid(command.transactionSid())
-        .orElseThrow(() -> new TransactionNotFoundException(command.transactionSid()));
+        .orElseThrow(() -> new TransactionNotFoundException(
+            "Transaction [%s] not found for user [%s].".formatted(command.transactionSid(), command.userSid())));
 
     validateTransactionTypeInvariants(transaction, command);
 

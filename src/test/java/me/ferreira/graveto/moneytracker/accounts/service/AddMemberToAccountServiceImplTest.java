@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.common.web.exception.moneytracker.MemberNotRegisteredException;
@@ -23,12 +24,14 @@ import me.ferreira.graveto.moneytracker.accounts.service.command.AddMemberToAcco
 import me.ferreira.graveto.moneytracker.accounts.service.impl.AccountServiceImpl;
 import me.ferreira.graveto.moneytracker.accounts.service.payload.AccountDetails;
 import me.ferreira.graveto.moneytracker.utils.AccountUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class AddMemberToAccountServiceImplTest {
@@ -91,7 +94,12 @@ public class AddMemberToAccountServiceImplTest {
     assertThatThrownBy(() -> {
       service.addMember(command);
     }).isInstanceOf(MemberNotRegisteredException.class)
-        .hasMessage("User " + email + " needs to be registered in the platform in order enable account memberships.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo("New account member needs to be registered in the platform in order to be onboarded.");
+        });
   }
 
   @Test
@@ -113,7 +121,12 @@ public class AddMemberToAccountServiceImplTest {
     assertThatThrownBy(() -> {
       service.addMember(command);
     }).isInstanceOf(UserAlreadyAccountMemberException.class)
-        .hasMessage("The user " + userSid + " is already a member of this account.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo("This user is already a member of the account.");
+        });
   }
 
   @Test

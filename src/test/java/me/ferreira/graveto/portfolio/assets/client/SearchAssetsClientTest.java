@@ -9,11 +9,13 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 import java.util.List;
 import java.util.UUID;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
 import me.ferreira.graveto.common.web.exception.common.ExternalApiUnavailableException;
 import me.ferreira.graveto.common.web.exception.portfolio.client.AssetInvalidRequestException;
 import me.ferreira.graveto.portfolio.assets.client.impl.YahooFinanceClient;
 import me.ferreira.graveto.portfolio.assets.client.impl.dto.response.SearchAssetResponseDto;
 import me.ferreira.graveto.portfolio.assets.client.impl.properties.YahooFinanceProperties;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -26,6 +28,7 @@ public class SearchAssetsClientTest {
   private YahooFinanceClient yahooFinanceClient;
   private MockRestServiceServer mockServer;
   private final YahooFinanceProperties properties = new YahooFinanceProperties(
+      "yhfinance",
       "http://localhost",
       "",
       new YahooFinanceProperties.SearchProperties("v6/finance/autocomplete"),
@@ -105,7 +108,14 @@ public class SearchAssetsClientTest {
 
     // Act & Assert
     assertThatThrownBy(() -> yahooFinanceClient.searchAsset(UUID.randomUUID(), "iwda"))
-        .isInstanceOf(ExternalApiUnavailableException.class);
+        .isInstanceOf(ExternalApiUnavailableException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_GATEWAY);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo("An error occurred during the request to the external server.");
+        });
+    ;
 
     mockServer.verify();
   }

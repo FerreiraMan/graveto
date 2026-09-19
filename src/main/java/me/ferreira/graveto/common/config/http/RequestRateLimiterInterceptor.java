@@ -52,7 +52,8 @@ public class RequestRateLimiterInterceptor implements ClientHttpRequestIntercept
       if (v.count < httpProperties.client().maxRequests()) {
         return new RequestState(v.count + 1, now);
       }
-      throw new TooManyRequestsException();
+      throw new TooManyRequestsException(
+          "User [%s] exceeded the request limit: [%s] [%s]".formatted(userSid, request.getMethod(), request.getURI()));
     });
 
     return execution.execute(request, body);

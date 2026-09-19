@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFoundException;
@@ -28,6 +29,7 @@ import me.ferreira.graveto.moneytracker.transactions.service.command.UpdateTrans
 import me.ferreira.graveto.moneytracker.transactions.service.impl.TransactionServiceImpl;
 import me.ferreira.graveto.moneytracker.utils.AccountUtils;
 import me.ferreira.graveto.moneytracker.utils.CategoryUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -37,6 +39,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class UpdateTransactionServiceImplTest {
@@ -109,13 +112,18 @@ public class UpdateTransactionServiceImplTest {
     // Arrange
     final UUID transactionSid = UUID.randomUUID();
 
-    when(transactionRepository.findBySid(any())).thenThrow(new TransactionNotFoundException(transactionSid));
+    when(transactionRepository.findBySid(any())).thenThrow(new TransactionNotFoundException("loggableMessage"));
 
     // Act & Assert
     assertThatThrownBy(() -> {
       service.updateTransaction(Mockito.mock(UpdateTransactionCommand.class));
     }).isInstanceOf(TransactionNotFoundException.class)
-        .hasMessage("Transaction with SID [" + transactionSid + "] was not found.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "This transaction is no longer available. It may have been removed, or you may not have access to it.");
+        });
   }
 
   @Test
@@ -228,13 +236,18 @@ public class UpdateTransactionServiceImplTest {
         new UpdateTransactionCommand(userSid, null, null, categorySid, null, null, null);
 
     when(transactionRepository.findBySid(any())).thenReturn(Optional.of(transaction));
-    when(categoryService.fetchCategory(any())).thenThrow(new CategoryNotFoundException(categorySid));
+    when(categoryService.fetchCategory(any())).thenThrow(new CategoryNotFoundException("loggableMessage"));
 
     // Act & Assert
     assertThatThrownBy(() -> {
       service.updateTransaction(command);
     }).isInstanceOf(CategoryNotFoundException.class)
-        .hasMessage("Category with SID [" + categorySid + "] was not found or does not belong to the account.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "This category is no longer available. It may have been removed, or you may not have access to it.");
+        });
   }
 
   @Test

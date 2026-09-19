@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.time.Year;
 import java.util.List;
 import java.util.UUID;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class GenerateCategorySpendingReportServiceImplTest {
@@ -60,15 +62,19 @@ public class GenerateCategorySpendingReportServiceImplTest {
   @Test
   void shouldThrowIfAccountIsNotFoundDuringCategorySpendingGeneration() {
     // Arrange
-    final UUID accountSid = UUID.randomUUID();
-
-    when(accountService.fetchAccountEntity(any())).thenThrow(new AccountNotFoundException(accountSid));
+    when(accountService.fetchAccountEntity(any())).thenThrow(new AccountNotFoundException("loggableMessage"));
 
     // Act & Assert
     assertThatThrownBy(() -> {
       service.generateCategorySpendingReport(mock(CategorySpendingCommand.class));
     }).isInstanceOf(AccountNotFoundException.class)
-        .hasMessage("Account with SID [" + accountSid + "] was not found or you do not have permission to view it.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+          assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified account is no longer available. " +
+                  "It may have been removed, or you may not have access to it.");
+        });
   }
 
   @Test

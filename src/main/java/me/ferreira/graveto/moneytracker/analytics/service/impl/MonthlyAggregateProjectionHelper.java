@@ -10,15 +10,19 @@ import me.ferreira.graveto.moneytracker.transactions.domain.projection.MonthlyAg
 
 class MonthlyAggregateProjectionHelper {
 
+  private static final String ERROR_MESSAGE =
+      "Account with SID [%s] with invalid amount of opening balance transactions: [%s]";
+
   static MonthlyAggregateProjection resolveOpeningBalanceProjection(
       final UUID accountSid, final List<MonthlyAggregateProjection> projections) {
 
     return projections.stream()
         .filter(p -> TransactionType.OPENING_BALANCE.equals(p.getType()))
         .reduce((t1, t2) -> {
-          throw new AccountWithInvalidOpeningBalanceException(accountSid, "DUPLICATE");
+          throw new AccountWithInvalidOpeningBalanceException(ERROR_MESSAGE.formatted(accountSid, "DUPLICATE"));
         })
-        .orElseThrow(() -> new AccountWithInvalidOpeningBalanceException(accountSid, "NONEXISTENT"));
+        .orElseThrow(
+            () -> new AccountWithInvalidOpeningBalanceException(ERROR_MESSAGE.formatted(accountSid, "NONEXISTENT")));
   }
 
   static TreeSet<Integer> resolveYearsWithCashFlows(final List<MonthlyAggregateProjection> projections) {
