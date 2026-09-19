@@ -90,7 +90,9 @@ public class CreateTransferServiceImplTest {
         .satisfies(ex -> {
           final ApplicationException ae = (ApplicationException) ex;
           Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
-          Assertions.assertThat(ae.getSafeMessage()).isEqualTo("The specified account was not found.");
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified account is no longer available. " +
+                  "It may have been removed, or you may not have access to it.");
         });
   }
 

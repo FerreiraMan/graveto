@@ -1,9 +1,13 @@
 package me.ferreira.graveto.common.web.exception.moneytracker;
 
-import java.util.UUID;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
+import org.slf4j.event.Level;
+import org.springframework.http.HttpStatus;
 
-public class RecurringTransferNotFoundException extends RuntimeException {
-  public RecurringTransferNotFoundException(final UUID sid) {
-    super("Recurring Transfer with SID [" + sid + "] was not found.");
+public class RecurringTransferNotFoundException extends ApplicationException {
+  public RecurringTransferNotFoundException(final String loggableMessage) {
+    super(loggableMessage, HttpStatus.NOT_FOUND, "This recurring transfer is no longer available. " +
+        "It may have been removed, or you may not have access to it.", Level.ERROR);
+
   }
 }

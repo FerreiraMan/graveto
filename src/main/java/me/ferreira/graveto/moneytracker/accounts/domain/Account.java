@@ -88,7 +88,8 @@ public class Account extends BaseEntity {
         .anyMatch(m -> m.getUserSid().equals(membership.getUserSid()));
 
     if (alreadyExists) {
-      throw new UserAlreadyAccountMemberException(membership.getUserSid());
+      throw new UserAlreadyAccountMemberException(
+          "User [%s] is already a member of this account.".formatted(membership.getUserSid()));
     }
 
     memberships.add(membership);
@@ -101,7 +102,8 @@ public class Account extends BaseEntity {
         .anyMatch(m -> userSid.equals(m.getUserSid()));
 
     if (!isMember) {
-      throw new UserNotMemberOfAccountException();
+      throw new UserNotMemberOfAccountException(
+          "User [%s] is not a member of this account [%s].".formatted(userSid, this.sid));
     }
   }
 

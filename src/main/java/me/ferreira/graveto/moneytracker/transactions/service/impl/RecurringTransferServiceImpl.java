@@ -76,7 +76,8 @@ public class RecurringTransferServiceImpl implements RecurringTransferService {
 
     final RecurringTransfer existingRecurringTransfer =
         recurringTransferRepository.findBySid(command.sid())
-            .orElseThrow(() -> new RecurringTransferNotFoundException(command.sid()));
+            .orElseThrow(() -> new RecurringTransferNotFoundException(
+                "Recurring transfer [%s] not found for user [%s].".formatted(command.sid(), command.userSid())));
 
     existingRecurringTransfer.getSourceAccount()
         .validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction,
@@ -127,7 +128,8 @@ public class RecurringTransferServiceImpl implements RecurringTransferService {
 
     final RecurringTransfer existingRecurringTransfer =
         recurringTransferRepository.findBySid(command.sid())
-            .orElseThrow(() -> new RecurringTransferNotFoundException(command.sid()));
+            .orElseThrow(() -> new RecurringTransferNotFoundException(
+                "Recurring transfer [%s] not found for user [%s].".formatted(command.sid(), command.userSid())));
 
     existingRecurringTransfer.getSourceAccount()
         .validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction,

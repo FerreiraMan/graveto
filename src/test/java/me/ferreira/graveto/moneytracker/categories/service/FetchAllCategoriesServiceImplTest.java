@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.UUID;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserNotMemberOfAccountException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
@@ -19,11 +20,13 @@ import me.ferreira.graveto.moneytracker.categories.service.impl.CategoryServiceI
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.utils.AccountUtils;
 import me.ferreira.graveto.moneytracker.utils.CategoryUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class FetchAllCategoriesServiceImplTest {
@@ -94,7 +97,11 @@ public class FetchAllCategoriesServiceImplTest {
     assertThatThrownBy(() -> {
       service.fetchAllCategories(new FindAllCategoriesCommand(userSid, null, account.getSid(), null, null));
     }).isInstanceOf(UserNotMemberOfAccountException.class)
-        .hasMessage("The user is not a member of this account.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo("You do not have access to this account.");
+        });
   }
 
 }

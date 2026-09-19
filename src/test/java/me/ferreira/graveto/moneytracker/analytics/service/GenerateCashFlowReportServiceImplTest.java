@@ -69,7 +69,9 @@ public class GenerateCashFlowReportServiceImplTest {
         .satisfies(ex -> {
           final ApplicationException ae = (ApplicationException) ex;
           assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
-          assertThat(ae.getSafeMessage()).isEqualTo("The specified account was not found.");
+          assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified account is no longer available. " +
+                  "It may have been removed, or you may not have access to it.");
         });
   }
 

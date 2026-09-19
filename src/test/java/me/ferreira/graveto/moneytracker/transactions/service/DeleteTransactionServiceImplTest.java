@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
@@ -24,6 +25,7 @@ import me.ferreira.graveto.moneytracker.transactions.repository.TransactionRepos
 import me.ferreira.graveto.moneytracker.transactions.service.command.DeleteTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.impl.TransactionServiceImpl;
 import me.ferreira.graveto.moneytracker.utils.AccountUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -33,6 +35,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class DeleteTransactionServiceImplTest {
@@ -56,15 +59,18 @@ public class DeleteTransactionServiceImplTest {
   @Test
   void shouldThrowIfTransactionIsNotFoundDuringTransactionDeletion() {
     // Arrange
-    final UUID transactionSid = UUID.randomUUID();
-
-    when(transactionRepository.findBySid(any())).thenThrow(new TransactionNotFoundException(transactionSid));
+    when(transactionRepository.findBySid(any())).thenThrow(new TransactionNotFoundException("loggableMessage"));
 
     // Act & Assert
     assertThatThrownBy(() -> {
       service.deleteTransaction(Mockito.mock(DeleteTransactionCommand.class));
     }).isInstanceOf(TransactionNotFoundException.class)
-        .hasMessage("Transaction with SID [" + transactionSid + "] was not found.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "This transaction is no longer available. It may have been removed, or you may not have access to it.");
+        });
   }
 
   @Test

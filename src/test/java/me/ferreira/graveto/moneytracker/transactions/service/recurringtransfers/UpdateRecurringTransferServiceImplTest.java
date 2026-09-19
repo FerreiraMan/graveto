@@ -13,6 +13,7 @@ import java.util.UUID;
 import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.common.domain.Frequency;
 import me.ferreira.graveto.common.domain.RecurringOperationStatus;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.common.web.exception.moneytracker.RecurringTransferNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
@@ -24,11 +25,13 @@ import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransfer;
 import me.ferreira.graveto.moneytracker.transactions.repository.recurringtransfer.RecurringTransferRepository;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransfer.UpdateRecurringTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.impl.RecurringTransferServiceImpl;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class UpdateRecurringTransferServiceImplTest {
@@ -53,7 +56,14 @@ public class UpdateRecurringTransferServiceImplTest {
 
     // Act & Assert
     assertThatThrownBy(() -> recurringTransferService.updateRecurringTransfer(command))
-        .isInstanceOf(RecurringTransferNotFoundException.class);
+        .isInstanceOf(RecurringTransferNotFoundException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "This recurring transfer is no longer available. " +
+                  "It may have been removed, or you may not have access to it.");
+        });
   }
 
   @Test

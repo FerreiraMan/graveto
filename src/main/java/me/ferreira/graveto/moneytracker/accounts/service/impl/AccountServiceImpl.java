@@ -128,7 +128,9 @@ public class AccountServiceImpl implements AccountService {
     account.validateUserPermission(command.userSid(), MembershipRole::canAddMemberToAccount, "add members");
 
     final UserResponseDto newMemberUser = userApi.fetchUserByEmail(command.email())
-        .orElseThrow(() -> new MemberNotRegisteredException(command.email()));
+        .orElseThrow(
+            () -> new MemberNotRegisteredException(
+                "Failure to add member [%s] on account [%s].".formatted(command.email(), account.getSid())));
 
     final AccountMembership accountNewMembership = AccountMembership.create(
         newMemberUser.sid(),

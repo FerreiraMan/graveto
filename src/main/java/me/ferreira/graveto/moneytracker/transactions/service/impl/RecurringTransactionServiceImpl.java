@@ -80,7 +80,8 @@ public class RecurringTransactionServiceImpl implements RecurringTransactionServ
 
     final RecurringTransaction existingRecurringTransaction =
         recurringTransactionRepository.findBySid(command.sid())
-            .orElseThrow(() -> new RecurringTransactionNotFoundException(command.sid()));
+            .orElseThrow(() -> new RecurringTransactionNotFoundException(
+                "Recurring transaction [%s] not found for user [%s].".formatted(command.sid(), command.userSid())));
 
     existingRecurringTransaction
         .getAccount()
@@ -131,7 +132,8 @@ public class RecurringTransactionServiceImpl implements RecurringTransactionServ
 
     final RecurringTransaction existingRecurringTransaction =
         recurringTransactionRepository.findBySid(command.sid())
-            .orElseThrow(() -> new RecurringTransactionNotFoundException(command.sid()));
+            .orElseThrow(() -> new RecurringTransactionNotFoundException(
+                "Recurring transaction [%s] not found for user [%s].".formatted(command.sid(), command.userSid())));
 
     existingRecurringTransaction
         .getAccount()

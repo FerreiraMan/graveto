@@ -278,7 +278,8 @@ public class CreateCategoryServiceImplTest {
         .satisfies(ex -> {
           final ApplicationException ae = (ApplicationException) ex;
           Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
-          Assertions.assertThat(ae.getSafeMessage()).isEqualTo("The category account was not found.");
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "This category is no longer available. It may have been removed, or you may not have access to it.");
         });
   }
 
@@ -376,7 +377,8 @@ public class CreateCategoryServiceImplTest {
         .satisfies(ex -> {
           final ApplicationException ae = (ApplicationException) ex;
           Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
-          Assertions.assertThat(ae.getSafeMessage()).isEqualTo("The category account was not found.");
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "This category is no longer available. It may have been removed, or you may not have access to it.");
         });
   }
 
@@ -423,7 +425,11 @@ public class CreateCategoryServiceImplTest {
     assertThatThrownBy(() -> {
       service.createCategory(command);
     }).isInstanceOf(UserNotMemberOfAccountException.class)
-        .hasMessage("The user is not a member of this account.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo("You do not have access to this account.");
+        });
   }
 
 }

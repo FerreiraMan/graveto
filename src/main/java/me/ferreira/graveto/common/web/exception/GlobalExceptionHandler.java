@@ -8,12 +8,6 @@ import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
-import me.ferreira.graveto.common.web.exception.moneytracker.MemberNotRegisteredException;
-import me.ferreira.graveto.common.web.exception.moneytracker.RecurringTransactionNotFoundException;
-import me.ferreira.graveto.common.web.exception.moneytracker.RecurringTransferNotFoundException;
-import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFoundException;
-import me.ferreira.graveto.common.web.exception.moneytracker.UserAlreadyAccountMemberException;
-import me.ferreira.graveto.common.web.exception.moneytracker.UserNotMemberOfAccountException;
 import me.ferreira.graveto.common.web.exception.portfolio.AssetNotFoundException;
 import me.ferreira.graveto.common.web.exception.portfolio.BrokerNotFoundException;
 import me.ferreira.graveto.common.web.exception.portfolio.InsufficientPermissionsOnBrokerException;
@@ -135,30 +129,6 @@ public class GlobalExceptionHandler {
     return createBaseProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request);
   }
 
-  @ExceptionHandler(TransactionNotFoundException.class)
-  public ProblemDetail handleTransactionNotFoundException(final TransactionNotFoundException ex,
-                                                          final HttpServletRequest request) {
-
-    log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
-    return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
-  }
-
-  @ExceptionHandler(RecurringTransactionNotFoundException.class)
-  public ProblemDetail handleRecurringTransactionNotFoundException(final RecurringTransactionNotFoundException ex,
-                                                                   final HttpServletRequest request) {
-
-    log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
-    return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
-  }
-
-  @ExceptionHandler(RecurringTransferNotFoundException.class)
-  public ProblemDetail handleRecurringTransferNotFoundException(final RecurringTransferNotFoundException ex,
-                                                                final HttpServletRequest request) {
-
-    log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
-    return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
-  }
-
   @ExceptionHandler(InsufficientPermissionsOnAccountException.class)
   public ProblemDetail handleInsufficientPermissionsException(final InsufficientPermissionsOnAccountException ex,
                                                               final HttpServletRequest request) {
@@ -220,30 +190,6 @@ public class GlobalExceptionHandler {
 
     log.warn("Business rule violation: User does not have required permission. Message: {}", ex.getMessage());
     return createBaseProblemDetail(HttpStatus.FORBIDDEN, ex.getMessage(), request);
-  }
-
-  @ExceptionHandler(MemberNotRegisteredException.class)
-  public ProblemDetail handleMemberNotRegisteredException(final MemberNotRegisteredException ex,
-                                                          final HttpServletRequest request) {
-
-    log.warn("Business rule violation: Invitation on user that is not registered yet. Message: {}", ex.getMessage());
-    return createBaseProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request);
-  }
-
-  @ExceptionHandler(UserNotMemberOfAccountException.class)
-  public ProblemDetail handleUserIsNotMemberOfAccountException(final UserNotMemberOfAccountException ex,
-                                                               final HttpServletRequest request) {
-
-    log.warn("Business rule violation: User is not a member of the account. Message: {}", ex.getMessage());
-    return createBaseProblemDetail(HttpStatus.FORBIDDEN, ex.getMessage(), request);
-  }
-
-  @ExceptionHandler(UserAlreadyAccountMemberException.class)
-  public ProblemDetail handleUserAlreadyMemberException(final UserAlreadyAccountMemberException ex,
-                                                        final HttpServletRequest request) {
-
-    log.warn("Business rule violation: User is already member of account. Message: {}", ex.getMessage());
-    return createBaseProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request);
   }
 
   @ExceptionHandler(UserAlreadyBrokerMemberException.class)

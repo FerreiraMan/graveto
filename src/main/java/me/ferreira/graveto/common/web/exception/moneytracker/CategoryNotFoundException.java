@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus;
 
 public class CategoryNotFoundException extends ApplicationException {
   public CategoryNotFoundException(final String loggableMessage) {
-    super(loggableMessage, HttpStatus.NOT_FOUND, "The category account was not found.", Level.ERROR);
+    super(loggableMessage, HttpStatus.NOT_FOUND,
+        "This category is no longer available. It may have been removed, or you may not have access to it.",
+        Level.WARN);
   }
 }

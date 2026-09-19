@@ -212,7 +212,9 @@ public class AccountControllerTest {
         .hasStatus(HttpStatus.NOT_FOUND)
         .bodyJson()
         .extractingPath("$.detail").asString()
-        .isEqualTo("The specified account was not found.", accountSid);
+        .isEqualTo(
+            "The specified account is no longer available. It may have been removed, or you may not have access to it.",
+            accountSid);
   }
 
   @Test
