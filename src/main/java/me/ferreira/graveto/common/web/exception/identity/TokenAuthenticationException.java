@@ -7,6 +7,6 @@ import org.springframework.http.HttpStatus;
 public class TokenAuthenticationException extends ApplicationException {
   public TokenAuthenticationException(final String loggableMessage) {
     super(loggableMessage, HttpStatus.UNAUTHORIZED, "User not authorized to perform the requested action.",
-        Level.ERROR);
+        Level.WARN);
   }
 }

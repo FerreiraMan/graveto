@@ -26,6 +26,7 @@ import me.ferreira.graveto.moneytracker.transactions.domain.projection.CategoryA
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.GenerateCategoryAggregateCommand;
 import me.ferreira.graveto.moneytracker.utils.AccountUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -91,7 +92,12 @@ public class GenerateCategorySpendingReportServiceImplTest {
     assertThatThrownBy(() -> {
       service.generateCategorySpendingReport(command);
     }).isInstanceOf(InsufficientPermissionsOnAccountException.class)
-        .hasMessage("User does not have the required role to request category spending report for this account.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo("You do not have the required role to perform this action.");
+        });
   }
 
   @Test

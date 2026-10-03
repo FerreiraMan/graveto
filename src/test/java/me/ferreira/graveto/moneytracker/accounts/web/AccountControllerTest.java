@@ -213,8 +213,8 @@ public class AccountControllerTest {
         .bodyJson()
         .extractingPath("$.detail").asString()
         .isEqualTo(
-            "The specified account is no longer available. It may have been removed, or you may not have access to it.",
-            accountSid);
+            "The specified account is no longer available. " +
+                "It may have been removed, or you may not have access to it.");
   }
 
   @Test

@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 import me.ferreira.graveto.common.domain.Currency;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
+import me.ferreira.graveto.common.web.exception.portfolio.PositionNotFoundException;
 import me.ferreira.graveto.portfolio.assets.domain.Asset;
 import me.ferreira.graveto.portfolio.assets.domain.AssetType;
 import me.ferreira.graveto.portfolio.brokers.domain.Broker;
@@ -19,11 +21,13 @@ import me.ferreira.graveto.portfolio.orders.domain.OrderType;
 import me.ferreira.graveto.portfolio.positions.domain.Position;
 import me.ferreira.graveto.portfolio.positions.repository.PositionRepository;
 import me.ferreira.graveto.portfolio.positions.service.impl.PositionServiceImpl;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class ReapplyOrderToPositionServiceImplTest {
@@ -47,8 +51,14 @@ public class ReapplyOrderToPositionServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> positionService.reapplyOrderToPosition(
         new BigDecimal("10"), new BigDecimal("72.50"), new BigDecimal("2"), updatedOrder))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("Expected position from original order creation not found");
+        .isInstanceOf(PositionNotFoundException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo(
+                  "This position is no longer available. It may have been removed, or you may not have access to it.");
+        });
   }
 
   @Test

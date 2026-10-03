@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import me.ferreira.graveto.common.web.exception.portfolio.PositionNotFoundException;
 import me.ferreira.graveto.portfolio.assets.domain.Asset;
 import me.ferreira.graveto.portfolio.brokers.domain.Broker;
 import me.ferreira.graveto.portfolio.brokers.domain.BrokerMembershipRole;
@@ -68,9 +69,9 @@ public class PositionServiceImpl implements PositionService {
 
     final Position existingPosition =
         positionRepository.findByBrokerSidAndAssetSid(brokerSid, assetSid)
-            .orElseThrow(() -> new IllegalStateException(String.format(
-                "Expected position from original order creation not found for broker [%s] and asset [%s].",
-                brokerSid.toString(), assetSid.toString())));
+            .orElseThrow(() -> new PositionNotFoundException(
+                "Expected position from original order creation not found for broker [%s] and asset [%s].".formatted(
+                    brokerSid, assetSid)));
 
     return processUpdatedOrder(existingPosition, oldQuantity, oldPrice, oldFee, updatedOrder);
   }

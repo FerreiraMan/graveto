@@ -41,12 +41,14 @@ public class YahooFinanceClient implements MarketDataClient {
         .attribute("userSid", userSid)
         .retrieve()
         .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
-          throw new AssetInvalidRequestException(keyword, res.getStatusCode().value());
+          throw new AssetInvalidRequestException(
+              "Required resource [%s] is invalid or not found or requester is not authorized. HTTP status code: [%s]"
+                  .formatted(keyword, res.getStatusCode().value()));
         })
         .onStatus(HttpStatusCode::is5xxServerError, (req, res) -> {
           throw new ExternalApiUnavailableException(
-              "Upstream server [%s] is currently unavailable. HTTP status code: [%d]".formatted(
-                  yahooFinanceProperties.name(), res.getStatusCode().value()));
+              "Upstream server [%s] is currently unavailable. HTTP status code: [%d]"
+                  .formatted(yahooFinanceProperties.name(), res.getStatusCode().value()));
         })
         .body(SearchAssetResponseDto.class);
 
@@ -78,7 +80,9 @@ public class YahooFinanceClient implements MarketDataClient {
           .attribute("userSid", userSid != null ? userSid : "")
           .retrieve()
           .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
-            throw new QuoteDataInvalidRequestException(concatenatedSymbols, res.getStatusCode().value());
+            throw new QuoteDataInvalidRequestException(
+                "Required resource [%s] is invalid or not found or requester is not authorized. HTTP status code: [%s]"
+                    .formatted(concatenatedSymbols, res.getStatusCode().value()));
           })
           .onStatus(HttpStatusCode::is5xxServerError, (req, res) -> {
             throw new ExternalApiUnavailableException(

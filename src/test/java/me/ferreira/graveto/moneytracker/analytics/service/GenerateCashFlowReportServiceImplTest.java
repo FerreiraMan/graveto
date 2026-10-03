@@ -87,7 +87,12 @@ public class GenerateCashFlowReportServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> service.generateCashFlowReport(command))
         .isInstanceOf(InsufficientPermissionsOnAccountException.class)
-        .hasMessage("User does not have the required role to request cash flow report for this account.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo("You do not have the required role to perform this action.");
+        });
   }
 
   @Test

@@ -1,11 +1,15 @@
 package me.ferreira.graveto.common.web.exception.portfolio;
 
-import java.util.UUID;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
+import org.slf4j.event.Level;
+import org.springframework.http.HttpStatus;
 
-public class BrokerNotFoundException extends RuntimeException {
+public class BrokerNotFoundException extends ApplicationException {
 
-  public BrokerNotFoundException(final UUID brokerSid) {
-    super("Broker with SID [" + brokerSid + "] was not found or you do not have permission to view it.");
+  public BrokerNotFoundException(final String loggableMessage) {
+    super(loggableMessage, HttpStatus.NOT_FOUND,
+        "The specified broker is no longer available. It may have been removed, or you may not have access to it.",
+        Level.WARN);
   }
 
 }

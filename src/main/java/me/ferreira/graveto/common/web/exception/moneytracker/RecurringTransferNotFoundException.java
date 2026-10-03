@@ -7,7 +7,7 @@ import org.springframework.http.HttpStatus;
 public class RecurringTransferNotFoundException extends ApplicationException {
   public RecurringTransferNotFoundException(final String loggableMessage) {
     super(loggableMessage, HttpStatus.NOT_FOUND, "This recurring transfer is no longer available. " +
-        "It may have been removed, or you may not have access to it.", Level.ERROR);
+        "It may have been removed, or you may not have access to it.", Level.WARN);
 
   }
 }

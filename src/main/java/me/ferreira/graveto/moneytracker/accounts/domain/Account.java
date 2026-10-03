@@ -89,7 +89,7 @@ public class Account extends BaseEntity {
 
     if (alreadyExists) {
       throw new UserAlreadyAccountMemberException(
-          "User [%s] is already a member of this account.".formatted(membership.getUserSid()));
+          "User [%s] is already a member of this account [%s].".formatted(membership.getUserSid(), this.sid));
     }
 
     memberships.add(membership);
@@ -119,7 +119,9 @@ public class Account extends BaseEntity {
         .isPresent();
 
     if (!isAuthorized) {
-      throw new InsufficientPermissionsOnAccountException(actionName);
+      throw new InsufficientPermissionsOnAccountException(
+          ("User [%s] does not have the required permission to perform the action [%s] " +
+              "on this account [%s].").formatted(userSid, actionName, this.sid));
     }
   }
 

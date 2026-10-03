@@ -101,7 +101,7 @@ public class FetchPositionValuationControllerTest {
     final UUID brokerSid = UUID.randomUUID();
 
     when(service.generatePositionValuationOverview(org.mockito.ArgumentMatchers.any()))
-        .thenThrow(new BrokerNotFoundException(brokerSid));
+        .thenThrow(new BrokerNotFoundException("loggableMessage"));
 
     // Act
     final MvcTestResult result = mvc.get()
@@ -110,14 +110,18 @@ public class FetchPositionValuationControllerTest {
         .exchange();
 
     // Assert
-    assertThat(result).hasStatus(HttpStatus.NOT_FOUND);
+    assertThat(result).hasStatus(HttpStatus.NOT_FOUND)
+        .bodyJson()
+        .extractingPath("$.detail").asString()
+        .isEqualTo(
+            "The specified broker is no longer available. It may have been removed, or you may not have access to it.");
   }
 
   @Test
   void shouldReturnForbiddenWhenUserLacksPermission() {
     // Arrange
     when(service.generatePositionValuationOverview(org.mockito.ArgumentMatchers.any()))
-        .thenThrow(new InsufficientPermissionsOnBrokerException("request valuation overview"));
+        .thenThrow(new InsufficientPermissionsOnBrokerException("loggableMessage"));
 
     // Act
     final MvcTestResult result = mvc.get()
@@ -126,7 +130,11 @@ public class FetchPositionValuationControllerTest {
         .exchange();
 
     // Assert
-    assertThat(result).hasStatus(HttpStatus.FORBIDDEN);
+    assertThat(result).hasStatus(HttpStatus.FORBIDDEN)
+        .bodyJson()
+        .extractingPath("$.detail").asString()
+        .isEqualTo(
+            "You do not have the required role to perform this action.");
   }
 
   @Test

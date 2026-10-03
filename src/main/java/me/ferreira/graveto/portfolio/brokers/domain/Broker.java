@@ -76,7 +76,8 @@ public class Broker extends BaseEntity {
         .anyMatch(m -> m.getUserSid().equals(membership.getUserSid()));
 
     if (alreadyExists) {
-      throw new UserAlreadyBrokerMemberException(membership.getUserSid());
+      throw new UserAlreadyBrokerMemberException(
+          "User [%s] is already a member of this broker [%s].".formatted(membership.getUserSid(), this.sid));
     }
 
     memberships.add(membership);
@@ -95,7 +96,9 @@ public class Broker extends BaseEntity {
         .isPresent();
 
     if (!isAuthorized) {
-      throw new InsufficientPermissionsOnBrokerException(actionName);
+      throw new InsufficientPermissionsOnBrokerException(
+          ("User [%s] does not have the required permission to perform the action [%s] " +
+              "on this broker [%s].").formatted(userSid, actionName, this.sid));
     }
   }
 

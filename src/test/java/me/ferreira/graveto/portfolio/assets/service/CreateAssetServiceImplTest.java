@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import java.util.Optional;
 import java.util.UUID;
 import me.ferreira.graveto.common.domain.Currency;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
 import me.ferreira.graveto.common.web.exception.portfolio.InvalidExchangeException;
 import me.ferreira.graveto.portfolio.assets.domain.Asset;
 import me.ferreira.graveto.portfolio.assets.domain.AssetType;
@@ -21,6 +22,7 @@ import me.ferreira.graveto.portfolio.assets.service.impl.AssetServiceImpl;
 import me.ferreira.graveto.portfolio.stockexchange.domain.StockExchange;
 import me.ferreira.graveto.portfolio.stockexchange.service.StockExchangeService;
 import me.ferreira.graveto.portfolio.stockexchange.service.command.FetchStockExchangeCommand;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -28,6 +30,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class CreateAssetServiceImplTest {
@@ -106,7 +109,15 @@ public class CreateAssetServiceImplTest {
 
     // Act & Assert
     assertThatThrownBy(() -> assetService.createAsset(command))
-        .isInstanceOf(InvalidExchangeException.class);
+        .isInstanceOf(InvalidExchangeException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo(
+                  "An error occurred during the asset creation. " +
+                      "The requested exchange may be invalid. Please contact support.");
+        });
   }
 
   @Test

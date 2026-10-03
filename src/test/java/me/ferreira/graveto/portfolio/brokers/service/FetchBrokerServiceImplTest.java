@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import me.ferreira.graveto.common.domain.Currency;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
 import me.ferreira.graveto.common.web.exception.portfolio.BrokerNotFoundException;
 import me.ferreira.graveto.identity.api.UserApi;
 import me.ferreira.graveto.identity.api.UserResponseDto;
@@ -20,12 +21,14 @@ import me.ferreira.graveto.portfolio.brokers.repository.BrokerRepository;
 import me.ferreira.graveto.portfolio.brokers.service.command.FetchBrokerCommand;
 import me.ferreira.graveto.portfolio.brokers.service.impl.BrokerServiceImpl;
 import me.ferreira.graveto.portfolio.brokers.service.payload.BrokerDetails;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class FetchBrokerServiceImplTest {
@@ -71,7 +74,14 @@ public class FetchBrokerServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> brokerService.fetchBroker(new FetchBrokerCommand(userSid, brokerSid)))
         .isInstanceOf(BrokerNotFoundException.class)
-        .hasMessage("Broker with SID [" + brokerSid + "] was not found or you do not have permission to view it.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo(
+                  "The specified broker is no longer available. " +
+                      "It may have been removed, or you may not have access to it.");
+        });
   }
 
   private static Broker buildBroker(final UUID sid, final UUID ownerUserSid) {

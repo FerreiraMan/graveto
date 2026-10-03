@@ -122,7 +122,15 @@ public class FetchQuoteDataClientTest {
 
     // Act & Assert
     assertThatThrownBy(() -> yahooFinanceClient.fetchQuoteData(UUID.randomUUID(), List.of("BAD")))
-        .isInstanceOf(QuoteDataInvalidRequestException.class);
+        .isInstanceOf(QuoteDataInvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo(
+                  "An error occurred during the asset quote date search. " +
+                      "It may not exist, or you may not have access to it.");
+        });
 
     mockServer.verify();
   }

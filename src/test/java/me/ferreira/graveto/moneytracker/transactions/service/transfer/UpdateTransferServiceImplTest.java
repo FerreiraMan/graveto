@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.AccountStatus;
@@ -33,6 +34,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class UpdateTransferServiceImplTest {
@@ -145,9 +147,9 @@ public class UpdateTransferServiceImplTest {
     when(transactionRepository.findAllByCorrelationId(correlationId)).thenReturn(List.of(txOut, txIn));
 
     // Act & Assert
-    Assertions.assertThatThrownBy(() -> {
-      service.updateTransfer(command);
-    }).isInstanceOf(IllegalStateException.class)
+    Assertions.assertThatThrownBy(() ->
+            service.updateTransfer(command))
+        .isInstanceOf(IllegalStateException.class)
         .hasMessage("Cannot update transfer transactions. The account is currently CLOSED.");
   }
 
@@ -176,7 +178,12 @@ public class UpdateTransferServiceImplTest {
     assertThatThrownBy(() -> {
       service.updateTransfer(command);
     }).isInstanceOf(InsufficientPermissionsOnAccountException.class)
-        .hasMessage("User does not have the required role to update transfer transactions for this account.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo("You do not have the required role to perform this action.");
+        });
   }
 
   @ParameterizedTest

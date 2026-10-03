@@ -279,7 +279,8 @@ public class CreateCategoryServiceImplTest {
           final ApplicationException ae = (ApplicationException) ex;
           Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
           Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
-              "This category is no longer available. It may have been removed, or you may not have access to it.");
+              "The specified category is no longer available. " +
+                  "It may have been removed, or you may not have access to it.");
         });
   }
 
@@ -297,7 +298,7 @@ public class CreateCategoryServiceImplTest {
     final Category grandparentCategory =
         CategoryUtils.createCategory("Fuel", null, rootCategory, false, TransactionType.EXPENSE);
     final Category parentCategory =
-        CategoryUtils.createCategory("Diesel", otherAccountSid, grandparentCategory, false,
+        CategoryUtils.createCategory("Diesel", accountSid, grandparentCategory, false,
             TransactionType.EXPENSE);
     final CreateCategoryCommand command =
         new CreateCategoryCommand(userSid, name, accountSid, parentSid, TransactionType.EXPENSE);
@@ -378,7 +379,8 @@ public class CreateCategoryServiceImplTest {
           final ApplicationException ae = (ApplicationException) ex;
           Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
           Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
-              "This category is no longer available. It may have been removed, or you may not have access to it.");
+              "The specified category is no longer available. " +
+                  "It may have been removed, or you may not have access to it.");
         });
   }
 

@@ -56,7 +56,8 @@ public class OrderServiceImpl implements OrderService {
   public Order updateOrder(final UpdateOrderCommand command) {
 
     final Order existingOrder = orderRepository.findBySidAndUserSid(command.sid(), command.userSid())
-        .orElseThrow(() -> new OrderNotFoundException(command.sid()));
+        .orElseThrow(() -> new OrderNotFoundException(
+            "Order [%s] not found for user [%s].".formatted(command.sid(), command.userSid())));
 
     existingOrder.getBroker()
         .validateUserPermission(command.userSid(), BrokerMembershipRole::canUpdateOrders, "update orders");

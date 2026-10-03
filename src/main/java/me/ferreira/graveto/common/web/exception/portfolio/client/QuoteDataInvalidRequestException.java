@@ -1,8 +1,13 @@
 package me.ferreira.graveto.common.web.exception.portfolio.client;
 
-public class QuoteDataInvalidRequestException extends RuntimeException {
-  public QuoteDataInvalidRequestException(final String resource, final int statusCode) {
-    super("Required resource [" + resource +
-        "] is invalid or not found or requester is not authorized. HTTP status code: " + statusCode);
+import me.ferreira.graveto.common.web.exception.ApplicationException;
+import org.slf4j.event.Level;
+import org.springframework.http.HttpStatus;
+
+public class QuoteDataInvalidRequestException extends ApplicationException {
+  public QuoteDataInvalidRequestException(final String loggableMessage) {
+    super(loggableMessage, HttpStatus.BAD_REQUEST,
+        "An error occurred during the asset quote date search. It may not exist, or you may not have access to it.",
+        Level.WARN);
   }
 }

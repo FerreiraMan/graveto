@@ -4,20 +4,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
 import java.time.Instant;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import lombok.extern.slf4j.Slf4j;
-import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
-import me.ferreira.graveto.common.web.exception.portfolio.AssetNotFoundException;
-import me.ferreira.graveto.common.web.exception.portfolio.BrokerNotFoundException;
-import me.ferreira.graveto.common.web.exception.portfolio.InsufficientPermissionsOnBrokerException;
-import me.ferreira.graveto.common.web.exception.portfolio.InvalidExchangeException;
-import me.ferreira.graveto.common.web.exception.portfolio.OrderNotFoundException;
-import me.ferreira.graveto.common.web.exception.portfolio.PositionNotFoundException;
-import me.ferreira.graveto.common.web.exception.portfolio.StockExchangeNotFoundException;
-import me.ferreira.graveto.common.web.exception.portfolio.UserAlreadyBrokerMemberException;
-import me.ferreira.graveto.common.web.exception.portfolio.client.AssetInvalidRequestException;
-import me.ferreira.graveto.common.web.exception.portfolio.client.QuoteDataInvalidRequestException;
+import org.slf4j.spi.LoggingEventBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -26,7 +20,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -43,38 +36,28 @@ public class GlobalExceptionHandler {
   public ProblemDetail handleApplicationException(final ApplicationException ex,
                                                   final HttpServletRequest request) {
 
-
-    log.atLevel(ex.getLogLevel()).log(ex.getMessage());
+    final LoggingEventBuilder baseEvent = log.atLevel(ex.getLogLevel());
+    final LoggingEventBuilder event = ex.getStatus().is5xxServerError() ? baseEvent.setCause(ex) : baseEvent;
+    event.log(ex.getMessage());
     return createBaseProblemDetail(ex.getStatus(), ex.getSafeMessage(), request);
-  }
-
-  @ExceptionHandler(MissingRequestHeaderException.class)
-  public ProblemDetail handleMissingRequestHeaderException(final MissingRequestHeaderException ex,
-                                                           final HttpServletRequest request) {
-
-    final String detailMessage = "Request validation failed. Please check the 'missing_param' property for details.";
-    final ProblemDetail pd = createBaseProblemDetail(HttpStatus.BAD_REQUEST, detailMessage, request);
-
-    final Map<String, String> missingParam = new HashMap<>();
-    missingParam.put("header_name", ex.getHeaderName());
-    missingParam.put("header_type", ex.getParameter().getParameterType().getSimpleName());
-    pd.setProperty("missing_param", missingParam);
-
-    return pd;
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ProblemDetail handleMethodArgumentNotValidException(final MethodArgumentNotValidException ex,
                                                              final HttpServletRequest request) {
 
-    final String detailMessage = "Request validation failed. Please check the 'invalid_params' property for details.";
+    final String detailMessage = "Some of the submitted fields are invalid.";
 
     final ProblemDetail pd = createBaseProblemDetail(HttpStatus.BAD_REQUEST, detailMessage, request);
 
-    final Map<String, String> invalidParams = new HashMap<>();
-    for (FieldError error : ex.getBindingResult().getFieldErrors()) {
-      invalidParams.put(error.getField(), error.getDefaultMessage());
+    final Map<String, Set<String>> messagesByField = new TreeMap<>();
+    for (final FieldError error : ex.getBindingResult().getFieldErrors()) {
+      messagesByField.computeIfAbsent(error.getField(), field -> new TreeSet<>())
+          .add(Objects.requireNonNullElse(error.getDefaultMessage(), "Invalid value."));
     }
+
+    final Map<String, String> invalidParams = new LinkedHashMap<>();
+    messagesByField.forEach((field, messages) -> invalidParams.put(field, String.join(" ", messages)));
     pd.setProperty("invalid_params", invalidParams);
 
     return pd;
@@ -129,77 +112,6 @@ public class GlobalExceptionHandler {
     return createBaseProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request);
   }
 
-  @ExceptionHandler(InsufficientPermissionsOnAccountException.class)
-  public ProblemDetail handleInsufficientPermissionsException(final InsufficientPermissionsOnAccountException ex,
-                                                              final HttpServletRequest request) {
-
-    log.warn("Business rule violation: User does not have required permission. Message: {}", ex.getMessage());
-    return createBaseProblemDetail(HttpStatus.FORBIDDEN, ex.getMessage(), request);
-  }
-
-  @ExceptionHandler(BrokerNotFoundException.class)
-  public ProblemDetail handleBrokerNotFoundException(final BrokerNotFoundException ex,
-                                                     final HttpServletRequest request) {
-
-    log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
-    return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
-  }
-
-  @ExceptionHandler(AssetNotFoundException.class)
-  public ProblemDetail handleAssetNotFoundException(final AssetNotFoundException ex,
-                                                    final HttpServletRequest request) {
-
-    log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
-    return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
-  }
-
-  @ExceptionHandler(PositionNotFoundException.class)
-  public ProblemDetail handlePositionNotFoundException(final PositionNotFoundException ex,
-                                                       final HttpServletRequest request) {
-
-    log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
-    return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
-  }
-
-  @ExceptionHandler(OrderNotFoundException.class)
-  public ProblemDetail handleOrderNotFoundException(final OrderNotFoundException ex,
-                                                    final HttpServletRequest request) {
-
-    log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
-    return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
-  }
-
-  @ExceptionHandler(InvalidExchangeException.class)
-  public ProblemDetail handleInvalidExchangeException(final InvalidExchangeException ex,
-                                                      final HttpServletRequest request) {
-
-    return createBaseProblemDetail(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
-  }
-
-  @ExceptionHandler(StockExchangeNotFoundException.class)
-  public ProblemDetail handleStockExchangeNotFoundException(final StockExchangeNotFoundException ex,
-                                                            final HttpServletRequest request) {
-
-    log.warn("Resource not found or lack of permission to view it. Message: {}", ex.getMessage());
-    return createBaseProblemDetail(HttpStatus.NOT_FOUND, ex.getMessage(), request);
-  }
-
-  @ExceptionHandler(InsufficientPermissionsOnBrokerException.class)
-  public ProblemDetail handleInsufficientPermissionsOnBrokerException(final InsufficientPermissionsOnBrokerException ex,
-                                                                      final HttpServletRequest request) {
-
-    log.warn("Business rule violation: User does not have required permission. Message: {}", ex.getMessage());
-    return createBaseProblemDetail(HttpStatus.FORBIDDEN, ex.getMessage(), request);
-  }
-
-  @ExceptionHandler(UserAlreadyBrokerMemberException.class)
-  public ProblemDetail handleUserAlreadyBrokerMemberException(final UserAlreadyBrokerMemberException ex,
-                                                              final HttpServletRequest request) {
-
-    log.warn("Business rule violation: User is already member of broker account. Message: {}", ex.getMessage());
-    return createBaseProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request);
-  }
-
   @ExceptionHandler(UsernameNotFoundException.class)
   public ProblemDetail handleUsernameNotFoundException(final UsernameNotFoundException ex,
                                                        final HttpServletRequest request) {
@@ -212,22 +124,6 @@ public class GlobalExceptionHandler {
   public ProblemDetail handleBadCredentialsExceptionException(final HttpServletRequest request) {
 
     return createBaseProblemDetail(HttpStatus.UNAUTHORIZED, "Invalid email or password", request);
-  }
-
-  @ExceptionHandler(AssetInvalidRequestException.class)
-  public ProblemDetail handleAssetInvalidRequestException(final AssetInvalidRequestException ex,
-                                                          final HttpServletRequest request) {
-
-    log.error("Error with request to external API.", ex);
-    return createBaseProblemDetail(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
-  }
-
-  @ExceptionHandler(QuoteDataInvalidRequestException.class)
-  public ProblemDetail handleQuoteDataInvalidRequestException(final QuoteDataInvalidRequestException ex,
-                                                              final HttpServletRequest request) {
-
-    log.error("Error with request to external API.", ex);
-    return createBaseProblemDetail(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
   }
 
   @ExceptionHandler(ResourceAccessException.class)

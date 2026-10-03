@@ -110,8 +110,6 @@ public class UpdateTransactionServiceImplTest {
   @Test
   void shouldThrowIfTransactionIsNotFoundDuringTransactionUpdate() {
     // Arrange
-    final UUID transactionSid = UUID.randomUUID();
-
     when(transactionRepository.findBySid(any())).thenThrow(new TransactionNotFoundException("loggableMessage"));
 
     // Act & Assert
@@ -218,7 +216,12 @@ public class UpdateTransactionServiceImplTest {
     assertThatThrownBy(() -> {
       service.updateTransaction(command);
     }).isInstanceOf(InsufficientPermissionsOnAccountException.class)
-        .hasMessage("User does not have the required role to update transactions for this account.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo("You do not have the required role to perform this action.");
+        });
   }
 
   @Test
@@ -246,7 +249,8 @@ public class UpdateTransactionServiceImplTest {
           final ApplicationException ae = (ApplicationException) ex;
           Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
           Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
-              "This category is no longer available. It may have been removed, or you may not have access to it.");
+              "The specified category is no longer available. " +
+                  "It may have been removed, or you may not have access to it.");
         });
   }
 

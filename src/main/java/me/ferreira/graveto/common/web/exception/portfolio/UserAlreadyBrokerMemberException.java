@@ -1,10 +1,12 @@
 package me.ferreira.graveto.common.web.exception.portfolio;
 
-import java.util.UUID;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
+import org.slf4j.event.Level;
+import org.springframework.http.HttpStatus;
 
-public class UserAlreadyBrokerMemberException extends RuntimeException {
-  public UserAlreadyBrokerMemberException(final UUID userSid) {
-    super("The user " + userSid + " is already a member of this broker account.");
-
+public class UserAlreadyBrokerMemberException extends ApplicationException {
+  public UserAlreadyBrokerMemberException(final String loggableMessage) {
+    super(loggableMessage, HttpStatus.UNPROCESSABLE_CONTENT, "This user is already a member of the broker.",
+        Level.WARN);
   }
 }

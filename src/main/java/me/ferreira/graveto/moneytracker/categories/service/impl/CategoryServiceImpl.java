@@ -88,17 +88,17 @@ public class CategoryServiceImpl implements CategoryService {
               "Category [%s] was not found or does not belong to the account [%s]".formatted(command.parentSid(),
                   command.accountSid())));
 
-      if (parentCategory.getParent() != null && parentCategory.getParent().getParent() != null) {
-        throw new MaxCategoryDepthExceededException(
-            ("Category exceeds maximum depth level due to parent category [%s] already being a 3 level " +
-                "deep category on account [%s]").formatted(parentCategory.getSid(), command.accountSid()));
-      }
-
       if (Objects.nonNull(parentCategory.getAccountSid()) && !parentCategory.getAccountSid()
           .equals(command.accountSid())) {
         throw new CategoryNotFoundException(
             "Parent category [%s] was not found or does not belong to the account [%s]".formatted(
                 parentCategory.getSid(), command.accountSid()));
+      }
+
+      if (parentCategory.getParent() != null && parentCategory.getParent().getParent() != null) {
+        throw new MaxCategoryDepthExceededException(
+            ("Category exceeds maximum depth level due to parent category [%s] already being a 3 level " +
+                "deep category on account [%s]").formatted(parentCategory.getSid(), command.accountSid()));
       }
 
       if (!command.transactionType().equals(parentCategory.getTransactionType())) {

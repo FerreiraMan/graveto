@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import me.ferreira.graveto.common.domain.Currency;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
 import me.ferreira.graveto.common.web.exception.portfolio.AssetNotFoundException;
 import me.ferreira.graveto.common.web.exception.portfolio.BrokerNotFoundException;
 import me.ferreira.graveto.common.web.exception.portfolio.InsufficientPermissionsOnBrokerException;
@@ -27,12 +28,14 @@ import me.ferreira.graveto.portfolio.orders.repository.OrderRepository;
 import me.ferreira.graveto.portfolio.orders.service.command.CreateOrderCommand;
 import me.ferreira.graveto.portfolio.orders.service.impl.OrderServiceImpl;
 import me.ferreira.graveto.portfolio.positions.service.PositionService;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class CreateOrderServiceImplTest {
@@ -52,12 +55,19 @@ public class CreateOrderServiceImplTest {
   void shouldThrowIfBrokerIsNotFoundDuringOrderCreation() {
     // Arrange
     final UUID brokerSid = UUID.randomUUID();
-    when(brokerService.fetchBrokerEntity(brokerSid)).thenThrow(new BrokerNotFoundException(brokerSid));
+    when(brokerService.fetchBrokerEntity(brokerSid)).thenThrow(new BrokerNotFoundException("loggableMessage"));
 
     // Act & Assert
     assertThatThrownBy(() -> orderService.createOrder(buildCommand(brokerSid, UUID.randomUUID(), UUID.randomUUID())))
         .isInstanceOf(BrokerNotFoundException.class)
-        .hasMessage("Broker with SID [" + brokerSid + "] was not found or you do not have permission to view it.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo(
+                  "The specified broker is no longer available. " +
+                      "It may have been removed, or you may not have access to it.");
+        });
   }
 
   @Test
@@ -71,7 +81,12 @@ public class CreateOrderServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> orderService.createOrder(buildCommand(broker.getSid(), UUID.randomUUID(), userSid)))
         .isInstanceOf(InsufficientPermissionsOnBrokerException.class)
-        .hasMessage("User does not have the required role to create orders for this broker account.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo("You do not have the required role to perform this action.");
+        });
   }
 
   @Test
@@ -82,12 +97,19 @@ public class CreateOrderServiceImplTest {
     final UUID assetSid = UUID.randomUUID();
 
     when(brokerService.fetchBrokerEntity(broker.getSid())).thenReturn(broker);
-    when(assetService.fetchAsset(any())).thenThrow(new AssetNotFoundException(assetSid));
+    when(assetService.fetchAsset(any())).thenThrow(new AssetNotFoundException("loggableMessage"));
 
     // Act & Assert
     assertThatThrownBy(() -> orderService.createOrder(buildCommand(broker.getSid(), assetSid, userSid)))
         .isInstanceOf(AssetNotFoundException.class)
-        .hasMessage("Asset with SID [" + assetSid + "] was not found or you do not have permission to view it.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo(
+                  "This asset is currently not available. " +
+                      "Please make sure you add it to the list before associating orders.");
+        });
   }
 
   @Test
