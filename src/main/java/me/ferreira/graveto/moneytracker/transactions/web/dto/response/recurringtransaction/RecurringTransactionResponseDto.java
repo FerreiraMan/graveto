@@ -17,6 +17,7 @@ public record RecurringTransactionResponseDto(
     String currency,
     String transactionType,
     String frequency,
+    Boolean adjustToBusinessDay,
     String nextExecutionDate,
     String status,
     String endDate
@@ -41,6 +42,7 @@ public record RecurringTransactionResponseDto(
         recurringTransaction.getCurrency().name(),
         recurringTransaction.getType().name(),
         recurringTransaction.getFrequency().name(),
+        recurringTransaction.getAdjustToBusinessDay(),
         recurringTransaction.getNextExecutionDate().format(DateTimeFormatter.ISO_LOCAL_DATE),
         recurringTransaction.getStatus().name(),
         recurringTransaction.getEndDate() == null ? null :

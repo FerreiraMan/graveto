@@ -21,8 +21,8 @@ public final class RecurringTransferDtoAssertions {
   }
 
   private static void assertRecurringTransferFields(final MvcTestResult testResult,
-                                                       final RecurringTransfer expected,
-                                                       final String basePath) {
+                                                    final RecurringTransfer expected,
+                                                    final String basePath) {
 
     assertThat(testResult).bodyJson().extractingPath(basePath + ".sid").asString()
         .isEqualTo(expected.getSid().toString());
@@ -44,6 +44,8 @@ public final class RecurringTransferDtoAssertions {
         .isEqualTo(expected.getCurrency().name());
     assertThat(testResult).bodyJson().extractingPath(basePath + ".frequency").asString()
         .isEqualTo(expected.getFrequency().name());
+    assertThat(testResult).bodyJson().extractingPath(basePath + ".adjustToBusinessDay").asBoolean()
+        .isEqualTo(expected.getAdjustToBusinessDay());
 
     final String expectedNextExecutionDate =
         expected.getNextExecutionDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
@@ -61,5 +63,5 @@ public final class RecurringTransferDtoAssertions {
       assertThat(testResult).bodyJson().doesNotHavePath(basePath + ".endDate");
     }
   }
-  
+
 }
