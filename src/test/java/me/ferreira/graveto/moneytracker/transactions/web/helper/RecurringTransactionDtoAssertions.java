@@ -46,6 +46,8 @@ public final class RecurringTransactionDtoAssertions {
         .isEqualTo(expected.getType().name());
     assertThat(testResult).bodyJson().extractingPath(basePath + ".frequency").asString()
         .isEqualTo(expected.getFrequency().name());
+    assertThat(testResult).bodyJson().extractingPath(basePath + ".adjustToBusinessDay").asBoolean()
+        .isEqualTo(expected.getAdjustToBusinessDay());
 
     final String expectedNextExecutionDate =
         expected.getNextExecutionDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
