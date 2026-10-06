@@ -14,6 +14,7 @@ import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.common.domain.Frequency;
 import me.ferreira.graveto.common.domain.RecurringOperationStatus;
 import me.ferreira.graveto.common.web.exception.ApplicationException;
+import me.ferreira.graveto.common.web.exception.common.InvalidRequestException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.common.web.exception.moneytracker.RecurringTransferNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
@@ -213,8 +214,13 @@ public class UpdateRecurringTransferServiceImplTest {
 
     // Act & Assert
     assertThatThrownBy(() -> recurringTransferService.updateRecurringTransfer(command))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Day of the month needs to be provided when selecting monthly operation.");
+        .isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Day of the month needs to be provided when selecting monthly operation.");
+        });
   }
 
   @Test
@@ -237,8 +243,13 @@ public class UpdateRecurringTransferServiceImplTest {
 
     // Act & Assert
     assertThatThrownBy(() -> recurringTransferService.updateRecurringTransfer(command))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Day of the week needs to be provided when selecting weekly or bi-weekly operation.");
+        .isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Day of the week needs to be provided when selecting weekly or bi-weekly operation.");
+        });
   }
 
   @Test

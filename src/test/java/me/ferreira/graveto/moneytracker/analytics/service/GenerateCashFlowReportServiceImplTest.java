@@ -10,6 +10,7 @@ import java.time.Year;
 import java.util.List;
 import java.util.UUID;
 import me.ferreira.graveto.common.web.exception.ApplicationException;
+import me.ferreira.graveto.common.web.exception.common.InvalidRequestException;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountWithInvalidOpeningBalanceException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
@@ -51,8 +52,13 @@ public class GenerateCashFlowReportServiceImplTest {
 
     // Act & Assert
     assertThatThrownBy(() -> service.generateCashFlowReport(command))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Requested year must be present or past occurrence.");
+        .isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Requested year must be present or past occurrence.");
+        });
   }
 
   @Test
@@ -163,8 +169,13 @@ public class GenerateCashFlowReportServiceImplTest {
 
     // Act & Assert
     assertThatThrownBy(() -> service.generateCashFlowReport(command))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Account has no movements yet to report.");
+        .isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Account has no movements yet to report.");
+        });
   }
 
   @Test

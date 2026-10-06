@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 import me.ferreira.graveto.common.domain.Currency;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
+import me.ferreira.graveto.common.web.exception.common.BusinessRuleViolationException;
 import me.ferreira.graveto.portfolio.assets.domain.Asset;
 import me.ferreira.graveto.portfolio.assets.domain.AssetType;
 import me.ferreira.graveto.portfolio.brokers.domain.Broker;
@@ -19,12 +21,14 @@ import me.ferreira.graveto.portfolio.orders.domain.OrderType;
 import me.ferreira.graveto.portfolio.positions.domain.Position;
 import me.ferreira.graveto.portfolio.positions.repository.PositionRepository;
 import me.ferreira.graveto.portfolio.positions.service.impl.PositionServiceImpl;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class ApplyOrderToPositionServiceImplTest {
@@ -73,8 +77,13 @@ public class ApplyOrderToPositionServiceImplTest {
 
     // Act & Assert
     assertThatThrownBy(() -> positionService.applyOrderToPosition(order))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessage("Cannot create a position from a SELL order — position must exist before selling.");
+        .isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Cannot create a position from a SELL order - position must exist before selling.");
+        });
   }
 
   @Test

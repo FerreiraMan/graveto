@@ -12,6 +12,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 import me.ferreira.graveto.common.web.exception.ApplicationException;
+import me.ferreira.graveto.common.web.exception.common.BusinessRuleViolationException;
+import me.ferreira.graveto.common.web.exception.common.InvalidRequestException;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFoundException;
@@ -147,8 +149,13 @@ public class UpdateTransactionServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.updateTransaction(command);
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessage("Cannot update transactions. The account is currently CLOSED.");
+    }).isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Cannot perform the requested action on a [CLOSED] account.");
+        });
   }
 
   @Test
@@ -162,8 +169,13 @@ public class UpdateTransactionServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.updateTransaction(Mockito.mock(UpdateTransactionCommand.class));
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessage("This transaction is part of a transfer and must be updated via the Transfer API.");
+    }).isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified transaction is part of a transfer.");
+        });
   }
 
   @Test
@@ -179,8 +191,14 @@ public class UpdateTransactionServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.updateTransaction(command);
-    }).isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Cannot change a standard transaction into a transfer. Please create a new Transfer instead.");
+    }).isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Not possible to change a standard transaction into a transfer. " +
+                  "Please create a new Transfer instead.");
+        });
   }
 
   @Test
@@ -196,8 +214,14 @@ public class UpdateTransactionServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.updateTransaction(command);
-    }).isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Cannot change a standard transaction into a transfer. Please create a new Transfer instead.");
+    }).isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Not possible to change a standard transaction into a transfer. " +
+                  "Please create a new Transfer instead.");
+        });
   }
 
   @Test
@@ -278,8 +302,13 @@ public class UpdateTransactionServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.updateTransaction(command);
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessage("Cannot update a deleted transaction.");
+    }).isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified transaction is deleted and cannot be updated.");
+        });
   }
 
   @Test
@@ -309,9 +338,14 @@ public class UpdateTransactionServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.updateTransaction(command);
-    }).isInstanceOf(IllegalArgumentException.class)
-        .hasMessage(String.format("Category type [%s] does not match the requested transaction type [%s].",
-            category.getTransactionType().name(), command.transactionType().name()));
+    }).isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Category type does not match the requested transaction type. " +
+                  "Please choose another category or you may create a new one.");
+        });
   }
 
   @Test
@@ -339,9 +373,14 @@ public class UpdateTransactionServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.updateTransaction(command);
-    }).isInstanceOf(IllegalArgumentException.class)
-        .hasMessage(String.format("Category type [%s] does not match the requested transaction type [%s].",
-            persistedCategory.getTransactionType().name(), command.transactionType().name()));
+    }).isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Category type does not match the requested transaction type. " +
+                  "Please choose another category or you may create a new one.");
+        });
   }
 
   @Test

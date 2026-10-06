@@ -5,6 +5,7 @@ import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.ferreira.graveto.common.util.TemporalConfigValidator;
+import me.ferreira.graveto.common.web.exception.common.InvalidRequestException;
 import me.ferreira.graveto.common.web.exception.moneytracker.RecurringTransactionNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
@@ -148,10 +149,11 @@ public class RecurringTransactionServiceImpl implements RecurringTransactionServ
                                           final TransactionType transactionType) {
 
     if (categoryTransactionType != transactionType) {
-      throw new IllegalArgumentException(
-          String.format("Category type [%s] does not match the requested transaction type [%s].",
-              categoryTransactionType.name(), transactionType.name())
-      );
+      throw new InvalidRequestException(
+          "Category [%s] and transaction [%s] have different types."
+              .formatted(categoryTransactionType.name(), transactionType.name()),
+          "Category type does not match the requested transaction type. " +
+              "Please choose another category or you may create a new one.");
     }
   }
 

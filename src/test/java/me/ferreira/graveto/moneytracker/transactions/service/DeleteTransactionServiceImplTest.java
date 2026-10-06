@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 import me.ferreira.graveto.common.web.exception.ApplicationException;
+import me.ferreira.graveto.common.web.exception.common.BusinessRuleViolationException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
@@ -89,8 +90,13 @@ public class DeleteTransactionServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.deleteTransaction(Mockito.mock(DeleteTransactionCommand.class));
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessage("This transaction is part of a transfer and must be deleted via the Transfer API.");
+    }).isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified transaction is part of a transfer.");
+        });
   }
 
   @Test
@@ -110,8 +116,13 @@ public class DeleteTransactionServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.deleteTransaction(Mockito.mock(DeleteTransactionCommand.class));
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessage("Cannot delete transactions. The account is currently CLOSED.");
+    }).isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Cannot perform the requested action on a [CLOSED] account.");
+        });
   }
 
   @Test
@@ -130,8 +141,13 @@ public class DeleteTransactionServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.deleteTransaction(Mockito.mock(DeleteTransactionCommand.class));
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessage("This transaction is part of a transfer and must be deleted via the Transfer API.");
+    }).isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified transaction is part of a transfer.");
+        });
   }
 
   @Test
@@ -174,8 +190,13 @@ public class DeleteTransactionServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.deleteTransaction(command);
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessage("Transaction is already deleted.");
+    }).isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified transaction is already deleted.");
+        });
   }
 
   @Test

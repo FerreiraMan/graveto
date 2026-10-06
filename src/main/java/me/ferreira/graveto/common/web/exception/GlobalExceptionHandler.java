@@ -98,20 +98,6 @@ public class GlobalExceptionHandler {
     return createBaseProblemDetail(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
   }
 
-  @ExceptionHandler(IllegalArgumentException.class)
-  public ProblemDetail handleIllegalArgumentException(final IllegalArgumentException ex,
-                                                      final HttpServletRequest request) {
-
-    return createBaseProblemDetail(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
-  }
-
-  @ExceptionHandler(IllegalStateException.class)
-  public ProblemDetail handleIllegalStateException(final IllegalStateException ex,
-                                                   final HttpServletRequest request) {
-
-    return createBaseProblemDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request);
-  }
-
   @ExceptionHandler(UsernameNotFoundException.class)
   public ProblemDetail handleUsernameNotFoundException(final UsernameNotFoundException ex,
                                                        final HttpServletRequest request) {

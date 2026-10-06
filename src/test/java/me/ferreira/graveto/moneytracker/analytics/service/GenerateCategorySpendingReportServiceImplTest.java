@@ -11,6 +11,7 @@ import java.time.Year;
 import java.util.List;
 import java.util.UUID;
 import me.ferreira.graveto.common.web.exception.ApplicationException;
+import me.ferreira.graveto.common.web.exception.common.InvalidRequestException;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
@@ -56,8 +57,13 @@ public class GenerateCategorySpendingReportServiceImplTest {
 
     // Act & Assert
     assertThatThrownBy(() -> service.generateCategorySpendingReport(command))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Requested year must be present or past occurrence.");
+        .isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Requested year must be present or past occurrence.");
+        });
   }
 
   @Test

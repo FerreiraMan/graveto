@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
 import me.ferreira.graveto.common.web.exception.ApplicationException;
+import me.ferreira.graveto.common.web.exception.common.BusinessRuleViolationException;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
@@ -92,8 +93,13 @@ public class CloseAccountServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.closeAccount(command);
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessage("This account is already closed.");
+    }).isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified account is already closed.");
+        });
   }
 
   @Test
@@ -110,8 +116,13 @@ public class CloseAccountServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.closeAccount(command);
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessage("Account balance must be exactly 0.00 before it can be closed. Current balance: " + BigDecimal.ONE);
+    }).isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Account balance must be exactly 0.00 before it can be closed.");
+        });
   }
 
   @Test

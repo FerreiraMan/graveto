@@ -5,6 +5,7 @@ import java.util.Objects;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import me.ferreira.graveto.common.web.exception.common.InvalidRequestException;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryAlreadyExistsException;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.IllegalCategoryHierarchyException;
@@ -26,10 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 @AllArgsConstructor
 public class CategoryServiceImpl implements CategoryService {
 
-  private static final String INTERNAL_CATEGORY_SID_INVALID = "Requested SID is not a valid Internal Category.";
-  private static final String INTERNAL_CATEGORY_NOT_FOUND = "Internal Category is missing from the database.";
-  private static final String CATEGORY_NAME_NOT_PRESENT = "Category name cannot be empty.";
-
   private final AccountService accountService;
   private final CategoryRepository categoryRepository;
 
@@ -38,11 +35,11 @@ public class CategoryServiceImpl implements CategoryService {
   public Category fetchInternalCategory(final UUID systemCategorySid) {
 
     if (!SystemCategory.allInternalSids().contains(systemCategorySid)) {
-      throw new IllegalArgumentException(INTERNAL_CATEGORY_SID_INVALID);
+      throw new IllegalArgumentException("Requested SID is not a valid Internal Category.");
     }
 
     return categoryRepository.findBySid(systemCategorySid)
-        .orElseThrow(() -> new IllegalStateException(INTERNAL_CATEGORY_NOT_FOUND));
+        .orElseThrow(() -> new IllegalStateException("Internal Category is missing from the database."));
   }
 
   @Override
@@ -119,7 +116,7 @@ public class CategoryServiceImpl implements CategoryService {
   private String validateAndSanitizeName(final String name) {
 
     if (StringUtils.isBlank(name)) {
-      throw new IllegalArgumentException(CATEGORY_NAME_NOT_PRESENT);
+      throw new InvalidRequestException("A name for the category needs to be specified.");
     }
 
     return StringUtils.stripAccents(name)

@@ -11,6 +11,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import me.ferreira.graveto.common.web.exception.ApplicationException;
+import me.ferreira.graveto.common.web.exception.common.BusinessRuleViolationException;
+import me.ferreira.graveto.common.web.exception.common.InvalidRequestException;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
@@ -102,8 +104,13 @@ public class CreateTransactionServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.createTransaction(Mockito.mock(CreateTransactionCommand.class));
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessage("Cannot create transactions. The account is currently CLOSED.");
+    }).isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Cannot perform the requested action on a [CLOSED] account.");
+        });
   }
 
   @Test
@@ -144,9 +151,14 @@ public class CreateTransactionServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.createTransaction(command);
-    }).isInstanceOf(IllegalArgumentException.class)
-        .hasMessage(String.format("Category type [%s] does not match the requested transaction type [%s].",
-            category.getTransactionType().name(), command.transactionType().name()));
+    }).isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Category type does not match the requested transaction type. " +
+                  "Please choose another category or you may create a new one.");
+        });
   }
 
   @Test

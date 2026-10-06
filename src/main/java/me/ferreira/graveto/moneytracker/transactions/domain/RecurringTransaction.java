@@ -28,6 +28,7 @@ import me.ferreira.graveto.common.domain.RecurringOperationStatus;
 import me.ferreira.graveto.common.jpa.BaseEntity;
 import me.ferreira.graveto.common.util.RecurringDateCalculator;
 import me.ferreira.graveto.common.util.TemporalConfigValidator;
+import me.ferreira.graveto.common.web.exception.common.BusinessRuleViolationException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import org.hibernate.annotations.DynamicUpdate;
@@ -141,7 +142,9 @@ public class RecurringTransaction extends BaseEntity {
   public void updateDetails(final String description, final BigDecimal amount, final Boolean adjustToBusinessDay) {
 
     if (this.status == RecurringOperationStatus.CANCELED) {
-      throw new IllegalStateException("Cannot update a canceled recurring transaction.");
+      throw new BusinessRuleViolationException(
+          "Recurring operation [%s] with invalid status [%s] to be updated.".formatted(this.sid, this.status.name()),
+          "The specified recurring transaction is canceled and cannot be updated.");
     }
 
     this.description = description;
@@ -152,7 +155,10 @@ public class RecurringTransaction extends BaseEntity {
   public void scheduleNextExecutionDate(final Long amount, final ChronoUnit temporalUnit) {
 
     if (!RecurringOperationStatus.ACTIVE.equals(this.status)) {
-      throw new IllegalStateException("Scheduled operation is not in an active state.");
+      throw new BusinessRuleViolationException(
+          "Recurring operation [%s] with invalid status [%s] to be rescheduled."
+              .formatted(this.sid, this.status.name()),
+          "The specified recurring transaction is not active and cannot be rescheduled.");
     }
 
     this.lastExecutedAt = LocalDateTime.now();
@@ -170,9 +176,10 @@ public class RecurringTransaction extends BaseEntity {
     }
 
     if (!this.getStatus().canBeUpdated(newStatus) || this.status.isTerminal()) {
-      throw new IllegalStateException(
-          "Recurring transaction with status [" + this.getStatus().name() +
-              "] cannot have its status manually updated to [" + newStatus + "].");
+      throw new BusinessRuleViolationException(
+          "Recurring operation [%s] with non-updatable status [%s].".formatted(this.sid, this.status.name()),
+          "The specified recurring transaction cannot have its status manually updated to [%s].".formatted(
+              newStatus.name()));
     }
 
     switch (newStatus) {
@@ -232,7 +239,9 @@ public class RecurringTransaction extends BaseEntity {
   public void markAsCanceled() {
 
     if (this.status == RecurringOperationStatus.CANCELED) {
-      throw new IllegalStateException("Recurring transaction is already canceled.");
+      throw new BusinessRuleViolationException(
+          "Recurring operation [%s] is already canceled.".formatted(this.sid),
+          "The specified recurring transaction is already canceled.");
     }
 
     this.status = RecurringOperationStatus.CANCELED;

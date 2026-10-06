@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.TreeSet;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
+import me.ferreira.graveto.common.web.exception.common.InvalidRequestException;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
 import me.ferreira.graveto.moneytracker.analytics.service.AnalyticService;
@@ -40,7 +41,7 @@ public class AnalyticServiceImpl implements AnalyticService {
   public CashFlowResult generateCashFlowReport(final CashFlowCommand command) {
 
     if (Year.now().getValue() < command.year()) {
-      throw new IllegalArgumentException("Requested year must be present or past occurrence.");
+      throw new InvalidRequestException("Requested year must be present or past occurrence.");
     }
 
     accountService
@@ -62,7 +63,7 @@ public class AnalyticServiceImpl implements AnalyticService {
   public CategorySpendingResult generateCategorySpendingReport(final CategorySpendingCommand command) {
 
     if (Year.now().getValue() < command.year()) {
-      throw new IllegalArgumentException("Requested year must be present or past occurrence.");
+      throw new InvalidRequestException("Requested year must be present or past occurrence.");
     }
 
     accountService
@@ -90,7 +91,7 @@ public class AnalyticServiceImpl implements AnalyticService {
                                              final List<MonthlyAggregateProjection> projections) {
 
     if (year < yearAccountWasCreated) {
-      throw new IllegalArgumentException("Account has no movements yet to report.");
+      throw new InvalidRequestException("Account has no movements yet to report.");
     }
 
     final TreeSet<Integer> yearsWithCashFlows = MonthlyAggregateProjectionHelper.resolveYearsWithCashFlows(projections);

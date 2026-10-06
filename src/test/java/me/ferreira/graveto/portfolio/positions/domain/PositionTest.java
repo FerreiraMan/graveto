@@ -8,11 +8,15 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.UUID;
 import me.ferreira.graveto.common.domain.Currency;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
+import me.ferreira.graveto.common.web.exception.common.BusinessRuleViolationException;
 import me.ferreira.graveto.portfolio.assets.domain.Asset;
 import me.ferreira.graveto.portfolio.assets.domain.AssetType;
 import me.ferreira.graveto.portfolio.brokers.domain.Broker;
 import me.ferreira.graveto.portfolio.orders.domain.OrderType;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 
 public class PositionTest {
 
@@ -45,7 +49,13 @@ public class PositionTest {
     assertThatThrownBy(
         () -> Position.create(OrderType.SELL, mock(Broker.class), mock(Asset.class), BigDecimal.TEN, BigDecimal.ONE,
             BigDecimal.ZERO))
-        .isInstanceOf(IllegalStateException.class);
+        .isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Cannot create a position from a SELL order - position must exist before selling.");
+        });
   }
 
   @Test

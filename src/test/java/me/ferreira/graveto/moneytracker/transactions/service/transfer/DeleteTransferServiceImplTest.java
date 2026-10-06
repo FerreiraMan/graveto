@@ -10,7 +10,9 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import me.ferreira.graveto.common.web.exception.ApplicationException;
+import me.ferreira.graveto.common.web.exception.common.BusinessRuleViolationException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
+import me.ferreira.graveto.common.web.exception.moneytracker.TransferWithInvalidTransactionsException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.AccountStatus;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
@@ -52,8 +54,14 @@ public class DeleteTransferServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.deleteTransfer(mock(DeleteTransferCommand.class));
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessage("Transfer is associated with an incorrect amount of transactions.");
+    }).isInstanceOf(TransferWithInvalidTransactionsException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Something went wrong while processing the request on the specified transfer. " +
+                  "Please contact support.");
+        });
   }
 
   @Test
@@ -69,8 +77,14 @@ public class DeleteTransferServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.deleteTransfer(mock(DeleteTransferCommand.class));
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessage("Corrupted transfer does not contain exactly one IN and one OUT transaction.");
+    }).isInstanceOf(TransferWithInvalidTransactionsException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Something went wrong while processing the request on the specified transfer. " +
+                  "Please contact support.");
+        });
   }
 
   @Test
@@ -92,8 +106,13 @@ public class DeleteTransferServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.deleteTransfer(command);
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessage("Cannot delete transfer transactions. The account is currently CLOSED.");
+    }).isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Cannot perform the requested action on a [CLOSED] account.");
+        });
   }
 
   @Test
@@ -147,8 +166,13 @@ public class DeleteTransferServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.deleteTransfer(command);
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessage("Transaction is already deleted.");
+    }).isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified transaction is already deleted.");
+        });
   }
 
   @Test
