@@ -1,9 +1,13 @@
 package me.ferreira.graveto.common.web.exception.portfolio;
 
-import java.util.UUID;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
+import org.slf4j.event.Level;
+import org.springframework.http.HttpStatus;
 
-public class AssetNotFoundException extends RuntimeException {
-  public AssetNotFoundException(final UUID assetSid) {
-    super("Asset with SID [" + assetSid + "] was not found or you do not have permission to view it.");
+public class AssetNotFoundException extends ApplicationException {
+  public AssetNotFoundException(final String loggableMessage) {
+    super(loggableMessage, HttpStatus.NOT_FOUND,
+        "This asset is currently not available. Please make sure you add it to the list before associating orders.",
+        Level.WARN);
   }
 }

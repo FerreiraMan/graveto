@@ -73,6 +73,7 @@ http:
     max-requests: 5
     request-cooldown: 60000 # time unit in millisecond
     yahoo:
+      name: yhfinance
       api-key: ${YFINANCE_API_KEY:yfinance_api_key}
       base-url: https://yfapi.net/
       search:

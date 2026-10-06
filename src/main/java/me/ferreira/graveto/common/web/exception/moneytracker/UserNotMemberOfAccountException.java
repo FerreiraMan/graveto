@@ -1,7 +1,11 @@
 package me.ferreira.graveto.common.web.exception.moneytracker;
 
-public class UserNotMemberOfAccountException extends RuntimeException {
-  public UserNotMemberOfAccountException() {
-    super("The user is not a member of this account.");
+import me.ferreira.graveto.common.web.exception.ApplicationException;
+import org.slf4j.event.Level;
+import org.springframework.http.HttpStatus;
+
+public class UserNotMemberOfAccountException extends ApplicationException {
+  public UserNotMemberOfAccountException(final String loggableMessage) {
+    super(loggableMessage, HttpStatus.FORBIDDEN, "You do not have access to this account.", Level.WARN);
   }
 }

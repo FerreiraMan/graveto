@@ -1,7 +1,12 @@
 package me.ferreira.graveto.common.web.exception.moneytracker;
 
-public class MemberNotRegisteredException extends RuntimeException {
-  public MemberNotRegisteredException(final String email) {
-    super("User " + email + " needs to be registered in the platform in order enable account memberships.");
+import me.ferreira.graveto.common.web.exception.ApplicationException;
+import org.slf4j.event.Level;
+import org.springframework.http.HttpStatus;
+
+public class MemberNotRegisteredException extends ApplicationException {
+  public MemberNotRegisteredException(final String loggableMessage) {
+    super(loggableMessage, HttpStatus.UNPROCESSABLE_CONTENT,
+        "New account member needs to be registered in the platform in order to be onboarded.", Level.WARN);
   }
 }

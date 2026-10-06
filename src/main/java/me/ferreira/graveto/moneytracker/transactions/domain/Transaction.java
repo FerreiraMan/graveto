@@ -21,6 +21,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.common.jpa.BaseEntity;
+import me.ferreira.graveto.common.web.exception.common.BusinessRuleViolationException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import org.hibernate.annotations.DynamicUpdate;
@@ -153,7 +154,8 @@ public class Transaction extends BaseEntity {
   public void markAsDeleted() {
 
     if (this.status == TransactionStatus.DELETED) {
-      throw new IllegalStateException("Transaction is already deleted.");
+      throw new BusinessRuleViolationException(
+          "Transaction [%s] is already deleted.".formatted(this.sid), "The specified transaction is already deleted.");
     }
 
     this.status = TransactionStatus.DELETED;
@@ -167,7 +169,9 @@ public class Transaction extends BaseEntity {
                             final LocalDateTime occurredAt) {
 
     if (this.status == TransactionStatus.DELETED) {
-      throw new IllegalStateException("Cannot update a deleted transaction.");
+      throw new BusinessRuleViolationException(
+          "Transaction [%s] with invalid status [%s] to be updated.".formatted(this.sid, this.status.name()),
+          "The specified transaction is deleted and cannot be updated.");
     }
 
     this.amount = amount;

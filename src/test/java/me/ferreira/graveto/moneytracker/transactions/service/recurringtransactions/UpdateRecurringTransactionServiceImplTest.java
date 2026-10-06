@@ -13,6 +13,8 @@ import java.util.UUID;
 import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.common.domain.Frequency;
 import me.ferreira.graveto.common.domain.RecurringOperationStatus;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
+import me.ferreira.graveto.common.web.exception.common.InvalidRequestException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.common.web.exception.moneytracker.RecurringTransactionNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
@@ -27,11 +29,13 @@ import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.repository.recurringtransaction.RecurringTransactionRepository;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.UpdateRecurringTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.impl.RecurringTransactionServiceImpl;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class UpdateRecurringTransactionServiceImplTest {
@@ -58,7 +62,14 @@ public class UpdateRecurringTransactionServiceImplTest {
 
     // Act & Assert
     assertThatThrownBy(() -> recurringTransactionService.updateRecurringTransaction(command))
-        .isInstanceOf(RecurringTransactionNotFoundException.class);
+        .isInstanceOf(RecurringTransactionNotFoundException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "This recurring transaction is no longer available. " +
+                  "It may have been removed, or you may not have access to it.");
+        });
   }
 
   @Test
@@ -196,8 +207,13 @@ public class UpdateRecurringTransactionServiceImplTest {
 
     // Act & Assert
     assertThatThrownBy(() -> recurringTransactionService.updateRecurringTransaction(command))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Day of the month needs to be provided when selecting monthly operation.");
+        .isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Day of the month needs to be provided when selecting monthly operation.");
+        });
   }
 
   @Test
@@ -218,8 +234,13 @@ public class UpdateRecurringTransactionServiceImplTest {
 
     // Act & Assert
     assertThatThrownBy(() -> recurringTransactionService.updateRecurringTransaction(command))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Day of the week needs to be provided when selecting weekly or bi-weekly operation.");
+        .isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Day of the week needs to be provided when selecting weekly or bi-weekly operation.");
+        });
   }
 
   @Test

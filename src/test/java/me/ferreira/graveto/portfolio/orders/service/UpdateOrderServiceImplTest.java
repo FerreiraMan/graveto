@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 import me.ferreira.graveto.common.domain.Currency;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
 import me.ferreira.graveto.common.web.exception.portfolio.InsufficientPermissionsOnBrokerException;
 import me.ferreira.graveto.common.web.exception.portfolio.OrderNotFoundException;
 import me.ferreira.graveto.portfolio.assets.domain.Asset;
@@ -27,11 +28,13 @@ import me.ferreira.graveto.portfolio.orders.repository.OrderRepository;
 import me.ferreira.graveto.portfolio.orders.service.command.UpdateOrderCommand;
 import me.ferreira.graveto.portfolio.orders.service.impl.OrderServiceImpl;
 import me.ferreira.graveto.portfolio.positions.service.PositionService;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class UpdateOrderServiceImplTest {
@@ -58,7 +61,14 @@ public class UpdateOrderServiceImplTest {
 
     // Act & Assert
     assertThatThrownBy(() -> orderService.updateOrder(command))
-        .isInstanceOf(OrderNotFoundException.class);
+        .isInstanceOf(OrderNotFoundException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo(
+                  "This order is no longer available. It may have been removed, or you may not have access to it.");
+        });
   }
 
   @Test
@@ -73,7 +83,13 @@ public class UpdateOrderServiceImplTest {
 
     // Act & Assert
     assertThatThrownBy(() -> orderService.updateOrder(command))
-        .isInstanceOf(InsufficientPermissionsOnBrokerException.class);
+        .isInstanceOf(InsufficientPermissionsOnBrokerException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo("You do not have the required role to perform this action.");
+        });
   }
 
   @Test

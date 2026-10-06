@@ -22,6 +22,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.common.jpa.BaseEntity;
+import me.ferreira.graveto.common.web.exception.common.BusinessRuleViolationException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserAlreadyAccountMemberException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserNotMemberOfAccountException;
@@ -88,7 +89,8 @@ public class Account extends BaseEntity {
         .anyMatch(m -> m.getUserSid().equals(membership.getUserSid()));
 
     if (alreadyExists) {
-      throw new UserAlreadyAccountMemberException(membership.getUserSid());
+      throw new UserAlreadyAccountMemberException(
+          "User [%s] is already a member of this account [%s].".formatted(membership.getUserSid(), this.sid));
     }
 
     memberships.add(membership);
@@ -101,7 +103,8 @@ public class Account extends BaseEntity {
         .anyMatch(m -> userSid.equals(m.getUserSid()));
 
     if (!isMember) {
-      throw new UserNotMemberOfAccountException();
+      throw new UserNotMemberOfAccountException(
+          "User [%s] is not a member of this account [%s].".formatted(userSid, this.sid));
     }
   }
 
@@ -117,14 +120,18 @@ public class Account extends BaseEntity {
         .isPresent();
 
     if (!isAuthorized) {
-      throw new InsufficientPermissionsOnAccountException(actionName);
+      throw new InsufficientPermissionsOnAccountException(
+          ("User [%s] does not have the required permission to perform the action [%s] " +
+              "on this account [%s].").formatted(userSid, actionName, this.sid));
     }
   }
 
   public void validateIsActive(final String actionName) {
     if (this.status != AccountStatus.ACTIVE) {
-      throw new IllegalStateException(
-          String.format("Cannot %s. The account is currently %s.", actionName, this.status.name())
+      throw new BusinessRuleViolationException(
+          "Account [%s] with invalid status [%s] to perform action [%s]".formatted(this.sid, this.status.name(),
+              actionName),
+          "Cannot perform the requested action on a [%s] account.".formatted(this.status.name())
       );
     }
   }
@@ -147,12 +154,14 @@ public class Account extends BaseEntity {
   public void close() {
 
     if (AccountStatus.CLOSED.equals(this.status)) {
-      throw new IllegalStateException("This account is already closed.");
+      throw new BusinessRuleViolationException(
+          "Account [%s] is already closed.".formatted(this.sid), "The specified account is already closed.");
     }
 
     if (this.balance.compareTo(BigDecimal.ZERO) != 0) {
-      throw new IllegalStateException(
-          "Account balance must be exactly 0.00 before it can be closed. Current balance: " + this.balance);
+      throw new BusinessRuleViolationException(
+          "Account [%s] with invalid balance [%f] before being closed.".formatted(this.sid, this.balance),
+          "Account balance must be exactly 0.00 before it can be closed.");
     }
 
     this.status = AccountStatus.CLOSED;

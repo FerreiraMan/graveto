@@ -71,7 +71,7 @@ public class FetchBrokerControllerTest {
     // Arrange
     final UUID brokerSid = UUID.randomUUID();
     when(service.fetchBroker(org.mockito.ArgumentMatchers.any()))
-        .thenThrow(new BrokerNotFoundException(brokerSid));
+        .thenThrow(new BrokerNotFoundException("loggableMessage"));
 
     // Act
     final MvcTestResult result = mvc.get()
@@ -80,7 +80,11 @@ public class FetchBrokerControllerTest {
         .exchange();
 
     // Assert
-    assertThat(result).hasStatus(HttpStatus.NOT_FOUND);
+    assertThat(result).hasStatus(HttpStatus.NOT_FOUND)
+        .bodyJson()
+        .extractingPath("$.detail").asString()
+        .isEqualTo(
+            "The specified broker is no longer available. It may have been removed, or you may not have access to it.");
   }
 
   @Test

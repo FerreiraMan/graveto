@@ -53,7 +53,7 @@ public class AuthServiceImpl implements AuthService {
   public User register(final RegisterCommand command) {
 
     userRepository.fetchUserCredentials(command.email()).ifPresent(user -> {
-      throw new UserAlreadyExistsException();
+      throw new UserAlreadyExistsException("This email [%s] is already being used.".formatted(command.email()));
     });
 
     final String passwordHash = passwordEncoder.encode(command.password());
@@ -79,7 +79,8 @@ public class AuthServiceImpl implements AuthService {
   public void resetPassword(final ResetPasswordCommand command) {
 
     final User user = passwordResetTokenService.validateToken(command.token())
-        .orElseThrow(() -> new InvalidResetPasswordTokenException("Unable to process password reset request."));
+        .orElseThrow(
+            () -> new InvalidResetPasswordTokenException("Password reset attempt with invalid or expired token."));
 
     final String newPasswordHash = passwordEncoder.encode(command.newPassword());
     user.updatePassword(newPasswordHash);

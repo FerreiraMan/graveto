@@ -13,6 +13,9 @@ import java.util.UUID;
 import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.common.domain.Frequency;
 import me.ferreira.graveto.common.domain.RecurringOperationStatus;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
+import me.ferreira.graveto.common.web.exception.common.BusinessRuleViolationException;
+import me.ferreira.graveto.common.web.exception.common.InvalidRequestException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.AccountMembership;
 import me.ferreira.graveto.moneytracker.accounts.domain.AccountStatus;
@@ -25,12 +28,14 @@ import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.repository.recurringtransaction.RecurringTransactionRepository;
 import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.CreateRecurringTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.impl.RecurringTransactionServiceImpl;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class CreateRecurringTransactionServiceImplTest {
@@ -52,8 +57,13 @@ public class CreateRecurringTransactionServiceImplTest {
 
     // Act & Assert
     assertThatThrownBy(() -> recurringTransactionService.createRecurringTransaction(command))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Day of the month needs to be provided when selecting monthly operation.");
+        .isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Day of the month needs to be provided when selecting monthly operation.");
+        });
 
     verify(recurringTransactionRepository, never()).save(any());
   }
@@ -66,8 +76,13 @@ public class CreateRecurringTransactionServiceImplTest {
 
     // Act & Assert
     assertThatThrownBy(() -> recurringTransactionService.createRecurringTransaction(command))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Day of the week needs to be provided when selecting weekly or bi-weekly operation.");
+        .isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Day of the week needs to be provided when selecting weekly or bi-weekly operation.");
+        });
 
     verify(recurringTransactionRepository, never()).save(any());
   }
@@ -80,8 +95,13 @@ public class CreateRecurringTransactionServiceImplTest {
 
     // Act & Assert
     assertThatThrownBy(() -> recurringTransactionService.createRecurringTransaction(command))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Day of the week needs to be provided when selecting weekly or bi-weekly operation.");
+        .isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Day of the week needs to be provided when selecting weekly or bi-weekly operation.");
+        });
   }
 
   @Test
@@ -92,8 +112,13 @@ public class CreateRecurringTransactionServiceImplTest {
 
     // Act & Assert
     assertThatThrownBy(() -> recurringTransactionService.createRecurringTransaction(command))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Day of the month needs to be provided when selecting annual operation.");
+        .isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Day of the month needs to be provided when selecting annual operation.");
+        });
   }
 
   @Test
@@ -104,8 +129,13 @@ public class CreateRecurringTransactionServiceImplTest {
 
     // Act & Assert
     assertThatThrownBy(() -> recurringTransactionService.createRecurringTransaction(command))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("End date must be after start date.");
+        .isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "End date must be after start date.");
+        });
   }
 
   @Test
@@ -122,8 +152,14 @@ public class CreateRecurringTransactionServiceImplTest {
 
     // Act & Assert
     assertThatThrownBy(() -> recurringTransactionService.createRecurringTransaction(command))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Category type [INCOME] does not match the requested transaction type [EXPENSE].");
+        .isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Category type does not match the requested transaction type. " +
+                  "Please choose another category or you may create a new one.");
+        });
   }
 
   @Test
@@ -144,7 +180,13 @@ public class CreateRecurringTransactionServiceImplTest {
 
     // Act & Assert
     assertThatThrownBy(() -> recurringTransactionService.createRecurringTransaction(command))
-        .isInstanceOf(IllegalStateException.class);
+        .isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Cannot perform the requested action on a [CLOSED] account.");
+        });
   }
 
   @Test

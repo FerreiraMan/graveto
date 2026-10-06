@@ -5,6 +5,7 @@ import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.ferreira.graveto.common.util.TemporalConfigValidator;
+import me.ferreira.graveto.common.web.exception.common.InvalidRequestException;
 import me.ferreira.graveto.common.web.exception.moneytracker.RecurringTransferNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
@@ -41,7 +42,9 @@ public class RecurringTransferServiceImpl implements RecurringTransferService {
         command.dayOfMonth());
 
     if (command.sourceAccountSid().equals(command.destinationAccountSid())) {
-      throw new IllegalArgumentException("Source and destination accounts cannot be the same.");
+      throw new InvalidRequestException(
+          "User [%s] failed to create transfer with same destination account.".formatted(command.userSid()),
+          "Source and destination accounts cannot be the same. Please choose another destination account.");
     }
 
     final Account sourceAccount = accountService.fetchAccountEntity(command.sourceAccountSid());
@@ -76,7 +79,8 @@ public class RecurringTransferServiceImpl implements RecurringTransferService {
 
     final RecurringTransfer existingRecurringTransfer =
         recurringTransferRepository.findBySid(command.sid())
-            .orElseThrow(() -> new RecurringTransferNotFoundException(command.sid()));
+            .orElseThrow(() -> new RecurringTransferNotFoundException(
+                "Recurring transfer [%s] not found for user [%s].".formatted(command.sid(), command.userSid())));
 
     existingRecurringTransfer.getSourceAccount()
         .validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction,
@@ -127,7 +131,8 @@ public class RecurringTransferServiceImpl implements RecurringTransferService {
 
     final RecurringTransfer existingRecurringTransfer =
         recurringTransferRepository.findBySid(command.sid())
-            .orElseThrow(() -> new RecurringTransferNotFoundException(command.sid()));
+            .orElseThrow(() -> new RecurringTransferNotFoundException(
+                "Recurring transfer [%s] not found for user [%s].".formatted(command.sid(), command.userSid())));
 
     existingRecurringTransfer.getSourceAccount()
         .validateUserPermission(command.userSid(), MembershipRole::canUpdateTransaction,

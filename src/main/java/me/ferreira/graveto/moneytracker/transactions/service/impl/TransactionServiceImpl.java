@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import me.ferreira.graveto.common.web.exception.common.BusinessRuleViolationException;
+import me.ferreira.graveto.common.web.exception.common.InvalidRequestException;
 import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFoundException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
@@ -86,7 +88,8 @@ public class TransactionServiceImpl implements TransactionService {
   public Transaction deleteTransaction(final DeleteTransactionCommand command) {
 
     final Transaction transaction = transactionRepository.findBySid(command.transactionSid())
-        .orElseThrow(() -> new TransactionNotFoundException(command.transactionSid()));
+        .orElseThrow(() -> new TransactionNotFoundException(
+            "Transaction [%s] not found for user [%s].".formatted(command.transactionSid(), command.userSid())));
 
     final Account account = transaction.getAccount();
     account.validateIsActive(TX_DELETE_ACTION);
@@ -95,8 +98,9 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.getType() == TransactionType.TRANSFER_IN || transaction.getType() == TransactionType.TRANSFER_OUT;
 
     if (transaction.getCorrelationId() != null || isTransfer) {
-      throw new IllegalStateException(
-          "This transaction is part of a transfer and must be deleted via the Transfer API.");
+      throw new BusinessRuleViolationException(
+          "Not possible to delete transaction [%s] that belongs to transfer [%s].".formatted(transaction.getSid(),
+              transaction.getCorrelationId()), "The specified transaction is part of a transfer.");
     }
 
     account.validateUserPermission(command.userSid(), MembershipRole::canDeleteTransaction, TX_DELETE_ACTION);
@@ -115,7 +119,8 @@ public class TransactionServiceImpl implements TransactionService {
   public Transaction updateTransaction(final UpdateTransactionCommand command) {
 
     final Transaction transaction = transactionRepository.findBySid(command.transactionSid())
-        .orElseThrow(() -> new TransactionNotFoundException(command.transactionSid()));
+        .orElseThrow(() -> new TransactionNotFoundException(
+            "Transaction [%s] not found for user [%s].".formatted(command.transactionSid(), command.userSid())));
 
     validateTransactionTypeInvariants(transaction, command);
 
@@ -188,10 +193,11 @@ public class TransactionServiceImpl implements TransactionService {
                                           final TransactionType transactionType) {
 
     if (categoryTransactionType != transactionType) {
-      throw new IllegalArgumentException(
-          String.format("Category type [%s] does not match the requested transaction type [%s].",
-              categoryTransactionType.name(), transactionType.name())
-      );
+      throw new InvalidRequestException(
+          "Category [%s] and transaction [%s] have different types."
+              .formatted(categoryTransactionType.name(), transactionType.name()),
+          "Category type does not match the requested transaction type. " +
+              "Please choose another category or you may create a new one.");
     }
   }
 
@@ -199,14 +205,15 @@ public class TransactionServiceImpl implements TransactionService {
                                                  final UpdateTransactionCommand command) {
 
     if (transaction.getCorrelationId() != null) {
-      throw new IllegalStateException(
-          "This transaction is part of a transfer and must be updated via the Transfer API.");
+      throw new BusinessRuleViolationException(
+          "Not possible to update transaction [%s] that belongs to transfer [%s].".formatted(transaction.getSid(),
+              transaction.getCorrelationId()), "The specified transaction is part of a transfer.");
     }
 
     if (command.transactionType() == TransactionType.TRANSFER_IN
         || command.transactionType() == TransactionType.TRANSFER_OUT) {
-      throw new IllegalArgumentException(
-          "Cannot change a standard transaction into a transfer. Please create a new Transfer instead.");
+      throw new InvalidRequestException(
+          "Not possible to change a standard transaction into a transfer. Please create a new Transfer instead.");
     }
   }
 

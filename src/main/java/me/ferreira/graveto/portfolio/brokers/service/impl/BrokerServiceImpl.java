@@ -61,7 +61,9 @@ public class BrokerServiceImpl implements BrokerService {
   public BrokerDetails fetchBroker(final FetchBrokerCommand command) {
 
     final Broker broker = brokerRepository.findBySidAndUserSid(command.sid(), command.userSid())
-        .orElseThrow(() -> new BrokerNotFoundException(command.sid()));
+        .orElseThrow(() -> new BrokerNotFoundException(
+            "Broker [%s] was not found or the requester [%s] has no permission to view it".formatted(command.sid(),
+                command.userSid())));
 
     return buildBrokerDetails(broker);
   }
@@ -71,7 +73,8 @@ public class BrokerServiceImpl implements BrokerService {
   public Broker fetchBrokerEntity(final UUID brokerSid) {
 
     return brokerRepository.findBySid(brokerSid)
-        .orElseThrow(() -> new BrokerNotFoundException(brokerSid));
+        .orElseThrow(() -> new BrokerNotFoundException(
+            "Broker [%s] was not found or the requester has no permission to view it".formatted(brokerSid)));
   }
 
   private BrokerDetails buildBrokerDetails(final Broker broker) {

@@ -10,13 +10,18 @@ import java.util.UUID;
 import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.common.domain.Frequency;
 import me.ferreira.graveto.common.domain.RecurringOperationStatus;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
+import me.ferreira.graveto.common.web.exception.common.BusinessRuleViolationException;
+import me.ferreira.graveto.common.web.exception.common.InvalidRequestException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.AccountStatus;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.NullSource;
+import org.springframework.http.HttpStatus;
 
 public class RecurringTransactionTest {
 
@@ -118,7 +123,13 @@ public class RecurringTransactionTest {
     // Act
     assertThatThrownBy(
         () -> rt.scheduleNextExecutionDate(1L, ChronoUnit.DAYS))
-        .isInstanceOf(IllegalStateException.class).hasMessage("Scheduled operation is not in an active state.");
+        .isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified recurring transaction is not active and cannot be rescheduled.");
+        });
   }
 
   @Test
@@ -268,8 +279,13 @@ public class RecurringTransactionTest {
     // Act
     assertThatThrownBy(
         () -> assertThat(rt.updateStatus(RecurringOperationStatus.COMPLETED)))
-        .isInstanceOf(IllegalStateException.class).hasMessage(
-            "Recurring transaction with status [ACTIVE] cannot have its status manually updated to [COMPLETED].");
+        .isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified recurring transaction cannot have its status manually updated to [COMPLETED].");
+        });
   }
 
   @Test
@@ -281,8 +297,13 @@ public class RecurringTransactionTest {
     // Act
     assertThatThrownBy(
         () -> assertThat(rt.updateStatus(RecurringOperationStatus.ACTIVE)))
-        .isInstanceOf(IllegalStateException.class).hasMessage(
-            "Recurring transaction with status [COMPLETED] cannot have its status manually updated to [ACTIVE].");
+        .isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified recurring transaction cannot have its status manually updated to [ACTIVE].");
+        });
   }
 
   @Test
@@ -375,8 +396,13 @@ public class RecurringTransactionTest {
     // Act
     assertThatThrownBy(
         () -> rt.updateNextExecutionDate(LocalDate.of(2029, 1, 1)))
-        .isInstanceOf(IllegalStateException.class).hasMessage(
-            "Requested execution date [2029-01-01] is after defined end date [2028-01-31].");
+        .isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Requested next execution date needs to happen before defined end date.");
+        });
   }
 
   @Test
@@ -413,8 +439,13 @@ public class RecurringTransactionTest {
 
     // Act & Assert
     assertThatThrownBy(() -> rt.updateDetails("New desc", new BigDecimal("100"), true))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessage("Cannot update a canceled recurring transaction.");
+        .isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified recurring transaction is canceled and cannot be updated.");
+        });
   }
 
   @Test
@@ -438,7 +469,13 @@ public class RecurringTransactionTest {
 
     // Act & Assert
     assertThatThrownBy(() -> rt.updateStatus(RecurringOperationStatus.CANCELED))
-        .isInstanceOf(IllegalStateException.class);
+        .isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified recurring transaction cannot have its status manually updated to [CANCELED].");
+        });
   }
 
   @Test
@@ -505,8 +542,13 @@ public class RecurringTransactionTest {
 
     // Act & Assert
     assertThatThrownBy(rt::markAsCanceled)
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessage("Recurring transaction is already canceled.");
+        .isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified recurring transaction is already canceled.");
+        });
   }
 
   @Test

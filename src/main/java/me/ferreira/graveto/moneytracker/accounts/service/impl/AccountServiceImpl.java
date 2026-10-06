@@ -66,7 +66,8 @@ public class AccountServiceImpl implements AccountService {
   public Account fetchAccountEntity(final UUID accountSid) {
 
     return accountRepository.findBySid(accountSid)
-        .orElseThrow(() -> new AccountNotFoundException(accountSid));
+        .orElseThrow(() -> new AccountNotFoundException(
+            "Account [%s] was not found or the requester has no permission to view it.".formatted(accountSid)));
   }
 
   @Override
@@ -74,7 +75,9 @@ public class AccountServiceImpl implements AccountService {
   public AccountDetails fetchAccount(final FetchAccountCommand command) {
 
     final Account account = accountRepository.findBySidAndUserSid(command.accountSid(), command.userSid())
-        .orElseThrow(() -> new AccountNotFoundException(command.accountSid()));
+        .orElseThrow(() -> new AccountNotFoundException(
+            "Account [%s] was not found or the requester [%s] has no permission to view it.".formatted(
+                command.accountSid(), command.userSid())));
 
     final List<AccountDetails.MembershipDetails> userDetailsList = buildAccountUsersInformation(account);
 
@@ -100,7 +103,9 @@ public class AccountServiceImpl implements AccountService {
   public Account closeAccount(final CloseAccountCommand command) {
 
     final Account account = accountRepository.findBySid(command.accountSid())
-        .orElseThrow(() -> new AccountNotFoundException(command.accountSid()));
+        .orElseThrow(() -> new AccountNotFoundException(
+            "Account [%s] was not found or the requester [%s] has no permission to view it.".formatted(
+                command.accountSid(), command.userSid())));
 
     account.validateUserPermission(command.userSid(), MembershipRole::canCloseAccount, "request closure");
     account.close();
@@ -116,12 +121,16 @@ public class AccountServiceImpl implements AccountService {
   public AccountDetails addMember(final AddMemberToAccountCommand command) {
 
     final Account account = accountRepository.findBySid(command.accountSid())
-        .orElseThrow(() -> new AccountNotFoundException(command.accountSid()));
+        .orElseThrow(() -> new AccountNotFoundException(
+            "Account [%s] was not found or the requester [%s] has no permission to view it.".formatted(
+                command.accountSid(), command.userSid())));
 
     account.validateUserPermission(command.userSid(), MembershipRole::canAddMemberToAccount, "add members");
 
     final UserResponseDto newMemberUser = userApi.fetchUserByEmail(command.email())
-        .orElseThrow(() -> new MemberNotRegisteredException(command.email()));
+        .orElseThrow(
+            () -> new MemberNotRegisteredException(
+                "Failure to add member [%s] on account [%s].".formatted(command.email(), account.getSid())));
 
     final AccountMembership accountNewMembership = AccountMembership.create(
         newMemberUser.sid(),

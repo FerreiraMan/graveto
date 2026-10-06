@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import me.ferreira.graveto.common.web.exception.common.InvalidRequestException;
+import me.ferreira.graveto.common.web.exception.moneytracker.TransferWithInvalidTransactionsException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
@@ -44,7 +46,7 @@ public class TransferServiceImpl implements TransferService {
     final List<Transaction> transferTransactions =
         transactionRepository.findAllByCorrelationId(command.correlationId());
 
-    validateTransferIntegrity(transferTransactions);
+    validateTransferIntegrity(command.correlationId(), transferTransactions);
 
     final Transaction out =
         transferTransactions.get(0).getType() == TransactionType.TRANSFER_OUT ? transferTransactions.get(0) :
@@ -64,7 +66,9 @@ public class TransferServiceImpl implements TransferService {
   public TransferResult createTransfer(final CreateTransferCommand command) {
 
     if (command.sourceAccountSid().equals(command.destinationAccountSid())) {
-      throw new IllegalArgumentException("Source and destination accounts cannot be the same.");
+      throw new InvalidRequestException(
+          "User [%s] failed to create transfer with same destination account.".formatted(command.userSid()),
+          "Source and destination accounts cannot be the same. Please choose another destination account.");
     }
 
     final UUID userSid = command.userSid();
@@ -119,7 +123,7 @@ public class TransferServiceImpl implements TransferService {
     final List<Transaction> transferTransactions =
         transactionRepository.findAllByCorrelationId(command.correlationId());
 
-    validateTransferIntegrity(transferTransactions);
+    validateTransferIntegrity(command.correlationId(), transferTransactions);
 
     final Transaction out =
         transferTransactions.get(0).getType() == TransactionType.TRANSFER_OUT ? transferTransactions.get(0) :
@@ -152,7 +156,7 @@ public class TransferServiceImpl implements TransferService {
     final List<Transaction> transferTransactions =
         transactionRepository.findAllByCorrelationId(command.correlationId());
 
-    validateTransferIntegrity(transferTransactions);
+    validateTransferIntegrity(command.correlationId(), transferTransactions);
 
     final Transaction out =
         transferTransactions.get(0).getType() == TransactionType.TRANSFER_OUT ? transferTransactions.get(0) :
@@ -191,10 +195,12 @@ public class TransferServiceImpl implements TransferService {
     return new TransferResult(out, in);
   }
 
-  private void validateTransferIntegrity(final List<Transaction> transactions) {
+  private void validateTransferIntegrity(final UUID correlationId, final List<Transaction> transactions) {
 
     if (transactions.size() != 2) {
-      throw new IllegalStateException("Transfer is associated with an incorrect amount of transactions.");
+      throw new TransferWithInvalidTransactionsException(
+          "Transfer with correlation ID [%s] has an unprocessable amount [%d] of related transactions."
+              .formatted(correlationId, transactions.size()));
     }
 
     final Transaction first = transactions.get(0);
@@ -205,7 +211,9 @@ public class TransferServiceImpl implements TransferService {
             || (first.getType() == TransactionType.TRANSFER_IN && second.getType() == TransactionType.TRANSFER_OUT);
 
     if (!hasCorrectTypes) {
-      throw new IllegalStateException("Corrupted transfer does not contain exactly one IN and one OUT transaction.");
+      throw new TransferWithInvalidTransactionsException(
+          "Transfer with correlation ID [%s] has transactions with incorrect types - [%s] and [%s]."
+              .formatted(correlationId, first.getType().name(), second.getType().name()));
     }
   }
 

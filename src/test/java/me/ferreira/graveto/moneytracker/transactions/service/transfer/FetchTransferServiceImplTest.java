@@ -7,7 +7,10 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
+import me.ferreira.graveto.common.web.exception.common.BusinessRuleViolationException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
+import me.ferreira.graveto.common.web.exception.moneytracker.TransferWithInvalidTransactionsException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
 import me.ferreira.graveto.moneytracker.accounts.service.AccountService;
@@ -19,11 +22,13 @@ import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.Fe
 import me.ferreira.graveto.moneytracker.transactions.service.impl.TransferServiceImpl;
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.payload.TransferResult;
 import me.ferreira.graveto.moneytracker.utils.AccountUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class FetchTransferServiceImplTest {
@@ -48,8 +53,14 @@ public class FetchTransferServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.fetchTransfer(command);
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessage("Transfer is associated with an incorrect amount of transactions.");
+    }).isInstanceOf(TransferWithInvalidTransactionsException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Something went wrong while processing the request on the specified transfer. " +
+                  "Please contact support.");
+        });
   }
 
   @Test
@@ -70,8 +81,14 @@ public class FetchTransferServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.fetchTransfer(command);
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessage("Corrupted transfer does not contain exactly one IN and one OUT transaction.");
+    }).isInstanceOf(TransferWithInvalidTransactionsException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Something went wrong while processing the request on the specified transfer. " +
+                  "Please contact support.");
+        });
   }
 
   @Test
@@ -96,7 +113,12 @@ public class FetchTransferServiceImplTest {
     assertThatThrownBy(() -> {
       service.fetchTransfer(command);
     }).isInstanceOf(InsufficientPermissionsOnAccountException.class)
-        .hasMessage("User does not have the required role to read transfer transactions for this account.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo("You do not have the required role to perform this action.");
+        });
   }
 
   @Test

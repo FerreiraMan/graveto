@@ -18,6 +18,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import me.ferreira.graveto.common.jpa.BaseEntity;
+import me.ferreira.graveto.common.web.exception.common.BusinessRuleViolationException;
 import me.ferreira.graveto.portfolio.assets.domain.Asset;
 import me.ferreira.graveto.portfolio.brokers.domain.Broker;
 import me.ferreira.graveto.portfolio.orders.domain.OrderType;
@@ -61,8 +62,8 @@ public class Position extends BaseEntity {
                                 final BigDecimal quantity, final BigDecimal pricePerUnit, final BigDecimal fees) {
 
     if (!orderType.isBuyOrder()) {
-      throw new IllegalStateException(
-          "Cannot create a position from a SELL order — position must exist before selling.");
+      throw new BusinessRuleViolationException(
+          "Cannot create a position from a SELL order - position must exist before selling.");
     }
 
     final Position position = new Position();

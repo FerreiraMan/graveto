@@ -42,14 +42,11 @@ public class RegisterControllerTest {
 
   private static Stream<Arguments> invalidRegisterRequests() {
     return Stream.of(
-        // Email constraints
         Arguments.of(new RegisterRequestDto("  ", "password123"), "email"),
         Arguments.of(new RegisterRequestDto("", "password123"), "email"),
         Arguments.of(new RegisterRequestDto(null, "password123"), "email"),
         Arguments.of(new RegisterRequestDto("not-an-email", "password123"), "email"),
         Arguments.of(new RegisterRequestDto("email@email@", "password123"), "email"),
-
-        // Password constraints
         Arguments.of(new RegisterRequestDto("test@graveto.com", "    "), "password"),
         Arguments.of(new RegisterRequestDto("test@graveto.com", ""), "password"),
         Arguments.of(new RegisterRequestDto("test@graveto.com", null), "password"),
@@ -116,9 +113,7 @@ public class RegisterControllerTest {
     // Arrange
     final RegisterRequestDto request = new RegisterRequestDto("test@graveto.com", "password123");
 
-    // Simulate the DB rejecting the duplicate email
-    when(service.register(any(RegisterCommand.class)))
-        .thenThrow(new UserAlreadyExistsException()); // Assuming this is your custom exception
+    when(service.register(any(RegisterCommand.class))).thenThrow(new UserAlreadyExistsException("loggableMessage"));
 
     // Act & Assert
     final MvcTestResult testResult = mvc.post()
@@ -127,8 +122,9 @@ public class RegisterControllerTest {
         .contentType(MediaType.APPLICATION_JSON)
         .exchange();
 
-    // Assuming your @RestControllerAdvice maps this specific exception to a 409
-    assertThat(testResult).hasStatus(HttpStatus.CONFLICT);
+    assertThat(testResult).hasStatus(HttpStatus.CONFLICT).bodyJson()
+        .extractingPath("$.detail").asString()
+        .isEqualTo("An account with this email already exists.");
   }
 
   @ParameterizedTest

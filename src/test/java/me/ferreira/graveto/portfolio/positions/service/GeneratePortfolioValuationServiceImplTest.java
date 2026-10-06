@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import me.ferreira.graveto.common.domain.Currency;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
 import me.ferreira.graveto.common.web.exception.portfolio.InsufficientPermissionsOnBrokerException;
 import me.ferreira.graveto.portfolio.assets.domain.Asset;
 import me.ferreira.graveto.portfolio.assets.domain.AssetType;
@@ -21,11 +22,13 @@ import me.ferreira.graveto.portfolio.positions.repository.PositionRepository;
 import me.ferreira.graveto.portfolio.positions.service.command.FetchPortfolioOverviewCommand;
 import me.ferreira.graveto.portfolio.positions.service.impl.PositionServiceImpl;
 import me.ferreira.graveto.portfolio.positions.service.payload.PortfolioSummary;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class GeneratePortfolioValuationServiceImplTest {
@@ -49,7 +52,13 @@ public class GeneratePortfolioValuationServiceImplTest {
 
     // Act & Assert
     assertThatThrownBy(() -> positionService.generatePortfolioValuationOverview(command))
-        .isInstanceOf(InsufficientPermissionsOnBrokerException.class);
+        .isInstanceOf(InsufficientPermissionsOnBrokerException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo("You do not have the required role to perform this action.");
+        });
   }
 
   @Test

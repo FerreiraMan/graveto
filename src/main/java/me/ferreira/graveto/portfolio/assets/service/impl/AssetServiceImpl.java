@@ -60,7 +60,8 @@ public class AssetServiceImpl implements AssetService {
     final String[] assetRepresentation = command.symbol().split("\\.");
 
     if (assetRepresentation.length < 2) {
-      throw new InvalidExchangeException();
+      throw new InvalidExchangeException(
+          "User [%s] failed to create asset [%s]".formatted(command.userSid(), command.symbol()));
     }
 
     final String ticker = assetRepresentation[0].toUpperCase();
@@ -86,7 +87,7 @@ public class AssetServiceImpl implements AssetService {
   public Asset fetchAsset(final FetchAssetCommand command) {
 
     return assetRepository.findBySid(command.sid())
-        .orElseThrow(() -> new AssetNotFoundException(command.sid()));
+        .orElseThrow(() -> new AssetNotFoundException("Asset [%s] not found.".formatted(command.sid())));
   }
 
   @Override

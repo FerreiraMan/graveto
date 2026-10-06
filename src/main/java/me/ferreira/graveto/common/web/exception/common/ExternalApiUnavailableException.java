@@ -1,7 +1,12 @@
 package me.ferreira.graveto.common.web.exception.common;
 
-public class ExternalApiUnavailableException extends RuntimeException {
-  public ExternalApiUnavailableException(final int statusCode) {
-    super("Upstream server is currently unavailable. HTTP status code: " + statusCode);
+import me.ferreira.graveto.common.web.exception.ApplicationException;
+import org.slf4j.event.Level;
+import org.springframework.http.HttpStatus;
+
+public class ExternalApiUnavailableException extends ApplicationException {
+  public ExternalApiUnavailableException(final String loggableMessage) {
+    super(loggableMessage, HttpStatus.BAD_GATEWAY, "An error occurred during the request to the external server.",
+        Level.ERROR);
   }
 }

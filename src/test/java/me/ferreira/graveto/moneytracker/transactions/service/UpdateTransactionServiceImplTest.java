@@ -11,6 +11,9 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
+import me.ferreira.graveto.common.web.exception.common.BusinessRuleViolationException;
+import me.ferreira.graveto.common.web.exception.common.InvalidRequestException;
 import me.ferreira.graveto.common.web.exception.moneytracker.CategoryNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.common.web.exception.moneytracker.TransactionNotFoundException;
@@ -28,6 +31,7 @@ import me.ferreira.graveto.moneytracker.transactions.service.command.UpdateTrans
 import me.ferreira.graveto.moneytracker.transactions.service.impl.TransactionServiceImpl;
 import me.ferreira.graveto.moneytracker.utils.AccountUtils;
 import me.ferreira.graveto.moneytracker.utils.CategoryUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -37,6 +41,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class UpdateTransactionServiceImplTest {
@@ -107,15 +112,18 @@ public class UpdateTransactionServiceImplTest {
   @Test
   void shouldThrowIfTransactionIsNotFoundDuringTransactionUpdate() {
     // Arrange
-    final UUID transactionSid = UUID.randomUUID();
-
-    when(transactionRepository.findBySid(any())).thenThrow(new TransactionNotFoundException(transactionSid));
+    when(transactionRepository.findBySid(any())).thenThrow(new TransactionNotFoundException("loggableMessage"));
 
     // Act & Assert
     assertThatThrownBy(() -> {
       service.updateTransaction(Mockito.mock(UpdateTransactionCommand.class));
     }).isInstanceOf(TransactionNotFoundException.class)
-        .hasMessage("Transaction with SID [" + transactionSid + "] was not found.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "This transaction is no longer available. It may have been removed, or you may not have access to it.");
+        });
   }
 
   @Test
@@ -141,8 +149,13 @@ public class UpdateTransactionServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.updateTransaction(command);
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessage("Cannot update transactions. The account is currently CLOSED.");
+    }).isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Cannot perform the requested action on a [CLOSED] account.");
+        });
   }
 
   @Test
@@ -156,8 +169,13 @@ public class UpdateTransactionServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.updateTransaction(Mockito.mock(UpdateTransactionCommand.class));
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessage("This transaction is part of a transfer and must be updated via the Transfer API.");
+    }).isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified transaction is part of a transfer.");
+        });
   }
 
   @Test
@@ -173,8 +191,14 @@ public class UpdateTransactionServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.updateTransaction(command);
-    }).isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Cannot change a standard transaction into a transfer. Please create a new Transfer instead.");
+    }).isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Not possible to change a standard transaction into a transfer. " +
+                  "Please create a new Transfer instead.");
+        });
   }
 
   @Test
@@ -190,8 +214,14 @@ public class UpdateTransactionServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.updateTransaction(command);
-    }).isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Cannot change a standard transaction into a transfer. Please create a new Transfer instead.");
+    }).isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Not possible to change a standard transaction into a transfer. " +
+                  "Please create a new Transfer instead.");
+        });
   }
 
   @Test
@@ -210,7 +240,12 @@ public class UpdateTransactionServiceImplTest {
     assertThatThrownBy(() -> {
       service.updateTransaction(command);
     }).isInstanceOf(InsufficientPermissionsOnAccountException.class)
-        .hasMessage("User does not have the required role to update transactions for this account.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo("You do not have the required role to perform this action.");
+        });
   }
 
   @Test
@@ -228,13 +263,19 @@ public class UpdateTransactionServiceImplTest {
         new UpdateTransactionCommand(userSid, null, null, categorySid, null, null, null);
 
     when(transactionRepository.findBySid(any())).thenReturn(Optional.of(transaction));
-    when(categoryService.fetchCategory(any())).thenThrow(new CategoryNotFoundException(categorySid));
+    when(categoryService.fetchCategory(any())).thenThrow(new CategoryNotFoundException("loggableMessage"));
 
     // Act & Assert
     assertThatThrownBy(() -> {
       service.updateTransaction(command);
     }).isInstanceOf(CategoryNotFoundException.class)
-        .hasMessage("Category with SID [" + categorySid + "] was not found or does not belong to the account.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified category is no longer available. " +
+                  "It may have been removed, or you may not have access to it.");
+        });
   }
 
   @Test
@@ -261,8 +302,13 @@ public class UpdateTransactionServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.updateTransaction(command);
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessage("Cannot update a deleted transaction.");
+    }).isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified transaction is deleted and cannot be updated.");
+        });
   }
 
   @Test
@@ -292,9 +338,14 @@ public class UpdateTransactionServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.updateTransaction(command);
-    }).isInstanceOf(IllegalArgumentException.class)
-        .hasMessage(String.format("Category type [%s] does not match the requested transaction type [%s].",
-            category.getTransactionType().name(), command.transactionType().name()));
+    }).isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Category type does not match the requested transaction type. " +
+                  "Please choose another category or you may create a new one.");
+        });
   }
 
   @Test
@@ -322,9 +373,14 @@ public class UpdateTransactionServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.updateTransaction(command);
-    }).isInstanceOf(IllegalArgumentException.class)
-        .hasMessage(String.format("Category type [%s] does not match the requested transaction type [%s].",
-            persistedCategory.getTransactionType().name(), command.transactionType().name()));
+    }).isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Category type does not match the requested transaction type. " +
+                  "Please choose another category or you may create a new one.");
+        });
   }
 
   @Test

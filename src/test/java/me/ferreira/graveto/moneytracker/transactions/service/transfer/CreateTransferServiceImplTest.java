@@ -2,6 +2,7 @@ package me.ferreira.graveto.moneytracker.transactions.service.transfer;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -9,6 +10,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
+import me.ferreira.graveto.common.web.exception.common.BusinessRuleViolationException;
+import me.ferreira.graveto.common.web.exception.common.InvalidRequestException;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
@@ -26,12 +30,14 @@ import me.ferreira.graveto.moneytracker.transactions.service.impl.TransferServic
 import me.ferreira.graveto.moneytracker.transactions.service.transfer.payload.TransferResult;
 import me.ferreira.graveto.moneytracker.utils.AccountUtils;
 import me.ferreira.graveto.moneytracker.utils.CategoryUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class CreateTransferServiceImplTest {
@@ -63,8 +69,13 @@ public class CreateTransferServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.createTransfer(command);
-    }).isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Source and destination accounts cannot be the same.");
+    }).isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Source and destination accounts cannot be the same. Please choose another destination account.");
+        });
   }
 
   @Test
@@ -78,12 +89,18 @@ public class CreateTransferServiceImplTest {
         userSid, sourceSid, destSid, BigDecimal.TEN, "Test", LocalDateTime.now()
     );
 
-    when(accountService.fetchAccountEntity(sourceSid)).thenThrow(new AccountNotFoundException(sourceSid));
+    when(accountService.fetchAccountEntity(sourceSid)).thenThrow(new AccountNotFoundException(any()));
 
     // Act & Assert
     assertThatThrownBy(() -> service.createTransfer(command))
         .isInstanceOf(AccountNotFoundException.class)
-        .hasMessage("Account with SID [" + sourceSid + "] was not found or you do not have permission to view it.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified account is no longer available. " +
+                  "It may have been removed, or you may not have access to it.");
+        });
   }
 
   @Test
@@ -105,8 +122,13 @@ public class CreateTransferServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> {
       service.createTransfer(command);
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessage("Cannot create transfer transactions. The account is currently CLOSED.");
+    }).isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Cannot perform the requested action on a [CLOSED] account.");
+        });
   }
 
   @Test
@@ -128,7 +150,12 @@ public class CreateTransferServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> service.createTransfer(command))
         .isInstanceOf(InsufficientPermissionsOnAccountException.class)
-        .hasMessage("User does not have the required role to create transfer transactions for this account.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo("You do not have the required role to perform this action.");
+        });
   }
 
   @Test

@@ -10,12 +10,17 @@ import java.util.UUID;
 import me.ferreira.graveto.common.domain.Currency;
 import me.ferreira.graveto.common.domain.Frequency;
 import me.ferreira.graveto.common.domain.RecurringOperationStatus;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
+import me.ferreira.graveto.common.web.exception.common.BusinessRuleViolationException;
+import me.ferreira.graveto.common.web.exception.common.InvalidRequestException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.accounts.domain.AccountStatus;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.NullSource;
+import org.springframework.http.HttpStatus;
 
 public class RecurringTransferTest {
 
@@ -104,8 +109,13 @@ public class RecurringTransferTest {
     // Act
     assertThatThrownBy(
         () -> rt.scheduleNextExecutionDate(1L, ChronoUnit.DAYS))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessage("Scheduled operation is not in an active state.");
+        .isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified recurring transfer is not active and cannot be rescheduled.");
+        });
   }
 
   @Test
@@ -223,8 +233,13 @@ public class RecurringTransferTest {
     rt.setStatus(RecurringOperationStatus.CANCELED);
     // Act & Assert
     assertThatThrownBy(() -> rt.updateDetails("New desc", new BigDecimal("100"), true))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessage("Cannot update a canceled recurring transfer.");
+        .isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified recurring transfer is canceled and cannot be updated.");
+        });
   }
 
   @Test
@@ -245,7 +260,13 @@ public class RecurringTransferTest {
     final RecurringTransfer rt = buildRecurringTransfer(LocalDate.of(2026, 7, 10), null);
     // Act & Assert
     assertThatThrownBy(() -> rt.updateStatus(RecurringOperationStatus.CANCELED))
-        .isInstanceOf(IllegalStateException.class);
+        .isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified recurring transfer cannot have its status manually updated to [CANCELED].");
+        });
   }
 
   @ParameterizedTest
@@ -265,8 +286,13 @@ public class RecurringTransferTest {
     // Act
     assertThatThrownBy(
         () -> assertThat(rt.updateStatus(RecurringOperationStatus.COMPLETED)))
-        .isInstanceOf(IllegalStateException.class).hasMessage(
-            "Recurring transfer with status [ACTIVE] cannot have its status manually updated to [COMPLETED].");
+        .isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified recurring transfer cannot have its status manually updated to [COMPLETED].");
+        });
   }
 
   @Test
@@ -277,8 +303,13 @@ public class RecurringTransferTest {
     // Act
     assertThatThrownBy(
         () -> assertThat(rt.updateStatus(RecurringOperationStatus.ACTIVE)))
-        .isInstanceOf(IllegalStateException.class).hasMessage(
-            "Recurring transfer with status [COMPLETED] cannot have its status manually updated to [ACTIVE].");
+        .isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified recurring transfer cannot have its status manually updated to [ACTIVE].");
+        });
   }
 
   @Test
@@ -373,8 +404,13 @@ public class RecurringTransferTest {
     // Act
     assertThatThrownBy(
         () -> rt.updateNextExecutionDate(LocalDate.of(2029, 1, 1)))
-        .isInstanceOf(IllegalStateException.class).hasMessage(
-            "Requested execution date [2029-01-01] is after defined end date [2028-01-31].");
+        .isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Requested next execution date needs to happen before defined end date.");
+        });
   }
 
   @Test
@@ -444,8 +480,13 @@ public class RecurringTransferTest {
 
     // Act & Assert
     assertThatThrownBy(rt::markAsCanceled)
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessage("Recurring transfer is already canceled.");
+        .isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified recurring transfer is already canceled.");
+        });
   }
 
   @Test

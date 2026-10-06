@@ -7,17 +7,20 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
 import me.ferreira.graveto.common.web.exception.identity.InvalidResetPasswordTokenException;
 import me.ferreira.graveto.identity.domain.User;
 import me.ferreira.graveto.identity.repository.UserRepository;
 import me.ferreira.graveto.identity.service.command.ResetPasswordCommand;
 import me.ferreira.graveto.identity.service.impl.AuthServiceImpl;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,7 +45,11 @@ public class ResetPasswordServiceImplTest {
     // Act & Assert
     assertThatThrownBy(() -> service.resetPassword(command))
         .isInstanceOf(InvalidResetPasswordTokenException.class)
-        .hasMessage("Unable to process password reset request.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo("Unable to process password reset request.");
+        });
   }
 
   @Test

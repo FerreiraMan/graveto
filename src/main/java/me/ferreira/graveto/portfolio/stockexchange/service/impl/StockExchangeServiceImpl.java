@@ -20,7 +20,8 @@ public class StockExchangeServiceImpl implements StockExchangeService {
   public StockExchange fetchStockExchange(final FetchStockExchangeCommand command) {
 
     return stockExchangeRepository.findBySuffix(command.suffix())
-        .orElseThrow(() -> new StockExchangeNotFoundException(command.suffix()));
+        .orElseThrow(() -> new StockExchangeNotFoundException(
+            "Stock exchange with suffix [%s] was not found.".formatted(command.suffix())));
   }
 
 }

@@ -5,9 +5,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.UUID;
 import me.ferreira.graveto.common.domain.Currency;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
 import me.ferreira.graveto.common.web.exception.portfolio.InsufficientPermissionsOnBrokerException;
 import me.ferreira.graveto.common.web.exception.portfolio.UserAlreadyBrokerMemberException;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 
 public class BrokerTest {
 
@@ -64,7 +67,13 @@ public class BrokerTest {
 
     // Act & Assert
     assertThatThrownBy(() -> broker.addMembership(BrokerMembership.create(userSid, BrokerMembershipRole.VIEWER)))
-        .isInstanceOf(UserAlreadyBrokerMemberException.class);
+        .isInstanceOf(UserAlreadyBrokerMemberException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo("This user is already a member of the broker.");
+        });
   }
 
   @Test
@@ -78,7 +87,12 @@ public class BrokerTest {
     assertThatThrownBy(() ->
         broker.validateUserPermission(userSid, BrokerMembershipRole::canCreateOrders, "create orders"))
         .isInstanceOf(InsufficientPermissionsOnBrokerException.class)
-        .hasMessage("User does not have the required role to create orders for this broker account.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo("You do not have the required role to perform this action.");
+        });
   }
 
   @Test
@@ -89,7 +103,13 @@ public class BrokerTest {
     // Act & Assert
     assertThatThrownBy(() ->
         broker.validateUserPermission(UUID.randomUUID(), BrokerMembershipRole::canCreateOrders, "create orders"))
-        .isInstanceOf(InsufficientPermissionsOnBrokerException.class);
+        .isInstanceOf(InsufficientPermissionsOnBrokerException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo("You do not have the required role to perform this action.");
+        });
   }
 
 }

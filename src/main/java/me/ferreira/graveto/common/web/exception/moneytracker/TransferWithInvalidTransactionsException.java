@@ -4,10 +4,10 @@ import me.ferreira.graveto.common.web.exception.ApplicationException;
 import org.slf4j.event.Level;
 import org.springframework.http.HttpStatus;
 
-public class AccountWithInvalidOpeningBalanceException extends ApplicationException {
-  public AccountWithInvalidOpeningBalanceException(final String loggableMessage) {
+public class TransferWithInvalidTransactionsException extends ApplicationException {
+  public TransferWithInvalidTransactionsException(final String loggableMessage) {
     super(loggableMessage, HttpStatus.INTERNAL_SERVER_ERROR,
-        "Something went wrong while processing the cash flow report. Please try again later or contact support.",
+        "Something went wrong while processing the request on the specified transfer. Please contact support.",
         Level.ERROR);
   }
 }

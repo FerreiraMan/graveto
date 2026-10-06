@@ -10,6 +10,8 @@ import java.math.BigDecimal;
 import java.time.Year;
 import java.util.List;
 import java.util.UUID;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
+import me.ferreira.graveto.common.web.exception.common.InvalidRequestException;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
@@ -25,11 +27,13 @@ import me.ferreira.graveto.moneytracker.transactions.domain.projection.CategoryA
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.GenerateCategoryAggregateCommand;
 import me.ferreira.graveto.moneytracker.utils.AccountUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
 public class GenerateCategorySpendingReportServiceImplTest {
@@ -53,22 +57,31 @@ public class GenerateCategorySpendingReportServiceImplTest {
 
     // Act & Assert
     assertThatThrownBy(() -> service.generateCategorySpendingReport(command))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Requested year must be present or past occurrence.");
+        .isInstanceOf(InvalidRequestException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+          Assertions.assertThat(ae.getSafeMessage()).isEqualTo(
+              "Requested year must be present or past occurrence.");
+        });
   }
 
   @Test
   void shouldThrowIfAccountIsNotFoundDuringCategorySpendingGeneration() {
     // Arrange
-    final UUID accountSid = UUID.randomUUID();
-
-    when(accountService.fetchAccountEntity(any())).thenThrow(new AccountNotFoundException(accountSid));
+    when(accountService.fetchAccountEntity(any())).thenThrow(new AccountNotFoundException("loggableMessage"));
 
     // Act & Assert
     assertThatThrownBy(() -> {
       service.generateCategorySpendingReport(mock(CategorySpendingCommand.class));
     }).isInstanceOf(AccountNotFoundException.class)
-        .hasMessage("Account with SID [" + accountSid + "] was not found or you do not have permission to view it.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          assertThat(ae.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+          assertThat(ae.getSafeMessage()).isEqualTo(
+              "The specified account is no longer available. " +
+                  "It may have been removed, or you may not have access to it.");
+        });
   }
 
   @Test
@@ -85,7 +98,12 @@ public class GenerateCategorySpendingReportServiceImplTest {
     assertThatThrownBy(() -> {
       service.generateCategorySpendingReport(command);
     }).isInstanceOf(InsufficientPermissionsOnAccountException.class)
-        .hasMessage("User does not have the required role to request category spending report for this account.");
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo("You do not have the required role to perform this action.");
+        });
   }
 
   @Test

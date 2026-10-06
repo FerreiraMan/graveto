@@ -1,9 +1,13 @@
 package me.ferreira.graveto.common.web.exception.portfolio;
 
-import java.util.UUID;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
+import org.slf4j.event.Level;
+import org.springframework.http.HttpStatus;
 
-public class PositionNotFoundException extends RuntimeException {
-  public PositionNotFoundException(final UUID positionSid) {
-    super("Position with SID [" + positionSid + "] was not found or you do not have permission to view it.");
+public class PositionNotFoundException extends ApplicationException {
+  public PositionNotFoundException(final String loggableMessage) {
+    super(loggableMessage, HttpStatus.NOT_FOUND,
+        "This position is no longer available. It may have been removed, or you may not have access to it.",
+        Level.WARN);
   }
 }
