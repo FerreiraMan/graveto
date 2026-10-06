@@ -16,6 +16,7 @@ public record RecurringTransferResponseDto(
     BigDecimal amount,
     String currency,
     String frequency,
+    Boolean adjustToBusinessDay,
     String nextExecutionDate,
     String status,
     String endDate
@@ -39,6 +40,7 @@ public record RecurringTransferResponseDto(
         recurringTransfer.getAmount(),
         recurringTransfer.getCurrency().name(),
         recurringTransfer.getFrequency().name(),
+        recurringTransfer.getAdjustToBusinessDay(),
         recurringTransfer.getNextExecutionDate().format(DateTimeFormatter.ISO_LOCAL_DATE),
         recurringTransfer.getStatus().name(),
         recurringTransfer.getEndDate() == null ? null :
