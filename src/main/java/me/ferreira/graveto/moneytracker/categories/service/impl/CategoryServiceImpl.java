@@ -63,6 +63,12 @@ public class CategoryServiceImpl implements CategoryService {
   }
 
   @Override
+  @Transactional(readOnly = true)
+  public List<Category> fetchCategoryAndAllDescendants(final UUID categorySid, final UUID accountSid) {
+    return categoryRepository.findCategoryAndAllDescendants(categorySid, accountSid);
+  }
+
+  @Override
   @Transactional
   public Category createCategory(final CreateCategoryCommand command) {
 

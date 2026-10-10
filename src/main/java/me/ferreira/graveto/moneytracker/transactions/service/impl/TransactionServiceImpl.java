@@ -3,6 +3,8 @@ package me.ferreira.graveto.moneytracker.transactions.service.impl;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.ferreira.graveto.common.web.exception.common.BusinessRuleViolationException;
@@ -20,6 +22,7 @@ import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.domain.projection.CategoryAggregateProjection;
 import me.ferreira.graveto.moneytracker.transactions.domain.projection.MonthlyAggregateProjection;
 import me.ferreira.graveto.moneytracker.transactions.repository.TransactionRepository;
+import me.ferreira.graveto.moneytracker.transactions.repository.TransactionSearchCriteria;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
 import me.ferreira.graveto.moneytracker.transactions.service.command.CreateTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.service.command.DeleteTransactionCommand;
@@ -37,6 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class TransactionServiceImpl implements TransactionService {
 
   private static final String TX_CREATE_ACTION = "create transactions";
+  private static final String TX_READ_ACTION = "read transactions";
   private static final String TX_DELETE_ACTION = "delete transactions";
   private static final String TX_UPDATE_ACTION = "update transactions";
 
@@ -78,9 +82,15 @@ public class TransactionServiceImpl implements TransactionService {
   @Transactional(readOnly = true)
   public Page<Transaction> findAll(final FindAllTransactionsCommand command) {
 
-    accountService.fetchAccountEntity(command.accountSid());
+    accountService.fetchAccountEntity(command.accountSid())
+        .validateUserPermission(command.userSid(), MembershipRole::canReadTransaction, TX_READ_ACTION);
 
-    return transactionRepository.findAll(command);
+    final Set<Long> categoryAndAllDescendantsIds = command.categorySid() == null ? null :
+        categoryService.fetchCategoryAndAllDescendants(command.categorySid(), command.accountSid()).stream()
+            .map(Category::getId)
+            .collect(Collectors.toSet());
+
+    return transactionRepository.findAll(TransactionSearchCriteria.from(command, categoryAndAllDescendantsIds));
   }
 
   @Override

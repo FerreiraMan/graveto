@@ -22,4 +22,6 @@ public interface CategoryRepository {
 
   boolean existsByNameForAccountOrSystem(String name, UUID accountSid);
 
+  List<Category> findCategoryAndAllDescendants(UUID categorySid, UUID accountSid);
+
 }
