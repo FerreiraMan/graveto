@@ -3,6 +3,7 @@ package me.ferreira.graveto.moneytracker.transactions.repository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Set;
 import java.util.UUID;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account_;
 import me.ferreira.graveto.moneytracker.categories.domain.Category_;
@@ -10,7 +11,6 @@ import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction_;
-import me.ferreira.graveto.moneytracker.transactions.service.command.FindAllTransactionsCommand;
 import org.springframework.data.jpa.domain.PredicateSpecification;
 
 public class TransactionsSpecs {
@@ -28,15 +28,14 @@ public class TransactionsSpecs {
         );
   }
 
-  public static PredicateSpecification<Transaction> hasCategory(final UUID categorySid) {
+  public static PredicateSpecification<Transaction> hasCategoryIn(final Set<Long> categoryIds) {
 
-    if (categorySid == null) {
+    if (categoryIds == null) {
       return PredicateSpecification.unrestricted();
     }
 
     return (from, builder) ->
-        builder.equal(from.join(Transaction_.category).get(Category_.sid), categorySid
-        );
+        from.get(Transaction_.category).get(Category_.id).in(categoryIds);
   }
 
   public static PredicateSpecification<Transaction> withinDateRange(
@@ -81,13 +80,13 @@ public class TransactionsSpecs {
         );
   }
 
-  public static PredicateSpecification<Transaction> buildFromCommand(final FindAllTransactionsCommand command) {
+  public static PredicateSpecification<Transaction> buildPredicate(final TransactionSearchCriteria searchCriteria) {
 
-    return isFromAccount(command.accountSid())
-        .and(hasStatus(command.status()))
-        .and(hasCategory(command.categorySid()))
-        .and(withinDateRange(command.startDate(), command.endDate()))
-        .and(ofType(command.type()));
+    return isFromAccount(searchCriteria.accountSid())
+        .and(hasStatus(searchCriteria.status()))
+        .and(hasCategoryIn(searchCriteria.categoryIds()))
+        .and(withinDateRange(searchCriteria.startDate(), searchCriteria.endDate()))
+        .and(ofType(searchCriteria.type()));
   }
 
 }

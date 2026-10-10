@@ -1,10 +1,12 @@
 package me.ferreira.graveto.moneytracker.transactions;
 
 import static io.restassured.RestAssured.given;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 
 import io.restassured.http.ContentType;
 import java.math.BigDecimal;
@@ -16,6 +18,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
+import me.ferreira.graveto.moneytracker.accounts.domain.AccountMembership;
+import me.ferreira.graveto.moneytracker.accounts.domain.MembershipRole;
 import me.ferreira.graveto.moneytracker.accounts.repository.AccountRepository;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.repository.CategoryRepository;
@@ -26,14 +30,18 @@ import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.repository.TransactionRepository;
 import me.ferreira.graveto.moneytracker.utils.AccountTestFactory;
+import me.ferreira.graveto.moneytracker.utils.CategoryTestFactory;
 import me.ferreira.graveto.moneytracker.utils.TransactionTestFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
 
-@Sql(scripts = {"/moneytracker/sql/delete_all.sql"}, executionPhase = Sql.ExecutionPhase.AFTER_TEST_CLASS)
+@Sql(scripts = {"/moneytracker/sql/delete_all.sql", "/moneytracker/sql/delete_find_all_transactions_categories.sql"},
+    executionPhase = Sql.ExecutionPhase.AFTER_TEST_CLASS)
 public class FindAllTransactionsIT extends MoneyTrackerBaseIntegrationTest {
+
+  private static final String CATEGORY_PREFIX = "FindAllTxIT-";
 
   private static final UUID ACCOUNT_OWNER = UUID.randomUUID();
   private static final UUID SECOND_ACCOUNT_OWNER = UUID.randomUUID();
@@ -41,6 +49,15 @@ public class FindAllTransactionsIT extends MoneyTrackerBaseIntegrationTest {
       AccountTestFactory.createAccountWithOwner(ACCOUNT_OWNER, "BCP", BigDecimal.TEN);
   private static final Account ACCOUNT_2 =
       AccountTestFactory.createAccountWithOwner(SECOND_ACCOUNT_OWNER, "BPI", BigDecimal.ONE);
+
+  private static final UUID TREE_OWNER = UUID.randomUUID();
+  private static final UUID TREE_CONTRIBUTOR = UUID.randomUUID();
+  private static final Account TREE_ACCOUNT =
+      AccountTestFactory.createAccountWithOwner(TREE_OWNER, "Tree bank", BigDecimal.TEN);
+
+  static {
+    TREE_ACCOUNT.addMembership(AccountMembership.create(TREE_CONTRIBUTOR, MembershipRole.CONTRIBUTOR));
+  }
 
   @Autowired
   private TransactionRepository transactionRepository;
@@ -55,16 +72,34 @@ public class FindAllTransactionsIT extends MoneyTrackerBaseIntegrationTest {
   private Transaction guaranteedMatch;
   private Transaction guaranteedDeletedMatch;
 
+  // root -> child -> grandChild, plus an unrelated sibling root, all scoped to TREE_ACCOUNT
+  private Category root;
+  private Category child;
+  private Category grandChild;
+  private Category sibling;
+  // system category (no account) with one child owned by TREE_ACCOUNT and one owned by ACCOUNT_2
+  private Category systemParent;
+  private Category treeAccountChildOfSystemParent;
+  private Category otherAccountChildOfSystemParent;
+  private Transaction rootTx;
+  private Transaction childTx;
+  private Transaction grandChildTx;
+  private Transaction siblingTx;
+
   @BeforeAll
   void setupData() {
-    accountRepository.saveAll(List.of(ACCOUNT_1, ACCOUNT_2));
+    accountRepository.saveAll(List.of(ACCOUNT_1, ACCOUNT_2, TREE_ACCOUNT));
 
     final List<Category> categoryList =
         categoryRepository.findAll(new FindAllCategoriesCommand(null, null, null, null, null));
-    firstCategory = categoryList.stream().filter(c -> !c.isInternal()).findAny().orElseThrow();
-    secondCategory =
-        categoryList.stream().filter(c -> !c.isInternal() && !c.getSid().equals(firstCategory.getSid())).findFirst()
-            .orElseThrow();
+    // Filtering by a category also returns its descendants, so the two noise categories must be root categories to
+    // guarantee that neither one is a descendant of the other.
+    firstCategory =
+        categoryList.stream().filter(c -> !c.isInternal() && c.getParent() == null).findAny().orElseThrow();
+    secondCategory = categoryList.stream()
+        .filter(c -> !c.isInternal() && c.getParent() == null && !c.getSid().equals(firstCategory.getSid()))
+        .findFirst()
+        .orElseThrow();
 
     guaranteedMatch = TransactionTestFactory.createTransaction(
         ACCOUNT_1,
@@ -104,6 +139,54 @@ public class FindAllTransactionsIT extends MoneyTrackerBaseIntegrationTest {
     noise.add(guaranteedMatch);
     noise.add(guaranteedDeletedMatch);
     allTransactions = transactionRepository.saveAll(noise);
+
+    setupCategoryTree();
+  }
+
+  private void setupCategoryTree() {
+    root = newCategory("root", TREE_ACCOUNT.getSid(), null);
+    child = newCategory("child", TREE_ACCOUNT.getSid(), root);
+    grandChild = newCategory("grandChild", TREE_ACCOUNT.getSid(), child);
+    sibling = newCategory("sibling", TREE_ACCOUNT.getSid(), null);
+
+    systemParent = newCategory("systemParent", null, null);
+    treeAccountChildOfSystemParent = newCategory("treeAccountChild", TREE_ACCOUNT.getSid(), systemParent);
+    otherAccountChildOfSystemParent = newCategory("otherAccountChild", ACCOUNT_2.getSid(), systemParent);
+
+    rootTx = newTransaction(TREE_ACCOUNT, root, "1.01");
+    childTx = newTransaction(TREE_ACCOUNT, child, "2.02");
+    grandChildTx = newTransaction(TREE_ACCOUNT, grandChild, "3.03");
+    siblingTx = newTransaction(TREE_ACCOUNT, sibling, "4.04");
+    newTransaction(TREE_ACCOUNT, systemParent, "5.05");
+    newTransaction(TREE_ACCOUNT, treeAccountChildOfSystemParent, "6.06");
+    // belongs to another account, must never show up in TREE_ACCOUNT's results
+    newTransaction(ACCOUNT_2, otherAccountChildOfSystemParent, "7.07");
+  }
+
+  private Category newCategory(final String name, final UUID accountSid, final Category parent) {
+    return categoryRepository.save(
+        CategoryTestFactory.createCategory(CATEGORY_PREFIX + name, accountSid, parent, false));
+  }
+
+  private Transaction newTransaction(final Account account, final Category category, final String amount) {
+    return transactionRepository.save(TransactionTestFactory.createTransaction(
+        account, category, TransactionType.EXPENSE, new BigDecimal(amount), TransactionStatus.ACTIVE,
+        LocalDate.now().minusDays(1)));
+  }
+
+  private List<String> fetchSids(final UUID user, final UUID accountSid, final UUID categorySid) {
+    return given()
+        .header("Authorization", "Bearer " + user)
+        .queryParam("accountSid", accountSid)
+        .queryParam("categorySid", categorySid)
+        .queryParam("size", 100)
+        .when()
+        .get("/transactions")
+        .then()
+        .log().ifValidationFails()
+        .statusCode(200)
+        .extract()
+        .path("content.sid");
   }
 
   @Test
@@ -208,6 +291,159 @@ public class FindAllTransactionsIT extends MoneyTrackerBaseIntegrationTest {
     int indexOfOlder = sids.indexOf(olderTx.getSid().toString());
 
     assertThat(indexOfNewer).isLessThan(indexOfOlder);
+  }
+
+  @Test
+  void shouldReturnTransactionsOfTheCategoryAndAllOfItsDescendants() {
+    // Act
+    final List<String> sids = fetchSids(TREE_OWNER, TREE_ACCOUNT.getSid(), root.getSid());
+
+    // Assert
+    assertThat(sids).containsExactlyInAnyOrder(
+        rootTx.getSid().toString(), childTx.getSid().toString(), grandChildTx.getSid().toString());
+    assertThat(sids).doesNotContain(siblingTx.getSid().toString());
+  }
+
+  @Test
+  void shouldReturnOnlyTheSubtreeWhenFilteringByAnIntermediateCategory() {
+    // Act
+    final List<String> sids = fetchSids(TREE_OWNER, TREE_ACCOUNT.getSid(), child.getSid());
+
+    // Assert
+    assertThat(sids).containsExactlyInAnyOrder(childTx.getSid().toString(), grandChildTx.getSid().toString());
+  }
+
+  @Test
+  void shouldReturnOnlyTheOwnTransactionsWhenFilteringByLeafCategory() {
+    // Act
+    final List<String> sids = fetchSids(TREE_OWNER, TREE_ACCOUNT.getSid(), grandChild.getSid());
+
+    // Assert
+    assertThat(sids).containsExactly(grandChildTx.getSid().toString());
+  }
+
+  @Test
+  void shouldNotIncludeDescendantsOwnedByAnotherAccountWhenFilteringBySystemCategory() {
+    // Act
+    final List<String> categoryNames =
+        given()
+            .header("Authorization", "Bearer " + TREE_OWNER)
+            .queryParam("accountSid", TREE_ACCOUNT.getSid())
+            .queryParam("categorySid", systemParent.getSid())
+            .queryParam("size", 100)
+            .when()
+            .get("/transactions")
+            .then()
+            .statusCode(200)
+            .extract()
+            .path("content.category.name");
+
+    // Assert
+    assertThat(categoryNames).containsExactlyInAnyOrder(
+        CATEGORY_PREFIX + "systemParent", CATEGORY_PREFIX + "treeAccountChild");
+  }
+
+  @Test
+  void shouldResolveOnlyTheDescendantsVisibleToTheAccount() {
+    // Act & Assert
+    final List<String> names = categoryRepository
+        .findCategoryAndAllDescendants(systemParent.getSid(), TREE_ACCOUNT.getSid()).stream()
+        .map(Category::getName)
+        .toList();
+
+    assertThat(names).containsExactlyInAnyOrder(
+        CATEGORY_PREFIX + "systemParent", CATEGORY_PREFIX + "treeAccountChild");
+  }
+
+  @Test
+  void shouldReturnNoTransactionsWhenTheCategoryDoesNotExist() {
+    // Act & Assert
+    given()
+        .header("Authorization", "Bearer " + TREE_OWNER)
+        .queryParam("accountSid", TREE_ACCOUNT.getSid())
+        .queryParam("categorySid", UUID.randomUUID())
+        .when()
+        .get("/transactions")
+        .then()
+        .statusCode(200)
+        .body("totalElements", is(0))
+        .body("content", empty());
+  }
+
+  @Test
+  void shouldReturnNoTransactionsWhenTheCategoryBelongsToAnotherAccount() {
+    // Arrange
+    final Category foreignRoot = otherAccountChildOfSystemParent;
+
+    // Act & Assert
+    given()
+        .header("Authorization", "Bearer " + TREE_OWNER)
+        .queryParam("accountSid", TREE_ACCOUNT.getSid())
+        .queryParam("categorySid", foreignRoot.getSid())
+        .when()
+        .get("/transactions")
+        .then()
+        .statusCode(200)
+        .body("totalElements", is(0))
+        .body("content", empty());
+  }
+
+  @Test
+  void shouldReturnEveryTransactionOfTheAccountWhenNoCategoryIsRequested() {
+    // Act & Assert
+    given()
+        .header("Authorization", "Bearer " + TREE_OWNER)
+        .queryParam("accountSid", TREE_ACCOUNT.getSid())
+        .queryParam("size", 100)
+        .when()
+        .get("/transactions")
+        .then()
+        .statusCode(200)
+        .body("totalElements", is(6))
+        .body("content.sid", hasItem(siblingTx.getSid().toString()));
+  }
+
+  @Test
+  void shouldForbidUserWhoIsNotMemberOfTheAccount() {
+    // Act & Assert
+    given()
+        .header("Authorization", "Bearer " + SECOND_ACCOUNT_OWNER)
+        .queryParam("accountSid", TREE_ACCOUNT.getSid())
+        .when()
+        .get("/transactions")
+        .then()
+        .statusCode(403)
+        .body("detail", is("You do not have the required role to perform this action."))
+        .body("content", nullValue());
+  }
+
+  @Test
+  void shouldForbidNonMemberEvenWhenAskingForCategoryTree() {
+    // Act & Assert
+    given()
+        .header("Authorization", "Bearer " + SECOND_ACCOUNT_OWNER)
+        .queryParam("accountSid", TREE_ACCOUNT.getSid())
+        .queryParam("categorySid", root.getSid())
+        .when()
+        .get("/transactions")
+        .then()
+        .statusCode(403)
+        .body("detail", is("You do not have the required role to perform this action."));
+  }
+
+  @Test
+  void shouldReturnNotFoundWhenTheAccountDoesNotExist() {
+    // Act & Assert
+    given()
+        .header("Authorization", "Bearer " + TREE_OWNER)
+        .queryParam("accountSid", UUID.randomUUID())
+        .when()
+        .get("/transactions")
+        .then()
+        .statusCode(404)
+        .body("detail", is(
+            "The specified account is no longer available. " +
+                "It may have been removed, or you may not have access to it."));
   }
 
 }

@@ -71,4 +71,9 @@ public class CategoryRepositoryImpl implements CategoryRepository {
     return repository.existsByNameForAccountOrSystem(name, accountSid);
   }
 
+  @Override
+  public List<Category> findCategoryAndAllDescendants(final UUID categorySid, final UUID accountSid) {
+    return repository.findCategoryAndAllDescendants(categorySid, accountSid);
+  }
+
 }

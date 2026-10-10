@@ -12,8 +12,8 @@ import me.ferreira.graveto.moneytracker.transactions.domain.projection.CategoryA
 import me.ferreira.graveto.moneytracker.transactions.domain.projection.MonthlyAggregateProjection;
 import me.ferreira.graveto.moneytracker.transactions.repository.TransactionJpaRepository;
 import me.ferreira.graveto.moneytracker.transactions.repository.TransactionRepository;
+import me.ferreira.graveto.moneytracker.transactions.repository.TransactionSearchCriteria;
 import me.ferreira.graveto.moneytracker.transactions.repository.TransactionsSpecs;
-import me.ferreira.graveto.moneytracker.transactions.service.command.FindAllTransactionsCommand;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.PredicateSpecification;
@@ -32,7 +32,7 @@ public class TransactionRepositoryImpl implements TransactionRepository {
   }
 
   @Override
-  public List<Transaction> saveAll(List<Transaction> transactions) {
+  public List<Transaction> saveAll(final List<Transaction> transactions) {
     return repository.saveAll(transactions);
   }
 
@@ -57,12 +57,12 @@ public class TransactionRepositoryImpl implements TransactionRepository {
   }
 
   @Override
-  public Page<Transaction> findAll(final FindAllTransactionsCommand command) {
+  public Page<Transaction> findAll(final TransactionSearchCriteria searchCriteria) {
 
-    final PredicateSpecification<Transaction> predicateSpec = TransactionsSpecs.buildFromCommand(command);
+    final PredicateSpecification<Transaction> predicateSpec = TransactionsSpecs.buildPredicate(searchCriteria);
     final Specification<Transaction> classicSpec = Specification.where(predicateSpec);
 
-    return repository.findAll(classicSpec, command.pageable());
+    return repository.findAll(classicSpec, searchCriteria.pageable());
   }
 
   @Override

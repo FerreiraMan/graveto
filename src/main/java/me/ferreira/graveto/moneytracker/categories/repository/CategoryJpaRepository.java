@@ -31,4 +31,16 @@ public interface CategoryJpaRepository extends JpaRepository<Category, Long>, Jp
       "WHERE c.name = ?1 AND (c.accountSid = ?2 OR c.accountSid is NULL)")
   boolean existsByNameForAccountOrSystem(final String name, final UUID accountSid);
 
+  @Query(value =
+      "WITH RECURSIVE tree AS (" +
+          "   SELECT * FROM categories c1 " +
+          "   WHERE c1.sid = ?1 AND (c1.account_sid IS NULL OR c1.account_sid = ?2) " +
+          "   UNION " +
+          "   SELECT c2.* FROM categories c2 " +
+          "   JOIN tree t ON c2.parent_id = t.id " +
+          "   WHERE (c2.account_sid IS NULL OR c2.account_sid = ?2)" +
+          ") " +
+          "SELECT * FROM tree", nativeQuery = true)
+  List<Category> findCategoryAndAllDescendants(final UUID sid, final UUID accountSid);
+
 }

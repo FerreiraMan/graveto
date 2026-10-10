@@ -15,6 +15,8 @@ public interface CategoryService {
 
   List<Category> fetchAllCategories(FindAllCategoriesCommand command);
 
+  List<Category> fetchCategoryAndAllDescendants(UUID categorySid, UUID accountSid);
+
   Category createCategory(CreateCategoryCommand command);
 
 }
