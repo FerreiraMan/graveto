@@ -7,6 +7,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import me.ferreira.graveto.common.web.exception.common.MemberNotRegisteredException;
 import me.ferreira.graveto.common.web.exception.portfolio.BrokerNotFoundException;
 import me.ferreira.graveto.identity.api.UserApi;
 import me.ferreira.graveto.identity.api.UserResponseDto;
@@ -16,6 +17,7 @@ import me.ferreira.graveto.portfolio.brokers.domain.BrokerMembershipRole;
 import me.ferreira.graveto.portfolio.brokers.domain.event.BrokerCreatedEvent;
 import me.ferreira.graveto.portfolio.brokers.repository.BrokerRepository;
 import me.ferreira.graveto.portfolio.brokers.service.BrokerService;
+import me.ferreira.graveto.portfolio.brokers.service.command.AddMemberToBrokerCommand;
 import me.ferreira.graveto.portfolio.brokers.service.command.CreateBrokerCommand;
 import me.ferreira.graveto.portfolio.brokers.service.command.FetchBrokerCommand;
 import me.ferreira.graveto.portfolio.brokers.service.payload.BrokerDetails;
@@ -75,6 +77,29 @@ public class BrokerServiceImpl implements BrokerService {
     return brokerRepository.findBySid(brokerSid)
         .orElseThrow(() -> new BrokerNotFoundException(
             "Broker [%s] was not found or the requester has no permission to view it".formatted(brokerSid)));
+  }
+
+  @Override
+  @Transactional
+  public BrokerDetails addMember(AddMemberToBrokerCommand command) {
+
+    final Broker broker = brokerRepository.findBySid(command.brokerSid())
+        .orElseThrow(() -> new BrokerNotFoundException(
+            "Broker [%s] was not found or the requester [%s] has no permission to view it.".formatted(
+                command.brokerSid(), command.userSid())));
+
+    broker.validateUserPermission(command.userSid(), BrokerMembershipRole::canAddMemberToBroker, "add members");
+
+    final UserResponseDto newMemberUser = userApi.fetchUserByEmail(command.email())
+        .orElseThrow(
+            () -> new MemberNotRegisteredException(
+                "Failure to add member [%s] on broker [%s].".formatted(command.email(), broker.getSid())));
+
+    final BrokerMembership brokerNewMembership = BrokerMembership.create(newMemberUser.sid(), command.role());
+
+    broker.addMembership(brokerNewMembership);
+
+    return buildBrokerDetails(broker);
   }
 
   private BrokerDetails buildBrokerDetails(final Broker broker) {

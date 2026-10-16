@@ -22,7 +22,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
-import tools.jackson.databind.ObjectMapper;
 
 @WebMvcTest(
     controllers = BrokerController.class,
@@ -35,8 +34,6 @@ public class FetchAllBrokersControllerTest {
 
   @Autowired
   private MockMvcTester mvc;
-  @Autowired
-  private ObjectMapper objectMapper;
   @MockitoBean
   private BrokerService service;
 
@@ -72,7 +69,7 @@ public class FetchAllBrokersControllerTest {
     assertThat(testResult).bodyJson()
         .extractingPath("$[0].name").asString().isEqualTo(name);
     assertThat(testResult).bodyJson()
-        .extractingPath("$[0].baseCurrency").asString().isEqualTo(Currency.EUR.name());
+        .extractingPath("$[0].currency").asString().isEqualTo(Currency.EUR.name());
     assertThat(testResult).bodyJson()
         .extractingPath("$[0].accountSid").asString().isEqualTo(accountSid.toString());
   }
