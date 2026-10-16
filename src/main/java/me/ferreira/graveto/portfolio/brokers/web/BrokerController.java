@@ -7,12 +7,13 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import me.ferreira.graveto.portfolio.brokers.domain.Broker;
 import me.ferreira.graveto.portfolio.brokers.service.BrokerService;
+import me.ferreira.graveto.portfolio.brokers.service.command.AddMemberToBrokerCommand;
 import me.ferreira.graveto.portfolio.brokers.service.command.CreateBrokerCommand;
 import me.ferreira.graveto.portfolio.brokers.service.command.FetchBrokerCommand;
 import me.ferreira.graveto.portfolio.brokers.service.payload.BrokerDetails;
+import me.ferreira.graveto.portfolio.brokers.web.dto.request.AddMemberToBrokerRequestDto;
 import me.ferreira.graveto.portfolio.brokers.web.dto.request.CreateBrokerRequestDto;
 import me.ferreira.graveto.portfolio.brokers.web.dto.response.BrokerResponseDto;
-import me.ferreira.graveto.portfolio.brokers.web.dto.response.BrokerSummaryResponseDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,6 +30,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 public class BrokerController {
 
   private static final String BROKER_SID_PATH = "/{sid}";
+  private static final String MEMBERSHIP_PATH = "/memberships";
 
   private final BrokerService brokerService;
 
@@ -52,7 +54,7 @@ public class BrokerController {
         .buildAndExpand(brokerDetails.sid())
         .toUri();
 
-    return ResponseEntity.created(location).body(toResponse(brokerDetails));
+    return ResponseEntity.created(location).body(BrokerResponseDto.from(brokerDetails));
   }
 
   @GetMapping(value = BROKER_SID_PATH, produces = "application/json")
@@ -64,44 +66,33 @@ public class BrokerController {
 
     final BrokerDetails brokerDetails = brokerService.fetchBroker(command);
 
-    return ResponseEntity.ok(toResponse(brokerDetails));
+    return ResponseEntity.ok(BrokerResponseDto.from(brokerDetails));
   }
 
   @GetMapping(produces = "application/json")
-  public ResponseEntity<List<BrokerSummaryResponseDto>> fetchAllBrokers(@AuthenticationPrincipal final UUID userSid) {
+  public ResponseEntity<List<BrokerResponseDto>> fetchAllBrokers(@AuthenticationPrincipal final UUID userSid) {
 
     final List<Broker> brokers = brokerService.fetchAllBrokers(userSid);
 
-    final List<BrokerSummaryResponseDto> response = brokers.stream()
-        .map(b -> new BrokerSummaryResponseDto(
-            b.getSid(),
-            b.getName(),
-            b.getCurrency().name(),
-            b.getAccountSid(),
-            b.getStatus().name()))
-        .toList();
-
-    return ResponseEntity.ok(response);
+    return ResponseEntity.ok().body(brokers.stream().map(BrokerResponseDto::from).toList());
   }
 
-  private BrokerResponseDto toResponse(final BrokerDetails brokerDetails) {
+  @PostMapping(path = BROKER_SID_PATH + MEMBERSHIP_PATH, produces = "application/json")
+  public ResponseEntity<BrokerResponseDto> addMemberToBroker(
+      @AuthenticationPrincipal final UUID userSid,
+      @PathVariable final UUID sid,
+      @Valid @RequestBody final AddMemberToBrokerRequestDto requestDto) {
 
-    final List<BrokerResponseDto.MembershipResponseDto> membershipResponseDto = brokerDetails.users().stream()
-        .map(at -> new BrokerResponseDto.MembershipResponseDto(
-            at.sid(),
-            at.email(),
-            at.role()
-        ))
-        .toList();
-
-    return new BrokerResponseDto(
-        brokerDetails.sid(),
-        brokerDetails.name(),
-        brokerDetails.status().name(),
-        brokerDetails.currency().name(),
-        brokerDetails.accountSid(),
-        membershipResponseDto
+    final AddMemberToBrokerCommand command = new AddMemberToBrokerCommand(
+        userSid,
+        sid,
+        requestDto.email().trim().toLowerCase(),
+        requestDto.role()
     );
+
+    final BrokerDetails brokerDetails = brokerService.addMember(command);
+
+    return ResponseEntity.ok().body(BrokerResponseDto.from(brokerDetails));
   }
 
 }
