@@ -72,6 +72,10 @@ public class Transaction extends BaseEntity {
   @Enumerated(EnumType.STRING)
   private TransactionStatus status;
 
+  @JoinColumn(name = "group_id")
+  @ManyToOne(fetch = FetchType.LAZY)
+  private TransactionGroup transactionGroup;
+
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
 
