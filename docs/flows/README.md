@@ -11,12 +11,12 @@ One file per feature, describing what the code does today: data model, flows, ru
 - Keep each diagram under about 15 nodes. Split a diagram before it sprawls.
 - Mark anything not yet confirmed by a test as **unverified**, and remove the mark when a test proves it. "Confirmed" means a test asserts it, which you can read in the test source. You do not need to run the test. Say in the doc that the code was read and not run.
 - Decisions and their rationale belong in `docs/decisions/` (ADRs), not here. A flow file says what happens, not why it was chosen.
-- Update the flow file in the same change that alters the behaviour.
+- Update the flow file in the same change that alters the behavior.
 - Add the new flow to the table above.
 
 ## How to write a flow doc
 
-**The code is the source of truth.** Read it. Do not infer behaviour from class or method names, and do not copy from another flow doc. Use [transaction-groups.md](transaction-groups.md) as the template for structure and tone, never for content.
+**The code is the source of truth.** Read it. Do not infer behavior from class or method names, and do not copy from another flow doc. Use [transaction-groups.md](transaction-groups.md) as the template for structure and tone, never for content.
 
 ### Procedure
 1. **Scope one feature.** Name it, and list its endpoints. If the scope is unclear, ask before writing.
@@ -64,4 +64,4 @@ Every item must be true before the doc is done:
 - Explain why a design was chosen. That belongs in an ADR.
 
 ### Existing flows
-Documenting a flow that already exists follows the same procedure. Start from the controller, not from memory of the feature. When two parts of the code disagree, or behaviour is ambiguous, write the question under known limits and mark it **unverified**. Do not choose an answer.
+Documenting a flow that already exists follows the same procedure. Start from the controller, not from memory of the feature. When two parts of the code disagree, or behavior is ambiguous, write the question under known limits and mark it **unverified**. Do not choose an answer.

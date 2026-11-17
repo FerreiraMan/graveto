@@ -37,7 +37,6 @@ repositories {
 
 ext {
 	set('springModulithVersion', "2.0.2")
-	set('testcontainers.version', "1.19.8")
 }
 
 tasks.register('initApplication', Exec) {
@@ -106,7 +105,7 @@ dependencies {
 	implementation "org.springframework.boot:spring-boot-starter-security"
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
-	implementation 'com.auth0:java-jwt:4.5.2'
+	implementation 'com.auth0:java-jwt:4.6.2'
 	implementation 'org.apache.commons:commons-lang3:3.18.0'
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
@@ -115,8 +114,8 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testImplementation 'org.springframework.modulith:spring-modulith-starter-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.testcontainers:junit-jupiter'
-	testImplementation 'org.testcontainers:postgresql'
+	testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
+	testImplementation 'org.testcontainers:testcontainers-postgresql'
 	testImplementation 'org.springframework.security:spring-security-test'
 	runtimeOnly 'org.flywaydb:flyway-database-postgresql'
 	runtimeOnly 'org.postgresql:postgresql'
@@ -145,8 +144,8 @@ testing {
 				implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 				implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 				implementation 'org.springframework.boot:spring-boot-starter-test'
-				implementation 'org.testcontainers:junit-jupiter'
-				implementation 'org.testcontainers:postgresql'
+				implementation 'org.testcontainers:testcontainers-junit-jupiter'
+				implementation 'org.testcontainers:testcontainers-postgresql'
 				implementation 'org.mock-server:mockserver-testcontainers:7.2.0'
 				implementation 'org.springframework.boot:spring-boot-testcontainers'
 				implementation "org.springframework.boot:spring-boot-starter-security"
