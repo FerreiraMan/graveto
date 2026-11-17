@@ -4,7 +4,7 @@ One file per feature, describing what the code does today: data model, flows, ru
 
 | Flow | Module | Status |
 |---|---|---|
-| [Transaction groups](transaction-groups.md) | moneytracker/transactions | Implemented, tests pending |
+| [Transaction groups](transaction-groups.md) | moneytracker/transactions | Implemented, unit and integration tests done |
 
 ## Conventions
 - English, one file per feature, named after the feature (`kebab-case.md`).

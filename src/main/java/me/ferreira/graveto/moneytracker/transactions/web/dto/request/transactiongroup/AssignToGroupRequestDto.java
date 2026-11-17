@@ -21,8 +21,14 @@ public record AssignToGroupRequestDto(
     @Size(max = 500, message = "A maximum of 500 transactions can be assigned at once.")
     Set<UUID> transactionSids,
 
-    boolean replaceExistingGroup
+    Boolean replaceExistingGroup
 ) {
+
+  public AssignToGroupRequestDto {
+    if (replaceExistingGroup == null) {
+      replaceExistingGroup = false;
+    }
+  }
 
   @AssertTrue(message = "Either a group or a group name must be provided.")
   public boolean isGroupTargetProvided() {

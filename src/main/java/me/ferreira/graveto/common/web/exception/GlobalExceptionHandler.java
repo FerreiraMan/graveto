@@ -41,9 +41,7 @@ public class GlobalExceptionHandler {
     final LoggingEventBuilder event = ex.getStatus().is5xxServerError() ? baseEvent.setCause(ex) : baseEvent;
     event.log(ex.getMessage());
     final ProblemDetail pd = createBaseProblemDetail(ex.getStatus(), ex.getSafeMessage(), request);
-    if (!ex.getExtraProperties().isEmpty()) {
-      pd.setProperties(ex.getExtraProperties());
-    }
+    ex.getExtraProperties().forEach(pd::setProperty);
     return pd;
   }
 
