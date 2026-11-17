@@ -72,6 +72,10 @@ public class Transaction extends BaseEntity {
   @Enumerated(EnumType.STRING)
   private TransactionStatus status;
 
+  @JoinColumn(name = "group_id")
+  @ManyToOne(fetch = FetchType.LAZY)
+  private TransactionGroup transactionGroup;
+
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
 
@@ -160,6 +164,30 @@ public class Transaction extends BaseEntity {
 
     this.status = TransactionStatus.DELETED;
     this.deletedAt = LocalDateTime.now();
+  }
+
+  public GroupAssignmentOutcome assignToGroup(final TransactionGroup targetGroup) {
+
+    if (this.transactionGroup == null) {
+      this.transactionGroup = targetGroup;
+      return GroupAssignmentOutcome.ADDED;
+    }
+
+    if (this.transactionGroup.getSid().equals(targetGroup.getSid())) {
+      return GroupAssignmentOutcome.UNCHANGED;
+    }
+
+    this.transactionGroup = targetGroup;
+    return GroupAssignmentOutcome.MOVED;
+  }
+
+  public GroupAssignmentOutcome removeFromGroup() {
+
+    if (this.transactionGroup == null) {
+      return GroupAssignmentOutcome.UNCHANGED;
+    }
+    this.transactionGroup = null;
+    return GroupAssignmentOutcome.REMOVED;
   }
 
   public void updateDetails(final BigDecimal amount,

@@ -9,6 +9,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.util.List;
+import java.util.Map;
 import me.ferreira.graveto.config.TestSecurityConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +26,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
@@ -158,6 +161,72 @@ public class GlobalExceptionHandlerTest {
     assertThat(result).bodyText().doesNotContain("secret-value-xyz");
   }
 
+  @Test
+  void shouldExposeExtraPropertiesAsTopLevelFieldsAlongsideTheEnvelope() {
+    // Act
+    final MvcTestResult result = mvc.get().uri("/stub/application-exception-with-extras").exchange();
+
+    // Assert
+    assertThat(result).hasStatus(HttpStatus.UNPROCESSABLE_CONTENT);
+    assertThat(result).bodyJson().extractingPath("$.detail").asString().isEqualTo(SAFE_MESSAGE);
+    assertThat(result).bodyJson().extractingPath("$.title").asString()
+        .isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT.getReasonPhrase());
+    assertThat(result).bodyJson().hasPath("$.timestamp");
+    assertThat(result).bodyJson().extractingPath("$.group_conflicts[0].groupName").asString().isEqualTo("Birthday");
+    assertThat(result).bodyJson().extractingPath("$.group_conflicts[0].transactionSids[1]").asString()
+        .isEqualTo("tx-2");
+    assertThat(result).bodyText().doesNotContain(LOGGABLE_MESSAGE);
+  }
+
+  @Test
+  void shouldNotAddAnyExtraFieldWhenTheExceptionHasNoExtraProperties() {
+    // Act
+    final MvcTestResult result = throwApplicationException(422, Level.WARN);
+
+    // Assert
+    assertThat(result).bodyJson().doesNotHavePath("$.group_conflicts");
+    assertThat(result).bodyJson().doesNotHavePath("$.properties");
+  }
+
+  @Test
+  void shouldReturnConflictWithRetryMessageOnDataIntegrityViolation() {
+    // Act
+    final MvcTestResult result = mvc.get().uri("/stub/data-integrity-violation").exchange();
+
+    // Assert
+    assertThat(result).hasStatus(HttpStatus.CONFLICT);
+    assertThat(result).bodyJson().extractingPath("$.detail").asString()
+        .isEqualTo("Please retry the operation and if needed contact support.");
+    assertThat(result).bodyJson().extractingPath("$.title").asString()
+        .isEqualTo(HttpStatus.CONFLICT.getReasonPhrase());
+    assertThat(result).bodyJson().extractingPath("$.instance").asString().isEqualTo("/stub/data-integrity-violation");
+    assertThat(result).bodyJson().hasPath("$.timestamp");
+  }
+
+  @Test
+  void shouldNotLeakTheConstraintDetailOnDataIntegrityViolation() {
+    // Act
+    final MvcTestResult result = mvc.get().uri("/stub/data-integrity-violation").exchange();
+
+    // Assert
+    assertThat(result).bodyText().doesNotContain("transaction_groups_creator_lower_name_uq");
+  }
+
+  @Test
+  void shouldLogTheCauseAtWarnOnDataIntegrityViolation() {
+    // Act
+    mvc.get().uri("/stub/data-integrity-violation").exchange();
+
+    // Assert
+    assertThat(logAppender.list).hasSize(1);
+    final ILoggingEvent event = logAppender.list.getFirst();
+    assertThat(event.getLevel().toString()).isEqualTo("WARN");
+    assertThat(event.getFormattedMessage())
+        .isEqualTo("Failure to persist data on request /stub/data-integrity-violation");
+    assertThat(event.getThrowableProxy()).isNotNull();
+    assertThat(event.getThrowableProxy().getMessage()).contains("transaction_groups_creator_lower_name_uq");
+  }
+
   private MvcTestResult throwApplicationException(final int status, final Level level) {
     return mvc.get()
         .uri("/stub/application-exception")
@@ -177,6 +246,10 @@ public class GlobalExceptionHandlerTest {
   static class StubApplicationException extends ApplicationException {
     StubApplicationException(final HttpStatus status, final Level level) {
       super(LOGGABLE_MESSAGE, status, SAFE_MESSAGE, level);
+    }
+
+    StubApplicationException(final HttpStatus status, final Level level, final Map<String, Object> extraProperties) {
+      super(LOGGABLE_MESSAGE, status, SAFE_MESSAGE, level, extraProperties);
     }
   }
 
@@ -204,6 +277,19 @@ public class GlobalExceptionHandlerTest {
 
     @PostMapping("/validated")
     public void validated(@Valid @RequestBody final StubRequest request) {
+    }
+
+    @GetMapping("/application-exception-with-extras")
+    public void throwApplicationExceptionWithExtras() {
+      final Map<String, Object> extras = Map.of("group_conflicts", List.of(
+          Map.of("groupName", "Birthday", "transactionSids", List.of("tx-1", "tx-2"))));
+      throw new StubApplicationException(HttpStatus.UNPROCESSABLE_CONTENT, Level.WARN, extras);
+    }
+
+    @GetMapping("/data-integrity-violation")
+    public void throwDataIntegrityViolation() {
+      throw new DataIntegrityViolationException(
+          "duplicate key value violates unique constraint \"transaction_groups_creator_lower_name_uq\"");
     }
 
   }

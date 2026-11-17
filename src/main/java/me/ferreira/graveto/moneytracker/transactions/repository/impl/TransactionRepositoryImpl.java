@@ -3,9 +3,11 @@ package me.ferreira.graveto.moneytracker.transactions.repository.impl;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionGroup;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.domain.projection.CategoryAggregateProjection;
@@ -44,6 +46,17 @@ public class TransactionRepositoryImpl implements TransactionRepository {
   @Override
   public Optional<Transaction> findBySid(final UUID sid) {
     return repository.findBySid(sid);
+  }
+
+  @Override
+  public List<Transaction> findAllBySidFromAccountAndStatus(final Set<UUID> sids, final UUID accountSid,
+                                                   final TransactionStatus transactionStatus) {
+    return repository.findAllBySidFromAccountAndStatus(sids, accountSid, transactionStatus);
+  }
+
+  @Override
+  public Long countByTransactionGroup(final TransactionGroup transactionGroup) {
+    return repository.countByTransactionGroup(transactionGroup);
   }
 
   @Override

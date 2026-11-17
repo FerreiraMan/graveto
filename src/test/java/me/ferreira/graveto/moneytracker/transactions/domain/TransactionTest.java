@@ -91,4 +91,110 @@ public class TransactionTest {
     assertThat(transaction.getOccurredAt()).isEqualTo(occurredAt);
   }
 
+  @Test
+  void shouldStartWithoutGroup() {
+    // Arrange & Act
+    final Transaction transaction = buildTransaction();
+
+    // Assert
+    assertThat(transaction.getTransactionGroup()).isNull();
+  }
+
+  @Test
+  void shouldAddTransactionToGroupWhenItHasNone() {
+    // Arrange
+    final Transaction transaction = buildTransaction();
+    final TransactionGroup target = TransactionGroup.create("Algarve 2026", UUID.randomUUID());
+
+    // Act
+    final GroupAssignmentOutcome outcome = transaction.assignToGroup(target);
+
+    // Assert
+    assertThat(outcome).isEqualTo(GroupAssignmentOutcome.ADDED);
+    assertThat(transaction.getTransactionGroup()).isSameAs(target);
+  }
+
+  @Test
+  void shouldMoveTransactionWhenItIsInAnotherGroup() {
+    // Arrange
+    final Transaction transaction = buildTransaction();
+    final TransactionGroup current = TransactionGroup.create("Birthday", UUID.randomUUID());
+    final TransactionGroup target = TransactionGroup.create("Algarve 2026", UUID.randomUUID());
+    transaction.assignToGroup(current);
+
+    // Act
+    final GroupAssignmentOutcome outcome = transaction.assignToGroup(target);
+
+    // Assert
+    assertThat(outcome).isEqualTo(GroupAssignmentOutcome.MOVED);
+    assertThat(transaction.getTransactionGroup()).isSameAs(target);
+  }
+
+  @Test
+  void shouldLeaveTransactionUnchangedWhenItIsAlreadyInTheTargetGroup() {
+    // Arrange
+    final Transaction transaction = buildTransaction();
+    final TransactionGroup target = TransactionGroup.create("Algarve 2026", UUID.randomUUID());
+    transaction.assignToGroup(target);
+
+    // Act
+    final GroupAssignmentOutcome outcome = transaction.assignToGroup(target);
+
+    // Assert
+    assertThat(outcome).isEqualTo(GroupAssignmentOutcome.UNCHANGED);
+    assertThat(transaction.getTransactionGroup()).isSameAs(target);
+  }
+
+  @Test
+  void shouldTreatGroupsWithTheSameSidAsTheSameGroup() {
+    // Arrange
+    final Transaction transaction = buildTransaction();
+    final TransactionGroup current = TransactionGroup.create("Algarve 2026", UUID.randomUUID());
+    final TransactionGroup sameSidDifferentInstance = TransactionGroup.create("Algarve 2026", UUID.randomUUID());
+    sameSidDifferentInstance.setSid(current.getSid());
+    transaction.assignToGroup(current);
+
+    // Act
+    final GroupAssignmentOutcome outcome = transaction.assignToGroup(sameSidDifferentInstance);
+
+    // Assert
+    assertThat(outcome).isEqualTo(GroupAssignmentOutcome.UNCHANGED);
+    assertThat(transaction.getTransactionGroup()).isSameAs(current);
+  }
+
+  @Test
+  void shouldRemoveTransactionFromItsGroup() {
+    // Arrange
+    final Transaction transaction = buildTransaction();
+    transaction.assignToGroup(TransactionGroup.create("Algarve 2026", UUID.randomUUID()));
+
+    // Act
+    final GroupAssignmentOutcome outcome = transaction.removeFromGroup();
+
+    // Assert
+    assertThat(outcome).isEqualTo(GroupAssignmentOutcome.REMOVED);
+    assertThat(transaction.getTransactionGroup()).isNull();
+  }
+
+  @Test
+  void shouldLeaveTransactionUnchangedWhenRemovingFromGroupItDoesNotHave() {
+    // Arrange
+    final Transaction transaction = buildTransaction();
+
+    // Act
+    final GroupAssignmentOutcome outcome = transaction.removeFromGroup();
+
+    // Assert
+    assertThat(outcome).isEqualTo(GroupAssignmentOutcome.UNCHANGED);
+    assertThat(transaction.getTransactionGroup()).isNull();
+  }
+
+  private Transaction buildTransaction() {
+    final BigDecimal amount = new BigDecimal("1000.50");
+    final Account account = Account.create(amount, Currency.EUR, "Santander");
+    final Category category = CategoryUtils.createInitialBalanceCategory();
+
+    return Transaction.create(account, amount, "Lunch", category, TransactionType.EXPENSE, LocalDateTime.now());
+  }
+
 }
