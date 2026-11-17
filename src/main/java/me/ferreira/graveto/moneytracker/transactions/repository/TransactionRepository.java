@@ -3,8 +3,10 @@ package me.ferreira.graveto.moneytracker.transactions.repository;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionGroup;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.domain.projection.CategoryAggregateProjection;
@@ -21,6 +23,11 @@ public interface TransactionRepository {
   Page<Transaction> findAllByAccountId(Long accountId, Pageable pageable);
 
   Optional<Transaction> findBySid(UUID sid);
+
+  List<Transaction> findAllBySidFromAccountAndStatus(Set<UUID> sids, UUID accountSid,
+                                                     TransactionStatus transactionStatus);
+
+  Long countByTransactionGroup(TransactionGroup transactionGroup);
 
   List<Transaction> findAllByCorrelationId(UUID correlationId);
 

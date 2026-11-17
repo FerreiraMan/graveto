@@ -12,6 +12,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.spi.LoggingEventBuilder;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -39,7 +40,11 @@ public class GlobalExceptionHandler {
     final LoggingEventBuilder baseEvent = log.atLevel(ex.getLogLevel());
     final LoggingEventBuilder event = ex.getStatus().is5xxServerError() ? baseEvent.setCause(ex) : baseEvent;
     event.log(ex.getMessage());
-    return createBaseProblemDetail(ex.getStatus(), ex.getSafeMessage(), request);
+    final ProblemDetail pd = createBaseProblemDetail(ex.getStatus(), ex.getSafeMessage(), request);
+    if (!ex.getExtraProperties().isEmpty()) {
+      pd.setProperties(ex.getExtraProperties());
+    }
+    return pd;
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -119,6 +124,15 @@ public class GlobalExceptionHandler {
     log.warn("External API connectivity failure while accessing {}", request.getRequestURI(), ex);
     return createBaseProblemDetail(HttpStatus.SERVICE_UNAVAILABLE,
         "External service is currently unavailable. Please try again later.", request);
+  }
+
+  @ExceptionHandler(DataIntegrityViolationException.class)
+  public ProblemDetail handleDataIntegrityViolationException(final DataIntegrityViolationException ex,
+                                                             final HttpServletRequest request) {
+
+    log.warn("Failure to persist data on request {}", request.getRequestURI(), ex);
+    return createBaseProblemDetail(HttpStatus.CONFLICT, "Please retry the operation and if needed contact support.",
+        request);
   }
 
   @ExceptionHandler(Exception.class)

@@ -166,6 +166,30 @@ public class Transaction extends BaseEntity {
     this.deletedAt = LocalDateTime.now();
   }
 
+  public GroupAssignmentOutcome assignToGroup(final TransactionGroup targetGroup) {
+
+    if (this.transactionGroup == null) {
+      this.transactionGroup = targetGroup;
+      return GroupAssignmentOutcome.ADDED;
+    }
+
+    if (this.transactionGroup.getSid().equals(targetGroup.getSid())) {
+      return GroupAssignmentOutcome.UNCHANGED;
+    }
+
+    this.transactionGroup = targetGroup;
+    return GroupAssignmentOutcome.MOVED;
+  }
+
+  public GroupAssignmentOutcome removeFromGroup() {
+
+    if (this.transactionGroup == null) {
+      return GroupAssignmentOutcome.UNCHANGED;
+    }
+    this.transactionGroup = null;
+    return GroupAssignmentOutcome.REMOVED;
+  }
+
   public void updateDetails(final BigDecimal amount,
                             final Category category,
                             final String description,

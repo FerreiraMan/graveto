@@ -38,12 +38,12 @@ public class TransactionGroup extends BaseEntity {
   @Column(name = "created_by", nullable = false, updatable = false)
   private UUID createdBy;
 
-  public static TransactionGroup create(final String name, final UUID user) {
+  public static TransactionGroup create(final String name, final UUID createdBy) {
 
     final TransactionGroup group = new TransactionGroup();
     group.setSid(UUID.randomUUID());
     group.setName(name);
-    group.setCreatedBy(user);
+    group.setCreatedBy(createdBy);
     return group;
   }
 

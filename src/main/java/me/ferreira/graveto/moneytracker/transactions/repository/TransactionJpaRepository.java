@@ -3,8 +3,10 @@ package me.ferreira.graveto.moneytracker.transactions.repository;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionGroup;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction_;
@@ -37,6 +39,14 @@ public interface TransactionJpaRepository
   Page<Transaction> findAll(@Nullable final Specification<Transaction> spec, @NonNull final Pageable pageable);
 
   Optional<Transaction> findBySid(final UUID sid);
+
+  @Query(value = "SELECT t FROM Transaction t LEFT JOIN FETCH t.transactionGroup " +
+      "WHERE t.sid IN ?1 AND t.account.sid = ?2 AND t.status = ?3")
+  List<Transaction> findAllBySidFromAccountAndStatus(final Set<UUID> sids, final UUID accountSid,
+                                                     final TransactionStatus transactionStatus);
+
+  @Query(value = "SELECT COUNT(t) FROM Transaction t WHERE t.transactionGroup = ?1")
+  Long countByTransactionGroup(final TransactionGroup transactionGroup);
 
   @Query(value =
       "SELECT EXTRACT(YEAR FROM t.occurredAt) AS year, EXTRACT(MONTH FROM t.occurredAt) AS month, " +

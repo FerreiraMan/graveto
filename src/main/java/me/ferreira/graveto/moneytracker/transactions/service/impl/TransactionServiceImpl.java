@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.categories.service.CategoryService;
 import me.ferreira.graveto.moneytracker.categories.service.command.FetchCategoryCommand;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionGroup;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.domain.projection.CategoryAggregateProjection;
@@ -91,6 +93,19 @@ public class TransactionServiceImpl implements TransactionService {
             .collect(Collectors.toSet());
 
     return transactionRepository.findAll(TransactionSearchCriteria.from(command, categoryAndAllDescendantsIds));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<Transaction> findAllBySidFromAccountAndStatus(final Set<UUID> sids, final UUID accountSid,
+                                                   final TransactionStatus transactionStatus) {
+    return transactionRepository.findAllBySidFromAccountAndStatus(sids, accountSid, transactionStatus);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Long countByTransactionGroup(final TransactionGroup transactionGroup) {
+    return transactionRepository.countByTransactionGroup(transactionGroup);
   }
 
   @Override

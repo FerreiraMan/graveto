@@ -1,7 +1,11 @@
 package me.ferreira.graveto.moneytracker.transactions.service;
 
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionGroup;
+import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.projection.CategoryAggregateProjection;
 import me.ferreira.graveto.moneytracker.transactions.domain.projection.MonthlyAggregateProjection;
 import me.ferreira.graveto.moneytracker.transactions.service.command.CreateTransactionCommand;
@@ -17,6 +21,11 @@ public interface TransactionService {
   Transaction createTransaction(CreateTransactionCommand command);
 
   Page<Transaction> findAll(FindAllTransactionsCommand command);
+
+  List<Transaction> findAllBySidFromAccountAndStatus(Set<UUID> sids, UUID accountSid,
+                                                     TransactionStatus transactionStatus);
+
+  Long countByTransactionGroup(TransactionGroup transactionGroup);
 
   Transaction deleteTransaction(DeleteTransactionCommand command);
 
