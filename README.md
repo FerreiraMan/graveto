@@ -113,6 +113,10 @@ graveto/
 - Per-position valuation (market value, unrealized P&L, P&L %) using latest tracked asset price
 - Portfolio-level valuation summary per broker
 
+## Documentation
+
+Feature flows (data model, request flow, rules and errors, with Mermaid diagrams) live in [`docs/flows`](docs/flows/README.md). The same folder explains how to write a flow doc.
+
 ## Getting Started
 
 ### Prerequisites
