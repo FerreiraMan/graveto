@@ -2,7 +2,7 @@
 
 Status: implemented on branch `feature/transaction-groups`. Controller, domain, service, exception handler and integration tests are in place. There are no separate repository tests: the queries run in the integration tests. Items still marked **unverified** are listed under known limits.
 
-Last verified: 2026-11-17 against commit `2f4ddd3` plus uncommitted changes (`AssignToGroupRequestDto`, the `GlobalExceptionHandler` fix and all group tests). The tests were run and pass. Everything else was read from the code, not run.
+Last verified: 2026-11-18 against commit `8a62681` plus uncommitted changes (`Transaction.markAsDeleted` clearing the group, and its tests). The group tests in all layers were run and pass, except that after the `markAsDeleted` change only `TransactionTest` was re-run. Everything else was read from the code, not run.
 
 ## Purpose
 A user labels the transactions of an event (a holiday, a party) with a **group**. A transaction belongs to at most one group. A group is visible to every user who can access one of the accounts it is linked to, so a household shares groups without setup.
@@ -116,6 +116,7 @@ sequenceDiagram
 ```
 
 ## Rules and invariants
+- A transaction that is deleted leaves its group, so group counts and ungroup never see deleted transactions. `Transaction.markAsDeleted` clears the group. It is the only delete path for transactions (`TransactionServiceImpl`) and for both transfer legs (`TransferServiceImpl`), read from the code and not run end to end. Asserted at domain level by `TransactionTest.shouldClearGroupWhenMarkedAsDeleted`, `shouldMarkAsDeletedWhenItHasNoGroup` and `shouldThrowWhenMarkingAnAlreadyDeletedTransactionAsDeleted`. The group-account link stays, so a group whose last transaction was deleted stays visible with no transactions.
 - A transaction has zero or one group. Asserted by `TransactionTest.shouldAddTransactionToGroupWhenItHasNone`, `shouldMoveTransactionWhenItIsInAnotherGroup` and `shouldRemoveTransactionFromItsGroup`: assigning replaces the single group reference.
 - A group sid is accepted only if the group is among the groups visible to the caller (linked to an account the caller belongs to). Unknown and invisible groups return the same 404. Asserted at service level by `AssignToGroupServiceImplTest.shouldThrowIfGroupSidIsNotVisibleToUser` and `shouldAssignToVisibleGroupBySid`. Asserted end to end by `AssignToGroupIT.shouldReturnNotFoundForGroupVisibleOnlyToAnotherHousehold`, `shouldLetAnotherMemberOfLinkedAccountAssignToTheGroup` and `shouldLinkTheGroupToSecondAccountAndNotDuplicateTheLinkOnRepeat`, which run the real visibility query.
 - The group-account link is created on every assign, so every account that holds a grouped transaction is linked to its group. Visibility depends on this: keep it true if you add another way to set `group_id`. Asserted by `AssignToGroupServiceImplTest.shouldCreateGroupAndLinkItToAccountWhenNameMatchesNoVisibleGroup` (link saved for a new group) and `shouldReuseExistingGroupFoundByNameAndKeepExistingLink` (no second link when one exists).
@@ -134,7 +135,7 @@ Tests by layer:
 | Layer | Status |
 |---|---|
 | Controller (`web`) | Done: `AssignToGroupControllerTest` (10), `UngroupControllerTest` (5), helper `TransactionGroupDtoAssertions` |
-| Domain | Done: `TransactionTest` (7 group tests), `TransactionGroupTest` (2), `TransactionGroupAccountTest` (1). Covers `Transaction.assignToGroup` (ADDED, MOVED, UNCHANGED), `removeFromGroup` (REMOVED, UNCHANGED), and the two factories |
+| Domain | Done: `TransactionTest` (10 group tests), `TransactionGroupTest` (2), `TransactionGroupAccountTest` (1). Covers `Transaction.assignToGroup` (ADDED, MOVED, UNCHANGED), `removeFromGroup` (REMOVED, UNCHANGED), `markAsDeleted` clearing the group, and the two factories |
 | Service | Done: `AssignToGroupServiceImplTest` (12), `UngroupServiceImplTest` (5), helper `TransactionGroupUtils`. Repositories and `TransactionService` are mocked, so queries are not exercised |
 | Exception handler (`group_conflicts`, 409) | Done: `GlobalExceptionHandlerTest` (6 new tests, 29 in the class). Covers extra properties in the error body, no extras for plain exceptions, and the 409 body, no constraint leak and WARN log. Writing these found and fixed a bug: the extras replaced the whole body map and dropped `timestamp` |
 | Integration | Done: `AssignToGroupIT` (15), `UngroupIT` (6). Real Postgres via Testcontainers. Kept to what needs a database: the queries, the collation and unique index, visibility across accounts and households, conflicts, the deleted-status filter, and rejection leaving no change. The 403, the by-sid assign, the ungroup counts and mixed groups are covered by the service and controller tests only. A rollback after a partial write and a real concurrent create are not covered |
@@ -174,7 +175,7 @@ All paths under `src/main/java/me/ferreira/graveto/moneytracker/transactions/`.
 | Request and response DTOs | `web/dto/request/transactiongroup/*`, `web/dto/response/transactiongroup/TransactionGroupResponseDto` |
 | Orchestration | `service/impl/TransactionGroupServiceImpl` |
 | Commands and results | `service/command/transactiongroup/*`, `service/payload/AssignToGroupDetails`, `UngroupDetails`, `GroupConflict` |
-| Domain | `domain/TransactionGroup`, `TransactionGroupAccount`, `GroupAssignmentOutcome`, `Transaction.assignToGroup` and `removeFromGroup` |
+| Domain | `domain/TransactionGroup`, `TransactionGroupAccount`, `GroupAssignmentOutcome`, `Transaction.assignToGroup`, `removeFromGroup` and `markAsDeleted` |
 | Queries | `repository/transactiongroup/*`, `repository/transactiongroupaccount/*`, `TransactionJpaRepository.countByTransactionGroup` |
 | Migrations | `src/main/resources/db/migration/moneytracker/V202610191800__create_transaction_groups.sql`, `V202611141800__add_transaction_group_accounts_index_and_cascade.sql` |
 | Error extension | `common/web/exception/ApplicationException.extraProperties`, `GlobalExceptionHandler` |
