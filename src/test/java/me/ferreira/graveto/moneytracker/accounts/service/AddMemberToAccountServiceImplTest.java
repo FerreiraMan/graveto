@@ -13,7 +13,7 @@ import java.util.UUID;
 import me.ferreira.graveto.common.web.exception.ApplicationException;
 import me.ferreira.graveto.common.web.exception.moneytracker.AccountNotFoundException;
 import me.ferreira.graveto.common.web.exception.moneytracker.InsufficientPermissionsOnAccountException;
-import me.ferreira.graveto.common.web.exception.moneytracker.MemberNotRegisteredException;
+import me.ferreira.graveto.common.web.exception.common.MemberNotRegisteredException;
 import me.ferreira.graveto.common.web.exception.moneytracker.UserAlreadyAccountMemberException;
 import me.ferreira.graveto.identity.api.UserApi;
 import me.ferreira.graveto.identity.api.UserResponseDto;
@@ -103,7 +103,7 @@ public class AddMemberToAccountServiceImplTest {
           final ApplicationException ae = (ApplicationException) ex;
           Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
           Assertions.assertThat(ae.getSafeMessage())
-              .isEqualTo("New account member needs to be registered in the platform in order to be onboarded.");
+              .isEqualTo("New member needs to be registered in the platform in order to be onboarded.");
         });
   }
 

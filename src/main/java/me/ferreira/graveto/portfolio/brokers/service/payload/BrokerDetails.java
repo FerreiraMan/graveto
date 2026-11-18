@@ -11,7 +11,7 @@ public record BrokerDetails(
     BrokerStatus status,
     Currency currency,
     UUID accountSid,
-    List<BrokerDetails.MembershipDetails> users
+    List<MembershipDetails> users
 ) {
   public record MembershipDetails(
       UUID sid,
