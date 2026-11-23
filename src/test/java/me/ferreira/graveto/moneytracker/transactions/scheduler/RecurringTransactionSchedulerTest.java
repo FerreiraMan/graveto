@@ -22,7 +22,7 @@ import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransaction
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.repository.recurringtransaction.RecurringTransactionRepository;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
-import me.ferreira.graveto.moneytracker.transactions.service.command.CreateTransactionCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.transaction.command.CreateTransactionCommand;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

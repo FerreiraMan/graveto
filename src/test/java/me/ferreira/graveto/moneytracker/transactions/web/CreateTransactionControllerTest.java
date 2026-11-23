@@ -18,7 +18,7 @@ import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
-import me.ferreira.graveto.moneytracker.transactions.service.command.CreateTransactionCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.transaction.command.CreateTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.CreateTransactionRequestDto;
 import me.ferreira.graveto.moneytracker.transactions.web.helper.TransactionDtoAssertions;
 import org.junit.jupiter.api.Test;

@@ -1,15 +1,20 @@
 package me.ferreira.graveto.moneytracker.transactions.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import me.ferreira.graveto.common.domain.Currency;
+import me.ferreira.graveto.common.web.exception.ApplicationException;
+import me.ferreira.graveto.common.web.exception.common.BusinessRuleViolationException;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.utils.CategoryUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 
 public class TransactionTest {
 
@@ -187,6 +192,52 @@ public class TransactionTest {
     // Assert
     assertThat(outcome).isEqualTo(GroupAssignmentOutcome.UNCHANGED);
     assertThat(transaction.getTransactionGroup()).isNull();
+  }
+
+  @Test
+  void shouldClearGroupWhenMarkedAsDeleted() {
+    // Arrange
+    final Transaction transaction = buildTransaction();
+    transaction.assignToGroup(TransactionGroup.create("Algarve 2026", UUID.randomUUID()));
+
+    // Act
+    transaction.markAsDeleted();
+
+    // Assert
+    assertThat(transaction.getTransactionGroup()).isNull();
+    assertThat(transaction.getStatus()).isEqualTo(TransactionStatus.DELETED);
+    assertThat(transaction.getDeletedAt()).isNotNull();
+  }
+
+  @Test
+  void shouldMarkAsDeletedWhenItHasNoGroup() {
+    // Arrange
+    final Transaction transaction = buildTransaction();
+
+    // Act
+    transaction.markAsDeleted();
+
+    // Assert
+    assertThat(transaction.getTransactionGroup()).isNull();
+    assertThat(transaction.getStatus()).isEqualTo(TransactionStatus.DELETED);
+  }
+
+  @Test
+  void shouldThrowWhenMarkingAnAlreadyDeletedTransactionAsDeleted() {
+    // Arrange
+    final Transaction transaction = buildTransaction();
+    transaction.markAsDeleted();
+
+    // Act & Assert
+    assertThatThrownBy(transaction::markAsDeleted)
+        .isInstanceOf(BusinessRuleViolationException.class)
+        .satisfies(ex -> {
+          final ApplicationException ae = (ApplicationException) ex;
+          Assertions.assertThat(ae.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+          Assertions.assertThat(ae.getSafeMessage())
+              .isEqualTo(
+                  "The specified transaction is already deleted.");
+        });
   }
 
   private Transaction buildTransaction() {

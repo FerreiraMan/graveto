@@ -20,7 +20,7 @@ import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction_;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
-import me.ferreira.graveto.moneytracker.transactions.service.command.FindAllTransactionsCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.transaction.command.FindAllTransactionsCommand;
 import me.ferreira.graveto.moneytracker.transactions.web.helper.TransactionDtoAssertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;

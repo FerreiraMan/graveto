@@ -2,10 +2,10 @@ package me.ferreira.graveto.moneytracker.transactions.service;
 
 import java.util.List;
 import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransaction;
-import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.CancelRecurringTransactionCommand;
-import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.CreateRecurringTransactionCommand;
-import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.FindAllRecurringTransactionsCommand;
-import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.UpdateRecurringTransactionCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.recurringtransaction.command.CancelRecurringTransactionCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.recurringtransaction.command.CreateRecurringTransactionCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.recurringtransaction.command.FindAllRecurringTransactionsCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.recurringtransaction.command.UpdateRecurringTransactionCommand;
 
 public interface RecurringTransactionService {
 

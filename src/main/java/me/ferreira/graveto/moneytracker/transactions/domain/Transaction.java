@@ -162,6 +162,7 @@ public class Transaction extends BaseEntity {
           "Transaction [%s] is already deleted.".formatted(this.sid), "The specified transaction is already deleted.");
     }
 
+    this.transactionGroup = null;
     this.status = TransactionStatus.DELETED;
     this.deletedAt = LocalDateTime.now();
   }

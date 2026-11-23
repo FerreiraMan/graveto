@@ -2,8 +2,8 @@ package me.ferreira.graveto.moneytracker.transactions.web.dto.response.transacti
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.UUID;
-import me.ferreira.graveto.moneytracker.transactions.service.payload.AssignToGroupDetails;
-import me.ferreira.graveto.moneytracker.transactions.service.payload.UngroupDetails;
+import me.ferreira.graveto.moneytracker.transactions.service.transactiongroup.payload.AssignToGroupDetails;
+import me.ferreira.graveto.moneytracker.transactions.service.transactiongroup.payload.UngroupDetails;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record TransactionGroupResponseDto(

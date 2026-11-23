@@ -15,7 +15,7 @@ import me.ferreira.graveto.config.TestSecurityConfig;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransfer;
 import me.ferreira.graveto.moneytracker.transactions.service.RecurringTransferService;
-import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransfer.CancelRecurringTransferCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.recurringtransfer.command.CancelRecurringTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.web.RecurringTransferController;
 import me.ferreira.graveto.moneytracker.transactions.web.helper.RecurringTransferDtoAssertions;
 import org.junit.jupiter.api.Test;

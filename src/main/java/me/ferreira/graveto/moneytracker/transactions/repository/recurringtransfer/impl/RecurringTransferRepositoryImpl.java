@@ -11,7 +11,7 @@ import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransfer_;
 import me.ferreira.graveto.moneytracker.transactions.repository.recurringtransfer.RecurringTransferJpaRepository;
 import me.ferreira.graveto.moneytracker.transactions.repository.recurringtransfer.RecurringTransferRepository;
 import me.ferreira.graveto.moneytracker.transactions.repository.recurringtransfer.RecurringTransfersSpecs;
-import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransfer.FindAllRecurringTransfersCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.recurringtransfer.command.FindAllRecurringTransfersCommand;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.PredicateSpecification;
 import org.springframework.data.jpa.domain.Specification;

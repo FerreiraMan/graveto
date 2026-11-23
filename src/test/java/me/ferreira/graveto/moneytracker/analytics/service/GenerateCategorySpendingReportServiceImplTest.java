@@ -25,7 +25,7 @@ import me.ferreira.graveto.moneytracker.categories.service.CategoryService;
 import me.ferreira.graveto.moneytracker.categories.service.command.FindAllCategoriesCommand;
 import me.ferreira.graveto.moneytracker.transactions.domain.projection.CategoryAggregateProjection;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
-import me.ferreira.graveto.moneytracker.transactions.service.command.GenerateCategoryAggregateCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.transaction.command.GenerateCategoryAggregateCommand;
 import me.ferreira.graveto.moneytracker.utils.AccountUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;

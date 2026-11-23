@@ -16,7 +16,7 @@ import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.transactions.domain.Transaction;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
-import me.ferreira.graveto.moneytracker.transactions.service.command.UpdateTransactionCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.transaction.command.UpdateTransactionCommand;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.UpdateTransactionRequestDto;
 import me.ferreira.graveto.moneytracker.transactions.web.helper.TransactionDtoAssertions;
 import org.junit.jupiter.api.Test;

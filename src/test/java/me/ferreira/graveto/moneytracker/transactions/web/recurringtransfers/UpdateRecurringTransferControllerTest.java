@@ -17,7 +17,7 @@ import me.ferreira.graveto.moneytracker.accounts.domain.Account;
 import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransfer;
 import me.ferreira.graveto.moneytracker.transactions.service.RecurringTransferService;
-import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransfer.UpdateRecurringTransferCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.recurringtransfer.command.UpdateRecurringTransferCommand;
 import me.ferreira.graveto.moneytracker.transactions.web.RecurringTransferController;
 import me.ferreira.graveto.moneytracker.transactions.web.dto.request.recurringtransfer.UpdateRecurringTransferRequestDto;
 import me.ferreira.graveto.moneytracker.transactions.web.helper.RecurringTransferDtoAssertions;

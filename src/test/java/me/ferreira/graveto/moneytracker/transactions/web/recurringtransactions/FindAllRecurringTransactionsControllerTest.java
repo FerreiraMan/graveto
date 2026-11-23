@@ -18,7 +18,7 @@ import me.ferreira.graveto.moneytracker.categories.domain.Category;
 import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransaction;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
 import me.ferreira.graveto.moneytracker.transactions.service.RecurringTransactionService;
-import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.FindAllRecurringTransactionsCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.recurringtransaction.command.FindAllRecurringTransactionsCommand;
 import me.ferreira.graveto.moneytracker.transactions.web.RecurringTransactionController;
 import me.ferreira.graveto.moneytracker.transactions.web.helper.RecurringTransactionDtoAssertions;
 import org.assertj.core.api.InstanceOfAssertFactories;

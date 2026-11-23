@@ -8,12 +8,12 @@ import me.ferreira.graveto.moneytracker.transactions.domain.TransactionGroup;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.projection.CategoryAggregateProjection;
 import me.ferreira.graveto.moneytracker.transactions.domain.projection.MonthlyAggregateProjection;
-import me.ferreira.graveto.moneytracker.transactions.service.command.CreateTransactionCommand;
-import me.ferreira.graveto.moneytracker.transactions.service.command.DeleteTransactionCommand;
-import me.ferreira.graveto.moneytracker.transactions.service.command.FindAllTransactionsCommand;
-import me.ferreira.graveto.moneytracker.transactions.service.command.GenerateCategoryAggregateCommand;
-import me.ferreira.graveto.moneytracker.transactions.service.command.GenerateMonthlyAggregateCommand;
-import me.ferreira.graveto.moneytracker.transactions.service.command.UpdateTransactionCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.transaction.command.CreateTransactionCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.transaction.command.DeleteTransactionCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.transaction.command.FindAllTransactionsCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.transaction.command.GenerateCategoryAggregateCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.transaction.command.GenerateMonthlyAggregateCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.transaction.command.UpdateTransactionCommand;
 import org.springframework.data.domain.Page;
 
 public interface TransactionService {
