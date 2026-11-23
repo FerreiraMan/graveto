@@ -2,8 +2,8 @@ package me.ferreira.graveto.moneytracker.transactions.web.helper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import me.ferreira.graveto.moneytracker.transactions.service.payload.AssignToGroupDetails;
-import me.ferreira.graveto.moneytracker.transactions.service.payload.UngroupDetails;
+import me.ferreira.graveto.moneytracker.transactions.service.transactiongroup.payload.AssignToGroupDetails;
+import me.ferreira.graveto.moneytracker.transactions.service.transactiongroup.payload.UngroupDetails;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
 public final class TransactionGroupDtoAssertions {

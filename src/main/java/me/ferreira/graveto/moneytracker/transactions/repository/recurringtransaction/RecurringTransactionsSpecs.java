@@ -5,7 +5,7 @@ import me.ferreira.graveto.common.domain.RecurringOperationStatus;
 import me.ferreira.graveto.moneytracker.accounts.domain.Account_;
 import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransaction;
 import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransaction_;
-import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransaction.FindAllRecurringTransactionsCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.recurringtransaction.command.FindAllRecurringTransactionsCommand;
 import org.springframework.data.jpa.domain.PredicateSpecification;
 
 public class RecurringTransactionsSpecs {

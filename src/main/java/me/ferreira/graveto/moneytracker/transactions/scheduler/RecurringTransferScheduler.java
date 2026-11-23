@@ -11,8 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import me.ferreira.graveto.common.domain.RecurringOperationStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransfer;
 import me.ferreira.graveto.moneytracker.transactions.repository.recurringtransfer.RecurringTransferRepository;
-import me.ferreira.graveto.moneytracker.transactions.service.command.transfer.CreateTransferCommand;
-import me.ferreira.graveto.moneytracker.transactions.service.transfer.TransferService;
+import me.ferreira.graveto.moneytracker.transactions.service.TransferService;
+import me.ferreira.graveto.moneytracker.transactions.service.transfer.command.CreateTransferCommand;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 

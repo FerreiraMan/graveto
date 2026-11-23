@@ -6,7 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 import me.ferreira.graveto.common.domain.RecurringOperationStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransfer;
-import me.ferreira.graveto.moneytracker.transactions.service.command.recurringtransfer.FindAllRecurringTransfersCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.recurringtransfer.command.FindAllRecurringTransfersCommand;
 
 public interface RecurringTransferRepository {
 

@@ -23,8 +23,8 @@ import me.ferreira.graveto.moneytracker.categories.service.command.FindAllCatego
 import me.ferreira.graveto.moneytracker.transactions.domain.projection.CategoryAggregateProjection;
 import me.ferreira.graveto.moneytracker.transactions.domain.projection.MonthlyAggregateProjection;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
-import me.ferreira.graveto.moneytracker.transactions.service.command.GenerateCategoryAggregateCommand;
-import me.ferreira.graveto.moneytracker.transactions.service.command.GenerateMonthlyAggregateCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.transaction.command.GenerateCategoryAggregateCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.transaction.command.GenerateMonthlyAggregateCommand;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

@@ -5,7 +5,7 @@ import java.util.Set;
 import java.util.UUID;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.TransactionType;
-import me.ferreira.graveto.moneytracker.transactions.service.command.FindAllTransactionsCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.transaction.command.FindAllTransactionsCommand;
 import org.springframework.data.domain.Pageable;
 
 public record TransactionSearchCriteria(

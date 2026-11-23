@@ -12,7 +12,7 @@ import me.ferreira.graveto.common.domain.RecurringOperationStatus;
 import me.ferreira.graveto.moneytracker.transactions.domain.RecurringTransaction;
 import me.ferreira.graveto.moneytracker.transactions.repository.recurringtransaction.RecurringTransactionRepository;
 import me.ferreira.graveto.moneytracker.transactions.service.TransactionService;
-import me.ferreira.graveto.moneytracker.transactions.service.command.CreateTransactionCommand;
+import me.ferreira.graveto.moneytracker.transactions.service.transaction.command.CreateTransactionCommand;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
